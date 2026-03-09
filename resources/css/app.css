@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+   --qlc-green: #0f766e;
+   --qlc-green-light: #14b8a6;
+
+   --qlc-blue: #2563eb;
+   --qlc-blue-light: #3b82f6;
+
+   --qlc-gold: #d4a017;
+   --qlc-gold-light: #facc15;
+
+   --qlc-red: #dc2626;
+
+   --glass-bg: rgba(255, 255, 255, 0.65);
+}
+
+@layer components {
+   /* GLASS EFFECT */
+   .glass {
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow:
+         0 8px 32px rgba(0, 0, 0, 0.08),
+         inset 0 1px 0 rgba(255, 255, 255, 0.6);
+   }
+
+   .glass-dark {
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+   }
+}
