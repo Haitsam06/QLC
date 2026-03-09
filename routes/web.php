@@ -8,16 +8,18 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
+        // 'canLogin' => Route::has('login'),
+        // 'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('admin/dashboard', function () {
+    return Inertia::render('admin/Dashboard');
+});
+Route::redirect('admin/guru', 'admin/dashboard?tab=guru');
+// })->middleware(['auth', 'verified'])->name('dashboard');
 
 
 // ==========================================
@@ -28,7 +30,7 @@ Route::get('/landing/agenda', function (Request $request) {
     return Inertia::render('Landing/Agenda', [
         // Tangkap parameter 'date' dari URL, kirim sebagai props 'currentDateStr' ke React
         'currentDateStr' => $request->query('date'),
-        
+
         // Nanti Anda bisa menambahkan query database di sini untuk 'events'
         // 'events' => Agenda::whereMonth('tanggal', ...)->get(), 
     ]);
@@ -57,6 +59,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::get('parents/dashboard', function () {
+    return Inertia::render('parents/Dashboard');
 });
 
 require __DIR__ . '/auth.php';

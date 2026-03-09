@@ -15,6 +15,13 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            colors: {
+                'qlc-green': '#065f46', // Emerald 800 (Primary - Islam & Pertumbuhan)
+                'qlc-light-green': '#f0fdf4', // Background ringan
+                'qlc-blue': '#1e40af',  // Blue 800 (Secondary - Trust & Pendidikan)
+                'qlc-gold': '#fbbf24',  // Amber 400 (Accent - Kemuliaan & Leadership)
+                'qlc-red': '#dc2626',   // Red 600 (Alert - Urgent)
+            },
         },
     },
 
