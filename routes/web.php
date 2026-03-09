@@ -65,4 +65,17 @@ Route::get('parents/dashboard', function () {
     return Inertia::render('parents/Dashboard');
 });
 
+Route::get('mitra/dashboard', function () {
+    return Inertia::render('mitra/Dashboard');
+});
+Route::get('mitra/program', function () {
+    return Inertia::render('mitra/Program');
+});
+Route::get('mitra/jadwal', function () {
+    return Inertia::render('mitra/Jadwal');
+});
+Route::get('mitra/laporan', function () {
+    return Inertia::render('mitra/Laporan');
+});
+
 require __DIR__ . '/auth.php';
