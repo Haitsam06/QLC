@@ -78,4 +78,16 @@ Route::get('mitra/laporan', function () {
     return Inertia::render('mitra/Laporan');
 });
 
+Route::get('teacher/dashboard', function () {
+    return Inertia::render('teacher/Dashboard');
+});
+
+Route::get('teacher/jadwal', function () {
+    return Inertia::render('teacher/Jadwal');
+});
+
+Route::get('teacher/laporan', function () {
+    return Inertia::render('teacher/Laporan');
+});
+
 require __DIR__ . '/auth.php';
