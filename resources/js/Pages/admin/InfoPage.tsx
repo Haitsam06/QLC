@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Building2, BookOpen, Image, Plus, Pencil, Trash2, X,
   Loader2, CheckCircle2, AlertCircle, Search,
@@ -289,7 +290,7 @@ const CSS = `
    MODALS
 ════════════════════ */
 .imbk {
-  position:fixed; inset:0; z-index:500; background:rgba(15,23,42,0.5);
+  position:fixed; inset:0; z-index:700; background:rgba(15,23,42,0.5);
   display:flex; align-items:center; justify-content:center; padding:20px;
   animation:ifi .18s ease;
 }
@@ -476,7 +477,7 @@ function DeleteModal({ label, onClose, onConfirm }: {
 }) {
   const [busy, setBusy] = useState(false);
   const go = async () => { setBusy(true); try { await onConfirm(); } finally { setBusy(false); } };
-  return (
+  return createPortal(
     <div className="imbk" onClick={e => e.target===e.currentTarget && onClose()}>
       <div className="im im-del">
         <div className="idel-bdy">
@@ -491,7 +492,8 @@ function DeleteModal({ label, onClose, onConfirm }: {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -773,7 +775,7 @@ function ProgramModal({ mode, init, onClose, onSave }: {
     try { await onSave(fd); } finally { setBusy(false); }
   };
 
-  return (
+  return createPortal(
     <div className="imbk" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="im">
         <div className="im-hd">
@@ -807,7 +809,8 @@ function ProgramModal({ mode, init, onClose, onSave }: {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -953,7 +956,7 @@ function GalleryModal({ mode, init, onClose, onSave }: {
     try { await onSave(fd); } finally { setBusy(false); }
   };
 
-  return (
+  return createPortal(
     <div className="imbk" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="im">
         <div className="im-hd">
@@ -997,7 +1000,8 @@ function GalleryModal({ mode, init, onClose, onSave }: {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

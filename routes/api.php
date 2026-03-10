@@ -5,6 +5,7 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\InfoController;
+use App\Http\Controllers\AgendaController;
 
 // ── Teachers ──
 Route::prefix('teachers')->group(function () {
@@ -26,14 +27,19 @@ Route::prefix('info')->group(function () {
     Route::post ('profile', [InfoController::class, 'profileUpsert']);
 
     // Programs
-    Route::get   ('programs',     [InfoController::class, 'programIndex']);
-    Route::post  ('programs',     [InfoController::class, 'programStore']);
-    Route::post  ('programs/{id}',[InfoController::class, 'programUpdate']);   // method-spoofing
-    Route::delete('programs/{id}',[InfoController::class, 'programDestroy']);
+    Route::get   ('programs',      [InfoController::class, 'programIndex']);
+    Route::post  ('programs',      [InfoController::class, 'programStore']);
+    Route::post  ('programs/{id}', [InfoController::class, 'programUpdate']);   // method-spoofing
+    Route::delete('programs/{id}', [InfoController::class, 'programDestroy']);
 
     // Gallery
-    Route::get   ('gallery',     [InfoController::class, 'galleryIndex']);
-    Route::post  ('gallery',     [InfoController::class, 'galleryStore']);
-    Route::post  ('gallery/{id}',[InfoController::class, 'galleryUpdate']);    // method-spoofing
-    Route::delete('gallery/{id}',[InfoController::class, 'galleryDestroy']);
+    Route::get   ('gallery',      [InfoController::class, 'galleryIndex']);
+    Route::post  ('gallery',      [InfoController::class, 'galleryStore']);
+    Route::post  ('gallery/{id}', [InfoController::class, 'galleryUpdate']);    // method-spoofing
+    Route::delete('gallery/{id}', [InfoController::class, 'galleryDestroy']);
 });
+
+// ── Agenda ──
+// /upcoming harus didaftarkan SEBELUM apiResource agar tidak tertangkap sebagai {id}
+Route::get('agenda/upcoming', [AgendaController::class, 'upcoming']);
+Route::apiResource('agenda', AgendaController::class)->parameters(['agenda' => 'id']);
