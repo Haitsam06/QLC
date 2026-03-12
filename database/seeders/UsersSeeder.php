@@ -38,5 +38,14 @@ class UsersSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now()
         ]);
+
+        User::create([
+            'role_id' => 'RL04',
+            'username' => 'mitra',
+            'email' => 'mitra@gmail.com',
+            'password' => Hash::make('mitra123'),
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
     }
 }

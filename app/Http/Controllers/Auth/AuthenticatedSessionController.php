@@ -60,8 +60,9 @@ class AuthenticatedSessionController extends Controller
     {
         return match ($roleName) {
             'admin'  => '/admin/dashboard',
-            'guru'   => '/guru/dashboard',
-            'parent' => '/parents/dashboard',
+            'teacher', 'guru' => '/teacher/dashboard',
+            'parents', 'parent' => '/parents/dashboard',
+            'mitra' => '/mitra/dashboard',
             default  => '/',
         };
     }

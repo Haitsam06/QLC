@@ -38,7 +38,23 @@ class User extends Model implements Authenticatable
     }
 
     // ── Role checkers ────────────────────────────────────────
-    public function isAdmin(): bool  { return $this->getRoleName() === 'admin';  }
-    public function isGuru(): bool   { return $this->getRoleName() === 'guru';   }
-    public function isParents(): bool { return $this->getRoleName() === 'parents'; }
+    public function isAdmin(): bool
+    {
+        return $this->getRoleName() === 'admin';
+    }
+
+    public function isTeacher(): bool
+    {
+        return in_array($this->getRoleName(), ['teacher', 'guru'], true);
+    }
+
+    public function isParents(): bool
+    {
+        return in_array($this->getRoleName(), ['parents', 'parent'], true);
+    }
+
+    public function isMitra(): bool
+    {
+        return $this->getRoleName() === 'mitra';
+    }
 }

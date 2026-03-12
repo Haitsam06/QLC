@@ -23,5 +23,10 @@ class RolesSeeder extends Seeder
             '_id' => 'RL03',
             'role_name' => 'parents'
         ]);
+        
+        Role::create([
+            '_id' => 'RL04',
+            'role_name' => 'mitra'
+        ]);
     }
 }

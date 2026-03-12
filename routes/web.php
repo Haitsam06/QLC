@@ -37,16 +37,17 @@ Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', fn() => Inertia::render('admin/Dashboard'))->name('admin.dashboard');
-        Route::redirect('/guru', '/admin/dashboard?tab=guru');
+        // Route::redirect('/guru', '/admin/dashboard?tab=guru');
         // Tambah route admin lainnya di sini
     });
 
 // ── Guru routes ──────────────────────────────────────────────
-Route::middleware(['auth', 'role:guru'])
-    ->prefix('guru')
+Route::middleware(['auth', 'role:teacher'])
+    ->prefix('teacher')
     ->group(function () {
-        Route::get('/dashboard', fn() => Inertia::render('guru/Dashboard'))->name('guru.dashboard');
-        // Tambah route guru lainnya di sini
+        Route::get('/dashboard', fn() => Inertia::render('teacher/Dashboard'))->name('teacher.dashboard');
+        Route::get('/jadwal', fn() => Inertia::render('teacher/Jadwal'));
+        Route::get('/laporan', fn() => Inertia::render('teacher/Laporan'));
     });
 
 // ── Parent routes ─────────────────────────────────────────────
@@ -58,7 +59,7 @@ Route::middleware(['auth', 'role:parents'])
     });
 
 // ── Mitra routes (public sementara, tambah middleware jika perlu) ──
-Route::prefix('mitra')->group(function () {
+Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->group(function () {
     Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'));
     Route::get('/program',   fn() => Inertia::render('mitra/Program'));
     Route::get('/jadwal',    fn() => Inertia::render('mitra/Jadwal'));
