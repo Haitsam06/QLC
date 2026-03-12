@@ -37,7 +37,9 @@ class AuthenticatedSessionController extends Controller
         $user     = Auth::user()->load('role');
         $roleName = $user->getRoleName();
 
-        return redirect()->intended($this->redirectByRole($roleName));
+        // Selalu arahkan ke dashboard sesuai role aktif user.
+        // Jangan gunakan intended() agar tidak kebawa URL lama dari role lain.
+        return redirect()->to($this->redirectByRole($roleName));
     }
 
     /**
@@ -60,8 +62,8 @@ class AuthenticatedSessionController extends Controller
     {
         return match ($roleName) {
             'admin'  => '/admin/dashboard',
-            'teacher', 'guru' => '/teacher/dashboard',
-            'parents', 'parent' => '/parents/dashboard',
+            'teacher' => '/teacher/dashboard',
+            'parents' => '/parents/dashboard',
             'mitra' => '/mitra/dashboard',
             default  => '/',
         };

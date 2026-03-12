@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
+import type { PageProps } from "@/types";
 import {
   LayoutDashboard, BookOpen, ClipboardList, CreditCard,
   Bell, MessageSquare, Settings, LogOut, ArrowUpRight,
@@ -447,6 +448,16 @@ const payDonut = [{ name:"Lunas", value:2, fill:"#14b8a6" },{ name:"Belum", valu
    COMPONENT
 ═══════════════════════════════════════════════════════════ */
 export default function ParentDashboard() {
+  const user = usePage<PageProps>().props.auth.user;
+  const displayName = user?.name || user?.username || user?.email || "Pengguna";
+  const roleLabel = user?.role_id === "RL03" ? "Wali Murid" : "Pengguna";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "U";
+
   const [active, setActive] = useState("dashboard");
   const handleLogout = () => {
     router.post(route("logout"));
@@ -501,10 +512,10 @@ export default function ParentDashboard() {
             </button>
             <div className="topnav__profile">
               <div>
-                <div className="pname">Ahmad Fauzi</div>
-                <div className="prole">Wali Murid</div>
+                <div className="pname">{displayName}</div>
+                <div className="prole">{roleLabel}</div>
               </div>
-              <div className="av av-sm">AF</div>
+              <div className="av av-sm">{initials}</div>
             </div>
           </div>
         </nav>

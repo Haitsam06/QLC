@@ -6,6 +6,7 @@ use App\Http\Controllers\ParentController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\InfoController;
 use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\MitraController;
 
 // ── Teachers ──
 Route::prefix('teachers')->group(function () {
@@ -24,7 +25,7 @@ Route::apiResource('students', StudentController::class)->parameters(['students'
 Route::prefix('info')->group(function () {
     // Profile (single record)
     Route::get ('profile', [InfoController::class, 'profileShow']);
-    Route::post ('profile', [InfoController::class, 'profileUpsert']);
+    Route::post('profile', [InfoController::class, 'profileUpsert']);
 
     // Programs
     Route::get   ('programs',      [InfoController::class, 'programIndex']);
@@ -43,3 +44,6 @@ Route::prefix('info')->group(function () {
 // /upcoming harus didaftarkan SEBELUM apiResource agar tidak tertangkap sebagai {id}
 Route::get('agenda/upcoming', [AgendaController::class, 'upcoming']);
 Route::apiResource('agenda', AgendaController::class)->parameters(['agenda' => 'id']);
+
+// ── Mitra ──
+Route::apiResource('partners', MitraController::class)->parameters(['partners' => 'id']);

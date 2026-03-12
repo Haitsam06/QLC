@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
+import type { PageProps } from "@/types";
 import {
   LayoutDashboard, BookOpen, Users, CalendarDays,
   CreditCard, Bell, MessageSquare, Settings, LogOut,
@@ -8,11 +9,13 @@ import {
   Award, Star, X, Menu, FileText, ShieldUser,
   BookOpenCheck, Info,
   Badge,
+  Handshake,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import GuruPage from "./GuruPage";
+import MitraPage from "./MitraPage";
 import WaliMuridPage from "./WalimuridPage";
 import SiswaPage from "./SiswaPage";
 import InfoPage from "./InfoPage";
@@ -555,6 +558,7 @@ const navItems = [
   { icon:LayoutDashboard, label:"Dashboard",      id:"dashboard"      },
   { icon:CalendarDays,    label:"Agenda",         id:"agenda"         },
   { icon:GraduationCap,   label:"Guru",           id:"guru"           },
+  { icon:Handshake,       label:"Mitra",          id:"mitra"          },
   { icon:ShieldUser,      label:"Wali Murid",     id:"wali_murid"     },
   { icon:Users,           label:"Siswa",          id:"siswa", badge:3 },
   { icon:BookOpenCheck,   label:"Progress Siswa", id:"progress_siswa" },
@@ -566,6 +570,16 @@ const navItems = [
    COMPONENT
 ═══════════════════════════════════════════════ */
 export default function CombinedDashboard() {
+  const user = usePage<PageProps>().props.auth.user;
+  const displayName = user?.name || user?.username || user?.email || "Pengguna";
+  const roleLabel = user?.role_id === "RL01" ? "Admin" : "Pengguna";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "U";
+
   const [active,  setActive]  = useState(() => {
     if (typeof window === "undefined") return "dashboard";
     const tab = new URLSearchParams(window.location.search).get("tab");
@@ -652,10 +666,10 @@ export default function CombinedDashboard() {
           <div className="sb-spacer" />
 
           <div className="mob-profile">
-            <div className="av av-md">AF</div>
+            <div className="av av-md">{initials}</div>
             <div>
-              <div style={{ color:"#fff", fontWeight:700, fontSize:13 }}>Ahmad Fauzi</div>
-              <div style={{ color:"rgba(255,255,255,0.5)", fontSize:10.5 }}>Wali Murid</div>
+              <div style={{ color:"#fff", fontWeight:700, fontSize:13 }}>{displayName}</div>
+              <div style={{ color:"rgba(255,255,255,0.5)", fontSize:10.5 }}>{roleLabel}</div>
             </div>
           </div>
 
@@ -673,7 +687,7 @@ export default function CombinedDashboard() {
 
           <div className="tb-greeting">
             <span className="tb-sub">Selamat Datang</span>
-            <span className="tb-name">Ahmad Fauzi <span className="wave">👋</span></span>
+            <span className="tb-name">{displayName} <span className="wave">👋</span></span>
           </div>
 
           <div className="tb-gap" />
@@ -691,10 +705,10 @@ export default function CombinedDashboard() {
           <div className="tb-divider" />
 
           <div className="tb-profile">
-            <div className="av av-sm">AF</div>
+            <div className="av av-sm">{initials}</div>
             <div>
-              <div className="tb-pname">Ahmad Fauzi</div>
-              <div className="tb-prole">Wali Murid</div>
+              <div className="tb-pname">{displayName}</div>
+              <div className="tb-prole">{roleLabel}</div>
             </div>
           </div>
         </header>
@@ -702,6 +716,7 @@ export default function CombinedDashboard() {
         {/* ════ MAIN ════ */}
         <main className={`main ${col ? "main--col" : "main--open"}`}>
           {active === "guru"       ? <GuruPage /> :
+          active === "mitra"      ? <MitraPage /> :
           active === "wali_murid" ? <WaliMuridPage /> :
           active === "siswa"      ? <SiswaPage /> :
           active === "info"       ? <InfoPage /> :

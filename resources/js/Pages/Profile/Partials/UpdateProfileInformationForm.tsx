@@ -2,6 +2,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import type { PageProps } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
@@ -15,12 +16,15 @@ export default function UpdateProfileInformation({
     status?: string;
     className?: string;
 }) {
-    const user = usePage().props.auth.user;
+    const user = usePage<PageProps>().props.auth.user;
+    const userName = user?.name || user?.username || '';
+    const userEmail = user?.email || '';
+    const isEmailVerified = user?.email_verified_at !== null;
 
     const { data, setData, patch, errors, processing, recentlySuccessful } =
         useForm({
-            name: user.name,
-            email: user.email,
+            name: userName,
+            email: userEmail,
         });
 
     const submit: FormEventHandler = (e) => {
@@ -74,7 +78,7 @@ export default function UpdateProfileInformation({
                     <InputError className="mt-2" message={errors.email} />
                 </div>
 
-                {mustVerifyEmail && user.email_verified_at === null && (
+                {mustVerifyEmail && !isEmailVerified && (
                     <div>
                         <p className="mt-2 text-sm text-gray-800">
                             Your email address is unverified.
