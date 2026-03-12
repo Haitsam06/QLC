@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { router } from "@inertiajs/react";
 import {
   LayoutDashboard, BookOpen, Users, CalendarDays,
   CreditCard, Bell, MessageSquare, Settings, LogOut,
@@ -573,6 +574,10 @@ export default function CombinedDashboard() {
   const [col,     setCol]     = useState(false);
   const [drawer,  setDrawer]  = useState(false);
 
+  const handleLogout = () => {
+    router.post(route("logout"));
+  };
+
   const nav = (id: string) => {
     setActive(id);
     setDrawer(false);
@@ -623,7 +628,7 @@ export default function CombinedDashboard() {
           <NavList />
           <div className="sb-spacer" />
 
-          <button className="sb-logout">
+          <button className="sb-logout" onClick={handleLogout}>
             <LogOut size={15} strokeWidth={1.8} />
             <span>Keluar</span>
           </button>
@@ -653,6 +658,11 @@ export default function CombinedDashboard() {
               <div style={{ color:"rgba(255,255,255,0.5)", fontSize:10.5 }}>Wali Murid</div>
             </div>
           </div>
+
+          <button className="sb-logout drawer-ni" onClick={handleLogout}>
+            <LogOut size={15} strokeWidth={1.8} />
+            <span>Keluar</span>
+          </button>
         </aside>
 
         {/* ════ TOPBAR ════ */}

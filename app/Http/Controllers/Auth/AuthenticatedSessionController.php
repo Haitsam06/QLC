@@ -20,27 +20,24 @@ class AuthenticatedSessionController extends Controller
     {
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
-            'status' => session('status'),
+            'status'           => session('status'),
         ]);
     }
 
     /**
      * Handle an incoming authentication request.
      */
-    public function store(Request $request)
+    public function store(LoginRequest $request): RedirectResponse
     {
-        $credentials = $request->only('username', 'password');
+        $request->authenticate();
 
-        if (Auth::attempt($credentials)) {
+        $request->session()->regenerate();
 
-            $request->session()->regenerate();
+        // Load relasi role agar bisa baca role_name
+        $user     = Auth::user()->load('role');
+        $roleName = $user->getRoleName();
 
-            return redirect()->intended('/dashboard');
-        }
-
-        return back()->withErrors([
-            'username' => 'Login gagal',
-        ]);
+        return redirect()->intended($this->redirectByRole($roleName));
     }
 
     /**
@@ -51,9 +48,21 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
+    }
+
+    /**
+     * URL redirect berdasarkan role_name dari collection roles.
+     */
+    private function redirectByRole(?string $roleName): string
+    {
+        return match ($roleName) {
+            'admin'  => '/admin/dashboard',
+            'guru'   => '/guru/dashboard',
+            'parent' => '/parents/dashboard',
+            default  => '/',
+        };
     }
 }

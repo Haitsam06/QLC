@@ -12,15 +12,33 @@ class User extends Model implements Authenticatable
 
     protected $connection = 'mongodb';
     protected $collection = 'users';
+
     protected $fillable = [
         '_id',
         'role_id',
         'username',
         'email',
-        'password'
+        'password',
     ];
 
     protected $hidden = [
-        'password'
+        'password',
     ];
+
+    // ── Relasi ke collection roles ───────────────────────────
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id', '_id');
+    }
+
+    // ── Helper: ambil role_name lewat relasi ─────────────────
+    public function getRoleName(): ?string
+    {
+        return $this->role?->role_name;
+    }
+
+    // ── Role checkers ────────────────────────────────────────
+    public function isAdmin(): bool  { return $this->getRoleName() === 'admin';  }
+    public function isGuru(): bool   { return $this->getRoleName() === 'guru';   }
+    public function isParents(): bool { return $this->getRoleName() === 'parents'; }
 }

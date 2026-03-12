@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { router } from "@inertiajs/react";
 import {
   LayoutDashboard, BookOpen, ClipboardList, CreditCard,
   Bell, MessageSquare, Settings, LogOut, ArrowUpRight,
-  CheckCircle2, AlertCircle, Clock, TrendingUp, TrendingDown,
+  CheckCircle2, Clock, TrendingUp, TrendingDown,
   Award, ChevronRight, Plus, Star, Wallet, Users,
+  BookCheck,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -436,11 +438,8 @@ const payments = [
 const navItems = [
   { icon:LayoutDashboard, label:"Dashboard",   id:"dashboard" },
   { icon:Users,           label:"Anak Saya",   id:"anak" },
-  { icon:ClipboardList,   label:"Absensi",     id:"absensi" },
-  { icon:BookOpen,        label:"Nilai",       id:"nilai" },
-  { icon:CreditCard,      label:"Pembayaran",  id:"pembayaran" },
-  { icon:Bell,            label:"Pengumuman",  id:"pengumuman" },
-  { icon:MessageSquare,   label:"Pesan",       id:"pesan", badge:2 },
+  { icon:BookCheck,       label:"Laporan",     id:"laporan" },
+  { icon:Settings,        label:"Pengaturan",  id:"pengaturan", badge:2 },
 ];
 const payDonut = [{ name:"Lunas", value:2, fill:"#14b8a6" },{ name:"Belum", value:1, fill:"#dc2626" }];
 
@@ -449,6 +448,9 @@ const payDonut = [{ name:"Lunas", value:2, fill:"#14b8a6" },{ name:"Belum", valu
 ═══════════════════════════════════════════════════════════ */
 export default function ParentDashboard() {
   const [active, setActive] = useState("dashboard");
+  const handleLogout = () => {
+    router.post(route("logout"));
+  };
 
   return (
     <>
@@ -493,6 +495,9 @@ export default function ParentDashboard() {
             <button className="topnav__icon-btn">
               <Bell size={16} strokeWidth={1.8} />
               <span className="bell-dot" />
+            </button>
+            <button className="topnav__icon-btn" onClick={handleLogout} title="Keluar">
+              <LogOut size={16} strokeWidth={1.8} />
             </button>
             <div className="topnav__profile">
               <div>

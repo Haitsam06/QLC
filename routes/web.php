@@ -6,76 +6,63 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
+// ── Public: Welcome ──────────────────────────────────────────
 Route::get('/', function () {
     return Inertia::render('Welcome', [
-        // 'canLogin' => Route::has('login'),
-        // 'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+        'phpVersion'     => PHP_VERSION,
     ]);
 });
 
-Route::get('admin/dashboard', function () {
-    return Inertia::render('admin/Dashboard');
-});
-Route::redirect('admin/guru', 'admin/dashboard?tab=guru');
-// })->middleware(['auth', 'verified'])->name('dashboard');
-
-
-// ==========================================
-// ROUTE HALAMAN LANDING (Sesuai Struktur Folder)
-// ==========================================
-
+// ── Landing pages (public) ───────────────────────────────────
 Route::get('/landing/agenda', function (Request $request) {
     return Inertia::render('Landing/Agenda', [
-        // Tangkap parameter 'date' dari URL, kirim sebagai props 'currentDateStr' ke React
         'currentDateStr' => $request->query('date'),
-
-        // Nanti Anda bisa menambahkan query database di sini untuk 'events'
-        // 'events' => Agenda::whereMonth('tanggal', ...)->get(), 
     ]);
 })->name('landing.agenda');
 
-// URL: /pengurus -> Memanggil file: Pages/Landing/Pengurus.tsx
-Route::get('/pengurus', function () {
-    return Inertia::render('Landing/Pengurus');
-})->name('landing.pengurus');
+Route::get('/pengurus',       fn() => Inertia::render('Landing/Pengurus'))->name('landing.pengurus');
+Route::get('/galeri',         fn() => Inertia::render('Landing/Galeri'))->name('landing.galeri');
+Route::get('/program-detail', fn() => Inertia::render('Landing/ProgramDetail'))->name('program.detail');
 
-// URL: /galeri -> Memanggil file: Pages/Landing/Galeri.tsx
-Route::get('/galeri', function () {
-    return Inertia::render('Landing/Galeri');
-})->name('landing.galeri');
-
-// URL: /program-detail -> Memanggil file: Pages/Landing/ProgramDetail.tsx
-Route::get('/program-detail', function () {
-    return Inertia::render('Landing/ProgramDetail');
-})->name('program.detail');
-
-
-// ==========================================
-// ROUTE AUTH & PROFILE
-// ==========================================
+// ── Profile (auth) ───────────────────────────────────────────
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('parents/dashboard', function () {
-    return Inertia::render('parents/Dashboard');
-});
+// ── Admin routes ─────────────────────────────────────────────
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->group(function () {
+        Route::get('/dashboard', fn() => Inertia::render('admin/Dashboard'))->name('admin.dashboard');
+        Route::redirect('/guru', '/admin/dashboard?tab=guru');
+        // Tambah route admin lainnya di sini
+    });
 
-Route::get('mitra/dashboard', function () {
-    return Inertia::render('mitra/Dashboard');
-});
-Route::get('mitra/program', function () {
-    return Inertia::render('mitra/Program');
-});
-Route::get('mitra/jadwal', function () {
-    return Inertia::render('mitra/Jadwal');
-});
-Route::get('mitra/laporan', function () {
-    return Inertia::render('mitra/Laporan');
+// ── Guru routes ──────────────────────────────────────────────
+Route::middleware(['auth', 'role:guru'])
+    ->prefix('guru')
+    ->group(function () {
+        Route::get('/dashboard', fn() => Inertia::render('guru/Dashboard'))->name('guru.dashboard');
+        // Tambah route guru lainnya di sini
+    });
+
+// ── Parent routes ─────────────────────────────────────────────
+Route::middleware(['auth', 'role:parents'])
+    ->prefix('parents')
+    ->group(function () {
+        Route::get('/dashboard', fn() => Inertia::render('parents/Dashboard'))->name('parents.dashboard');
+        // Tambah route parent lainnya di sini
+    });
+
+// ── Mitra routes (public sementara, tambah middleware jika perlu) ──
+Route::prefix('mitra')->group(function () {
+    Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'));
+    Route::get('/program',   fn() => Inertia::render('mitra/Program'));
+    Route::get('/jadwal',    fn() => Inertia::render('mitra/Jadwal'));
+    Route::get('/laporan',   fn() => Inertia::render('mitra/Laporan'));
 });
 
 require __DIR__ . '/auth.php';
