@@ -3,12 +3,15 @@ import { createPortal } from "react-dom";
 import {
   Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight,
   GraduationCap, Loader2, AlertCircle, CheckCircle2,
-  Calendar, MapPin, Filter, ChevronDown, Users,
+  Calendar, Filter, ChevronDown, Users, FileText,
+  ExternalLink, Clock, CheckCheck, XCircle,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
 ═══════════════════════════════════════════════════════════ */
+type EnrollmentStatus = "active" | "inactive" | "pending";
+
 interface Student {
   id: string;
   parent_id: string | null;
@@ -19,7 +22,8 @@ interface Student {
   usia: number | null;
   tempat_lahir: string;
   tanggal_lahir: string;
-  enrollment_status: "active" | "inactive";
+  enrollment_status: EnrollmentStatus;
+  bukti_pembayaran: string | null;
   created_at: string | null;
 }
 interface Meta   { total: number; page: number; per_page: number; last_page: number; }
@@ -32,7 +36,7 @@ interface StudentForm {
   usia: string;
   tempat_lahir: string;
   tanggal_lahir: string;
-  enrollment_status: "active" | "inactive";
+  enrollment_status: EnrollmentStatus;
 }
 
 const EMPTY_FORM: StudentForm = {
@@ -44,7 +48,7 @@ const EMPTY_FORM: StudentForm = {
 const API = "/api/students";
 
 /* ═══════════════════════════════════════════════════════════
-   STYLES — prefix .sp (siswa page)
+   STYLES
 ═══════════════════════════════════════════════════════════ */
 const CSS = `
 .sp { width:100%; display:flex; flex-direction:column; gap:20px; }
@@ -101,29 +105,28 @@ const CSS = `
 
 /* ── Table Card ── */
 .sp-card {
-  position: relative;
-  background: rgba(255,255,255,0.62);
-  backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
-  border-radius: 24px;
-  border: 1.5px solid rgba(255,255,255,0.95);
+  position:relative;
+  background:rgba(255,255,255,0.62);
+  backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
+  border-radius:24px;
+  border:1.5px solid rgba(255,255,255,0.95);
   box-shadow:
     0 8px 32px rgba(212,160,23,0.10),
-    0 2px 8px  rgba(0,0,0,0.06),
+    0 2px 8px rgba(0,0,0,0.06),
     inset 0 1.5px 0 rgba(255,255,255,1),
     inset 0 -1px 0 rgba(255,255,255,0.4);
-  overflow: hidden;
+  overflow:hidden;
 }
 .sp-card::before {
-  content: "";
-  position: absolute; top:0; left:0; right:0; height:56px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%);
-  pointer-events: none; border-radius: 24px 24px 0 0; z-index: 0;
+  content:""; position:absolute; top:0; left:0; right:0; height:56px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0) 100%);
+  pointer-events:none; border-radius:24px 24px 0 0; z-index:0;
 }
 .sp-tbl { overflow-x:auto; position:relative; z-index:1; }
 .sp-tbl table { width:100%; border-collapse:collapse; }
 .sp-tbl thead tr {
-  background: linear-gradient(90deg, rgba(212,160,23,0.12) 0%, rgba(245,158,11,0.07) 100%);
-  border-bottom: 1.5px solid rgba(212,160,23,0.2);
+  background:linear-gradient(90deg,rgba(212,160,23,0.12) 0%,rgba(245,158,11,0.07) 100%);
+  border-bottom:1.5px solid rgba(212,160,23,0.2);
 }
 .sp-tbl th {
   padding:13px 20px; text-align:left;
@@ -139,12 +142,13 @@ const CSS = `
 .s-cell { display:flex; align-items:center; gap:12px; }
 .s-av {
   width:38px; height:38px; border-radius:11px; flex-shrink:0;
-  background: #d4a017;
+  background:#d4a017;
   display:flex; align-items:center; justify-content:center;
   font-weight:900; font-size:13px; color:#fff;
   box-shadow:0 3px 12px rgba(212,160,23,0.4);
   letter-spacing:0.5px;
 }
+.s-av-pending { background: linear-gradient(135deg,#f59e0b,#d97706); }
 .s-name { font-size:13.5px; font-weight:700; color:var(--text); }
 .s-meta { font-size:10.5px; color:var(--text3); margin-top:1px; }
 
@@ -157,10 +161,7 @@ const CSS = `
 }
 
 /* parent tag */
-.s-parent {
-  display:flex; align-items:center; gap:5px;
-  font-size:12px; color:var(--text2);
-}
+.s-parent { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text2); }
 
 /* status badge */
 .s-status {
@@ -168,11 +169,26 @@ const CSS = `
   padding:4px 10px; border-radius:99px;
   font-size:11px; font-weight:700; white-space:nowrap;
 }
-.s-active   { background:rgba(15,118,110,0.1);  color:var(--g);   border:1px solid rgba(15,118,110,0.2);  }
+.s-active   { background:rgba(15,118,110,0.1);  color:var(--g);    border:1px solid rgba(15,118,110,0.2);  }
 .s-inactive { background:rgba(148,163,184,0.12); color:var(--text3); border:1px solid rgba(148,163,184,0.2); }
+.s-pending  { background:rgba(245,158,11,0.12);  color:#d97706;     border:1px solid rgba(245,158,11,0.25); }
 .s-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
 .s-dot-active   { background:var(--g);   box-shadow:0 0 5px rgba(15,118,110,0.6); }
 .s-dot-inactive { background:var(--text3); }
+.s-dot-pending  { background:#f59e0b; box-shadow:0 0 5px rgba(245,158,11,0.6); animation: sp-pulse 1.5s infinite; }
+@keyframes sp-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* bukti pembayaran */
+.s-bukti {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:8px;
+  background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.15);
+  font-size:11.5px; font-weight:600; color:var(--b);
+  cursor:pointer; transition:all 0.18s; white-space:nowrap;
+  text-decoration:none;
+}
+.s-bukti:hover { background:rgba(37,99,235,0.14); border-color:rgba(37,99,235,0.28); }
+.s-no-bukti { font-size:12px; color:var(--text3); font-style:italic; }
 
 /* row actions */
 .sp-acts { display:flex; gap:6px; justify-content:flex-end; }
@@ -222,12 +238,12 @@ const CSS = `
   animation:sfi .18s ease;
   overflow-y:auto;
 }
-@keyframes sfi  { from{opacity:0} to{opacity:1} }
-@keyframes ssu  { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
-@keyframes sspin{ to{transform:rotate(360deg)} }
+@keyframes sfi   { from{opacity:0} to{opacity:1} }
+@keyframes ssu   { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+@keyframes sspin { to{transform:rotate(360deg)} }
 
 .sm {
-  width:100%; max-width:540px;
+  width:100%; max-width:560px;
   max-height:90vh; overflow-y:auto;
   background:rgba(255,255,255,0.92); backdrop-filter:blur(32px); -webkit-backdrop-filter:blur(32px);
   border:1.5px solid rgba(255,255,255,0.95); border-radius:22px;
@@ -264,7 +280,7 @@ const CSS = `
 .sfi.serr  { border-color:var(--red); }
 .sfe { font-size:11px; color:var(--red); font-weight:600; }
 
-/* select wrapper with chevron */
+/* select wrapper */
 .s-sel-wrap { position:relative; }
 .s-sel-wrap .sfi { appearance:none; padding-right:36px; cursor:pointer; }
 .s-sel-ico { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--text3); pointer-events:none; }
@@ -277,24 +293,51 @@ const CSS = `
 }
 .sm-div::before, .sm-div::after { content:""; flex:1; height:1px; background:rgba(0,0,0,0.07); }
 
-/* status toggle */
+/* status toggle — 3 opsi */
 .s-toggle { display:flex; gap:8px; }
 .s-tog-btn {
   flex:1; height:40px; border-radius:11px; border:1.5px solid rgba(0,0,0,0.1);
-  font-size:13px; font-weight:700; font-family:inherit; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:7px;
+  font-size:12.5px; font-weight:700; font-family:inherit; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
   background:rgba(255,255,255,0.5); color:var(--text3);
   transition:all 0.18s;
 }
 .s-tog-active {
   background:rgba(15,118,110,0.1); color:var(--g);
-  border-color:rgba(15,118,110,0.3);
-  box-shadow:0 2px 8px rgba(15,118,110,0.12);
+  border-color:rgba(15,118,110,0.3); box-shadow:0 2px 8px rgba(15,118,110,0.12);
 }
 .s-tog-inactive {
   background:rgba(148,163,184,0.1); color:var(--text3);
   border-color:rgba(148,163,184,0.25);
 }
+.s-tog-pending {
+  background:rgba(245,158,11,0.1); color:#d97706;
+  border-color:rgba(245,158,11,0.3); box-shadow:0 2px 8px rgba(245,158,11,0.12);
+}
+
+/* bukti pembayaran box di modal */
+.s-bukti-box {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; border-radius:11px;
+  background:rgba(37,99,235,0.06); border:1.5px solid rgba(37,99,235,0.15);
+}
+.s-bukti-box-info { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--b); font-weight:600; }
+.s-bukti-open {
+  display:flex; align-items:center; gap:5px;
+  padding:5px 12px; border-radius:8px;
+  background:var(--b); color:#fff;
+  font-size:11.5px; font-weight:700; text-decoration:none;
+  transition:opacity 0.18s;
+}
+.s-bukti-open:hover { opacity:0.85; }
+
+/* pending notice */
+.s-pending-notice {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:12px 14px; border-radius:12px;
+  background:rgba(245,158,11,0.08); border:1.5px solid rgba(245,158,11,0.2);
+}
+.s-pending-notice-txt { font-size:12.5px; color:#92400e; font-weight:600; line-height:1.5; }
 
 .sm-ft {
   display:flex; justify-content:flex-end; gap:8px;
@@ -351,11 +394,11 @@ const CSS = `
 .stoast-ok  { border-left:4px solid #16a34a; }
 .stoast-err { border-left:4px solid var(--red); }
 
-/* blur konten saat modal buka */
 .sp-blurred { filter:blur(4px) brightness(0.96); transition:filter 0.2s ease; pointer-events:none; user-select:none; }
 
 @media (max-width:768px) {
   .sp-tbl th:nth-child(5), .sp-tbl td:nth-child(5) { display:none; }
+  .sp-tbl th:nth-child(6), .sp-tbl td:nth-child(6) { display:none; }
   .sp-bar { flex-direction:column; align-items:stretch; }
   .sp-search { max-width:100%; }
   .sp-btn-add { justify-content:center; }
@@ -376,6 +419,12 @@ function useDebounce<T>(val: T, ms = 400): T {
 const formatDate = (d: string) =>
   d ? new Date(d).toLocaleDateString("id-ID", { day:"numeric", month:"short", year:"numeric" }) : "—";
 
+const STATUS_CONFIG: Record<EnrollmentStatus, { label: string; cls: string; dotCls: string; icon: React.ReactNode }> = {
+  active:   { label:"Aktif",       cls:"s-active",   dotCls:"s-dot-active",   icon:<CheckCheck size={11}/> },
+  inactive: { label:"Tidak Aktif", cls:"s-inactive",  dotCls:"s-dot-inactive", icon:<XCircle size={11}/> },
+  pending:  { label:"Menunggu",    cls:"s-pending",   dotCls:"s-dot-pending",  icon:<Clock size={11}/> },
+};
+
 /* ── Toast ── */
 function Toast({ msg, type, onClose }: { msg:string; type:"success"|"error"; onClose:()=>void }) {
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
@@ -388,15 +437,16 @@ function Toast({ msg, type, onClose }: { msg:string; type:"success"|"error"; onC
 }
 
 /* ════════════════════════════════════════════════
-   FORM MODAL (shared Add & Edit)
+   FORM MODAL
 ════════════════════════════════════════════════ */
-function FormModal({ mode, init, parents, programs, onClose, onSave }: {
-  mode: "add" | "edit";
-  init: StudentForm;
-  parents: Option[];
+function FormModal({ mode, init, student, parents, programs, onClose, onSave }: {
+  mode:     "add" | "edit";
+  init:     StudentForm;
+  student:  Student | null;
+  parents:  Option[];
   programs: Option[];
-  onClose: () => void;
-  onSave: (d: StudentForm) => Promise<void>;
+  onClose:  () => void;
+  onSave:   (d: StudentForm) => Promise<void>;
 }) {
   const [f, setF]       = useState<StudentForm>(init);
   const [e, setE]       = useState<Partial<Record<keyof StudentForm, string>>>({});
@@ -408,13 +458,13 @@ function FormModal({ mode, init, parents, programs, onClose, onSave }: {
 
   const validate = () => {
     const err: Partial<Record<keyof StudentForm, string>> = {};
-    if (!f.nama.trim())         err.nama         = "Nama wajib diisi.";
-    if (!f.parent_id)           err.parent_id    = "Wali murid wajib dipilih.";
-    if (!f.program_id)          err.program_id   = "Program wajib dipilih.";
-    if (!f.tempat_lahir.trim()) err.tempat_lahir = "Tempat lahir wajib diisi.";
-    if (!f.tanggal_lahir)       err.tanggal_lahir= "Tanggal lahir wajib diisi.";
+    if (!f.nama.trim())         err.nama          = "Nama wajib diisi.";
+    if (!f.parent_id)           err.parent_id     = "Wali murid wajib dipilih.";
+    if (!f.program_id)          err.program_id    = "Program wajib dipilih.";
+    if (!f.tempat_lahir.trim()) err.tempat_lahir  = "Tempat lahir wajib diisi.";
+    if (!f.tanggal_lahir)       err.tanggal_lahir = "Tanggal lahir wajib diisi.";
     if (!f.usia || isNaN(Number(f.usia)) || Number(f.usia) < 1)
-                                err.usia         = "Usia wajib diisi (angka > 0).";
+                                err.usia          = "Usia wajib diisi (angka > 0).";
     setE(err);
     return !Object.keys(err).length;
   };
@@ -425,6 +475,8 @@ function FormModal({ mode, init, parents, programs, onClose, onSave }: {
     try { await onSave(f); } finally { setBusy(false); }
   };
 
+  const isPending = student?.enrollment_status === "pending";
+
   return createPortal(
     <div className="smbk" onClick={ev => ev.target === ev.currentTarget && onClose()}>
       <div className="sm">
@@ -434,6 +486,38 @@ function FormModal({ mode, init, parents, programs, onClose, onSave }: {
         </div>
 
         <div className="sm-body">
+
+          {/* Notice untuk siswa pending */}
+          {mode === "edit" && isPending && (
+            <div className="s-pending-notice">
+              <Clock size={16} color="#d97706" style={{ flexShrink:0, marginTop:1 }}/>
+              <div className="s-pending-notice-txt">
+                Siswa ini mendaftar melalui portal wali murid dan menunggu verifikasi.
+                Ubah status ke <b>Aktif</b> untuk menyetujui pendaftaran, atau <b>Tidak Aktif</b> untuk menolak.
+              </div>
+            </div>
+          )}
+
+          {/* ── Bukti Pembayaran (edit + ada bukti) ── */}
+          {mode === "edit" && student?.bukti_pembayaran && (
+            <>
+              <div className="sm-div">Bukti Pembayaran</div>
+              <div className="s-bukti-box">
+                <div className="s-bukti-box-info">
+                  <FileText size={16}/>
+                  <span>File bukti pembayaran tersedia</span>
+                </div>
+                <a
+                  href={student.bukti_pembayaran}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="s-bukti-open"
+                >
+                  <ExternalLink size={12}/> Buka
+                </a>
+              </div>
+            </>
+          )}
 
           {/* ── Data Pribadi ── */}
           <div className="sm-div">Data Pribadi</div>
@@ -495,21 +579,20 @@ function FormModal({ mode, init, parents, programs, onClose, onSave }: {
           <div className="sm-div">Status Pendaftaran</div>
 
           <div className="s-toggle">
-            <button
-              type="button"
+            <button type="button"
               className={`s-tog-btn ${f.enrollment_status === "active" ? "s-tog-active" : ""}`}
-              onClick={() => setF(p => ({ ...p, enrollment_status:"active" }))}
-            >
-              <span className="s-dot s-dot-active"/>
-              Aktif
+              onClick={() => setF(p => ({ ...p, enrollment_status:"active" }))}>
+              <CheckCheck size={13}/> Aktif
             </button>
-            <button
-              type="button"
+            <button type="button"
+              className={`s-tog-btn ${f.enrollment_status === "pending" ? "s-tog-pending" : ""}`}
+              onClick={() => setF(p => ({ ...p, enrollment_status:"pending" }))}>
+              <Clock size={13}/> Menunggu
+            </button>
+            <button type="button"
               className={`s-tog-btn ${f.enrollment_status === "inactive" ? "s-tog-inactive" : ""}`}
-              onClick={() => setF(p => ({ ...p, enrollment_status:"inactive" }))}
-            >
-              <span className="s-dot s-dot-inactive"/>
-              Tidak Aktif
+              onClick={() => setF(p => ({ ...p, enrollment_status:"inactive" }))}>
+              <XCircle size={13}/> Tidak Aktif
             </button>
           </div>
 
@@ -524,8 +607,7 @@ function FormModal({ mode, init, parents, programs, onClose, onSave }: {
           </button>
         </div>
       </div>
-    </div>
-  ,
+    </div>,
     document.body);
 }
 
@@ -555,8 +637,7 @@ function DeleteModal({ student, onClose, onConfirm }: {
           </button>
         </div>
       </div>
-    </div>
-  ,
+    </div>,
     document.body);
 }
 
@@ -564,30 +645,27 @@ function DeleteModal({ student, onClose, onConfirm }: {
    MAIN PAGE
 ═══════════════════════════════════════════════════════════ */
 export default function SiswaPage() {
-  const [data,     setData]     = useState<Student[]>([]);
-  const [meta,     setMeta]     = useState<Meta>({ total:0, page:1, per_page:10, last_page:1 });
-  const [loading,  setLoading]  = useState(true);
-  const [search,   setSearch]   = useState("");
+  const [data,          setData]          = useState<Student[]>([]);
+  const [meta,          setMeta]          = useState<Meta>({ total:0, page:1, per_page:10, last_page:1 });
+  const [loading,       setLoading]       = useState(true);
+  const [search,        setSearch]        = useState("");
   const [filterStatus,  setFilterStatus]  = useState("");
   const [filterProgram, setFilterProgram] = useState("");
 
   const [parents,  setParents]  = useState<Option[]>([]);
   const [programs, setPrograms] = useState<Option[]>([]);
 
-  const [modal,    setModal]    = useState<"add"|"edit"|"delete"|null>(null);
-  const [sel,      setSel]      = useState<Student|null>(null);
-  const [toast,    setToast]    = useState<{ msg:string; type:"success"|"error" }|null>(null);
+  const [modal,  setModal]  = useState<"add"|"edit"|"delete"|null>(null);
+  const [sel,    setSel]    = useState<Student|null>(null);
+  const [toast,  setToast]  = useState<{ msg:string; type:"success"|"error" }|null>(null);
 
   const dSearch = useDebounce(search);
 
-  /* ── Load options (parents + programs) ── */
+  /* ── Load options ── */
   const loadOptions = useCallback(async () => {
     try {
       const j = await (await fetch(`${API}/options`)).json();
-      if (j.success) {
-        setParents(j.parents);
-        setPrograms(j.programs);
-      }
+      if (j.success) { setParents(j.parents); setPrograms(j.programs); }
     } catch {}
   }, []);
 
@@ -610,7 +688,7 @@ export default function SiswaPage() {
     }
   }, [dSearch, filterStatus, filterProgram]);
 
-  useEffect(() => { load(1); },     [load]);
+  useEffect(() => { load(1); },      [load]);
   useEffect(() => { loadOptions(); }, [loadOptions]);
 
   /* ── Store ── */
@@ -620,7 +698,6 @@ export default function SiswaPage() {
       headers:{ "Content-Type":"application/json","Accept":"application/json" },
       body: JSON.stringify(d),
     })).json();
-
     if (j.success) {
       setToast({ msg:"Siswa berhasil ditambahkan.", type:"success" });
       setModal(null); load(1);
@@ -640,7 +717,6 @@ export default function SiswaPage() {
       headers:{ "Content-Type":"application/json","Accept":"application/json" },
       body: JSON.stringify(d),
     })).json();
-
     if (j.success) {
       setToast({ msg:"Data berhasil diperbarui.", type:"success" });
       setModal(null); load(meta.page);
@@ -655,7 +731,6 @@ export default function SiswaPage() {
     const j = await (await fetch(`${API}/${sel.id}`, {
       method:"DELETE", headers:{ "Accept":"application/json" },
     })).json();
-
     if (j.success) {
       setToast({ msg:"Siswa berhasil dihapus.", type:"success" });
       setModal(null);
@@ -672,11 +747,7 @@ export default function SiswaPage() {
     return Array.from({ length: e-s+1 }, (_,i) => s+i);
   };
 
-  /* ── Init form for edit ── */
-  const openEdit = (s: Student) => {
-    setSel(s);
-    setModal("edit");
-  };
+  const openEdit = (s: Student) => { setSel(s); setModal("edit"); };
 
   const editInit: StudentForm = sel ? {
     parent_id:         sel.parent_id    ?? "",
@@ -688,9 +759,8 @@ export default function SiswaPage() {
     enrollment_status: sel.enrollment_status,
   } : EMPTY_FORM;
 
-  /* ── Stat counts ── */
-  const activeCount   = data.filter(s => s.enrollment_status === "active").length;
-  const inactiveCount = data.filter(s => s.enrollment_status === "inactive").length;
+  const activeCount  = data.filter(s => s.enrollment_status === "active").length;
+  const pendingCount = data.filter(s => s.enrollment_status === "pending").length;
 
   return (
     <>
@@ -706,16 +776,16 @@ export default function SiswaPage() {
           <div className="sp-chips">
             <div className="sp-chip">
               <span className="sp-chip-dot" style={{ background:"var(--gold)" }}/>
-              {meta.total} Siswa Terdaftar
+              {meta.total} Terdaftar
             </div>
             <div className="sp-chip">
               <span className="sp-chip-dot" style={{ background:"var(--g)" }}/>
               {activeCount} Aktif
             </div>
-            {inactiveCount > 0 && (
+            {pendingCount > 0 && (
               <div className="sp-chip">
-                <span className="sp-chip-dot" style={{ background:"var(--text3)" }}/>
-                {inactiveCount} Tidak Aktif
+                <span className="sp-chip-dot" style={{ background:"#f59e0b" }}/>
+                {pendingCount} Menunggu
               </div>
             )}
           </div>
@@ -737,17 +807,16 @@ export default function SiswaPage() {
             )}
           </div>
 
-          {/* Filter status */}
           <div className="sp-sel">
             <Filter size={14} color="var(--text3)"/>
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option value="">Semua Status</option>
               <option value="active">Aktif</option>
+              <option value="pending">Menunggu</option>
               <option value="inactive">Tidak Aktif</option>
             </select>
           </div>
 
-          {/* Filter program */}
           {programs.length > 0 && (
             <div className="sp-sel">
               <GraduationCap size={14} color="var(--text3)"/>
@@ -774,62 +843,100 @@ export default function SiswaPage() {
                   <th>Wali Murid</th>
                   <th>Program</th>
                   <th>Tgl Lahir</th>
+                  <th>Bukti Bayar</th>
                   <th>Status</th>
                   <th style={{ textAlign:"right" }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {!loading && data.map((s, i) => (
-                  <tr key={s.id}>
-                    <td style={{ color:"var(--text3)", fontSize:12 }}>
-                      {(meta.page-1)*meta.per_page+i+1}
-                    </td>
-                    <td>
-                      <div className="s-cell">
-                        <div className="s-av">{initials(s.nama)}</div>
-                        <div>
-                          <div className="s-name">{s.nama}</div>
-                          <div className="s-meta">
-                            {s.tempat_lahir} · {s.usia ? `${s.usia} thn` : "—"}
+                {!loading && data.map((s, i) => {
+                  const stCfg = STATUS_CONFIG[s.enrollment_status];
+                  return (
+                    <tr key={s.id}>
+                      <td style={{ color:"var(--text3)", fontSize:12 }}>
+                        {(meta.page-1)*meta.per_page+i+1}
+                      </td>
+
+                      {/* Siswa */}
+                      <td>
+                        <div className="s-cell">
+                          <div className={`s-av ${s.enrollment_status === "pending" ? "s-av-pending" : ""}`}>
+                            {initials(s.nama)}
+                          </div>
+                          <div>
+                            <div className="s-name">{s.nama}</div>
+                            <div className="s-meta">
+                              {s.tempat_lahir} · {s.usia ? `${s.usia} thn` : "—"}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="s-parent">
-                        <Users size={12} color="var(--text3)"/>
-                        {s.parent_name ?? <span style={{ color:"var(--text3)", fontStyle:"italic" }}>Tidak ada</span>}
-                      </div>
-                    </td>
-                    <td>
-                      {s.program_name
-                        ? <span className="s-prog"><GraduationCap size={11}/>{s.program_name}</span>
-                        : <span style={{ color:"var(--text3)", fontSize:12 }}>—</span>}
-                    </td>
-                    <td style={{ fontSize:12, color:"var(--text3)" }}>
-                      <span style={{ display:"flex", alignItems:"center", gap:5 }}>
-                        <Calendar size={11}/>
-                        {formatDate(s.tanggal_lahir)}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`s-status ${s.enrollment_status === "active" ? "s-active" : "s-inactive"}`}>
-                        <span className={`s-dot ${s.enrollment_status === "active" ? "s-dot-active" : "s-dot-inactive"}`}/>
-                        {s.enrollment_status === "active" ? "Aktif" : "Tidak Aktif"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="sp-acts">
-                        <button className="sp-act sa-e" title="Edit" onClick={() => openEdit(s)}>
-                          <Pencil size={13}/>
-                        </button>
-                        <button className="sp-act sa-d" title="Hapus" onClick={() => { setSel(s); setModal("delete"); }}>
-                          <Trash2 size={13}/>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      {/* Wali Murid */}
+                      <td>
+                        <div className="s-parent">
+                          <Users size={12} color="var(--text3)"/>
+                          {s.parent_name ?? <span style={{ color:"var(--text3)", fontStyle:"italic" }}>Tidak ada</span>}
+                        </div>
+                      </td>
+
+                      {/* Program */}
+                      <td>
+                        {s.program_name
+                          ? <span className="s-prog"><GraduationCap size={11}/>{s.program_name}</span>
+                          : <span style={{ color:"var(--text3)", fontSize:12 }}>—</span>}
+                      </td>
+
+                      {/* Tgl Lahir */}
+                      <td style={{ fontSize:12, color:"var(--text3)" }}>
+                        <span style={{ display:"flex", alignItems:"center", gap:5 }}>
+                          <Calendar size={11}/>
+                          {formatDate(s.tanggal_lahir)}
+                        </span>
+                      </td>
+
+                      {/* Bukti Pembayaran */}
+                      <td>
+                        {s.bukti_pembayaran
+                          ? (
+                            <a
+                              href={s.bukti_pembayaran}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="s-bukti"
+                              title="Klik untuk preview"
+                            >
+                              <FileText size={12}/>
+                              Lihat Bukti
+                              <ExternalLink size={10}/>
+                            </a>
+                          ) : (
+                            <span className="s-no-bukti">—</span>
+                          )}
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <span className={`s-status ${stCfg.cls}`}>
+                          <span className={`s-dot ${stCfg.dotCls}`}/>
+                          {stCfg.label}
+                        </span>
+                      </td>
+
+                      {/* Aksi */}
+                      <td>
+                        <div className="sp-acts">
+                          <button className="sp-act sa-e" title="Edit" onClick={() => openEdit(s)}>
+                            <Pencil size={13}/>
+                          </button>
+                          <button className="sp-act sa-d" title="Hapus" onClick={() => { setSel(s); setModal("delete"); }}>
+                            <Trash2 size={13}/>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
@@ -883,14 +990,14 @@ export default function SiswaPage() {
       {/* Modals */}
       {modal === "add" && (
         <FormModal
-          mode="add" init={EMPTY_FORM}
+          mode="add" init={EMPTY_FORM} student={null}
           parents={parents} programs={programs}
           onClose={() => setModal(null)} onSave={post}
         />
       )}
       {modal === "edit" && sel && (
         <FormModal
-          mode="edit" init={editInit}
+          mode="edit" init={editInit} student={sel}
           parents={parents} programs={programs}
           onClose={() => setModal(null)} onSave={put}
         />

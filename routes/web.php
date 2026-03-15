@@ -1,12 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Parents\EnrollmentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-// ── Public: Welcome ──────────────────────────────────────────
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'laravelVersion' => Application::VERSION,
@@ -14,7 +14,6 @@ Route::get('/', function () {
     ]);
 });
 
-// ── Landing pages (public) ───────────────────────────────────
 Route::get('/landing/agenda', function (Request $request) {
     return Inertia::render('Landing/Agenda', [
         'currentDateStr' => $request->query('date'),
@@ -25,45 +24,44 @@ Route::get('/pengurus',       fn() => Inertia::render('Landing/Pengurus'))->name
 Route::get('/galeri',         fn() => Inertia::render('Landing/Galeri'))->name('landing.galeri');
 Route::get('/program-detail', fn() => Inertia::render('Landing/ProgramDetail'))->name('program.detail');
 
-// ── Profile (auth) ───────────────────────────────────────────
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// ── Admin routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', fn() => Inertia::render('admin/Dashboard'))->name('admin.dashboard');
-        // Route::redirect('/guru', '/admin/dashboard?tab=guru');
-        // Tambah route admin lainnya di sini
     });
 
-// ── Guru routes ──────────────────────────────────────────────
 Route::middleware(['auth', 'role:teacher'])
     ->prefix('teacher')
     ->group(function () {
         Route::get('/dashboard', fn() => Inertia::render('teacher/Dashboard'))->name('teacher.dashboard');
-        Route::get('/jadwal', fn() => Inertia::render('teacher/Jadwal'));
-        Route::get('/laporan', fn() => Inertia::render('teacher/Laporan'));
+        Route::get('/jadwal',    fn() => Inertia::render('teacher/Jadwal'));
+        Route::get('/laporan',   fn() => Inertia::render('teacher/Laporan'));
     });
 
-// ── Parent routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'role:parents'])
     ->prefix('parents')
+    ->name('parents.')
     ->group(function () {
-        Route::get('/dashboard', fn() => Inertia::render('parents/Dashboard'))->name('parents.dashboard');
-        // Tambah route parent lainnya di sini
+        Route::get('/dashboard', fn() => Inertia::render('parents/Dashboard'))->name('dashboard');
+
+        // Pendaftaran — hanya 2 route, tidak ada /sukses
+        Route::get('/daftar',  [EnrollmentController::class, 'create'])->name('daftar');
+        Route::post('/daftar', [EnrollmentController::class, 'store'])->name('daftar.store');
     });
 
-// ── Mitra routes (public sementara, tambah middleware jika perlu) ──
-Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->group(function () {
-    Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'));
-    Route::get('/program',   fn() => Inertia::render('mitra/Program'));
-    Route::get('/jadwal',    fn() => Inertia::render('mitra/Jadwal'));
-    Route::get('/laporan',   fn() => Inertia::render('mitra/Laporan'));
-});
+Route::middleware(['auth', 'role:mitra'])
+    ->prefix('mitra')
+    ->group(function () {
+        Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'));
+        Route::get('/program',   fn() => Inertia::render('mitra/Program'));
+        Route::get('/jadwal',    fn() => Inertia::render('mitra/Jadwal'));
+        Route::get('/laporan',   fn() => Inertia::render('mitra/Laporan'));
+    });
 
 require __DIR__ . '/auth.php';

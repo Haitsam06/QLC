@@ -22,10 +22,6 @@ class StudentController extends Controller
         $this->programs = $db->selectCollection('programs');
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/students
-       Query: search, status, program_id, page, per_page
-    ───────────────────────────────────────────── */
     public function index(Request $request)
     {
         $search    = $request->query('search', '');
@@ -36,11 +32,10 @@ class StudentController extends Controller
         $skip      = ($page - 1) * $perPage;
 
         $filter = [];
-
         if (!empty($search)) {
             $filter['$or'] = [
-                ['nama'          => ['$regex' => $search, '$options' => 'i']],
-                ['tempat_lahir'  => ['$regex' => $search, '$options' => 'i']],
+                ['nama'         => ['$regex' => $search, '$options' => 'i']],
+                ['tempat_lahir' => ['$regex' => $search, '$options' => 'i']],
             ];
         }
         if (!empty($status))    $filter['enrollment_status'] = $status;
@@ -70,9 +65,6 @@ class StudentController extends Controller
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       POST /api/students
-    ───────────────────────────────────────────── */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -82,29 +74,23 @@ class StudentController extends Controller
             'usia'              => 'required|integer|min:1|max:30',
             'tempat_lahir'      => 'required|string|max:100',
             'tanggal_lahir'     => 'required|date_format:Y-m-d',
-            'enrollment_status' => 'required|in:active,inactive',
+            'enrollment_status' => 'required|in:active,inactive,pending',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        // Pastikan parent_id valid
         try {
             $parent = $this->parents->findOne(['_id' => new ObjectId($request->parent_id)]);
-        } catch (\Exception $e) {
-            $parent = null;
-        }
+        } catch (\Exception $e) { $parent = null; }
         if (!$parent) {
             return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
 
-        // Pastikan program_id valid
         try {
             $program = $this->programs->findOne(['_id' => new ObjectId($request->program_id)]);
-        } catch (\Exception $e) {
-            $program = null;
-        }
+        } catch (\Exception $e) { $program = null; }
         if (!$program) {
             return response()->json(['success' => false, 'message' => 'Program tidak ditemukan.'], 404);
         }
@@ -121,8 +107,8 @@ class StudentController extends Controller
             'updated_at'        => new \MongoDB\BSON\UTCDateTime(),
         ];
 
-        $result      = $this->students->insertOne($doc);
-        $doc['_id']  = $result->getInsertedId();
+        $result     = $this->students->insertOne($doc);
+        $doc['_id'] = $result->getInsertedId();
 
         return response()->json([
             'success' => true,
@@ -131,9 +117,6 @@ class StudentController extends Controller
         ], 201);
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/students/{id}
-    ───────────────────────────────────────────── */
     public function show(string $id)
     {
         try {
@@ -141,17 +124,12 @@ class StudentController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
         }
-
         if (!$doc) {
             return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan.'], 404);
         }
-
         return response()->json(['success' => true, 'data' => $this->format($doc)]);
     }
 
-    /* ─────────────────────────────────────────────
-       PUT /api/students/{id}
-    ───────────────────────────────────────────── */
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
@@ -161,35 +139,28 @@ class StudentController extends Controller
             'usia'              => 'required|integer|min:1|max:30',
             'tempat_lahir'      => 'required|string|max:100',
             'tanggal_lahir'     => 'required|date_format:Y-m-d',
-            'enrollment_status' => 'required|in:active,inactive',
+            'enrollment_status' => 'required|in:active,inactive,pending',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
+        try { $oid = new ObjectId($id); }
+        catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
         }
 
-        // Validasi parent_id
         try {
             $parent = $this->parents->findOne(['_id' => new ObjectId($request->parent_id)]);
-        } catch (\Exception $e) {
-            $parent = null;
-        }
+        } catch (\Exception $e) { $parent = null; }
         if (!$parent) {
             return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
 
-        // Validasi program_id
         try {
             $program = $this->programs->findOne(['_id' => new ObjectId($request->program_id)]);
-        } catch (\Exception $e) {
-            $program = null;
-        }
+        } catch (\Exception $e) { $program = null; }
         if (!$program) {
             return response()->json(['success' => false, 'message' => 'Program tidak ditemukan.'], 404);
         }
@@ -221,14 +192,10 @@ class StudentController extends Controller
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       DELETE /api/students/{id}
-    ───────────────────────────────────────────── */
     public function destroy(string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
+        try { $oid = new ObjectId($id); }
+        catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
         }
 
@@ -241,13 +208,8 @@ class StudentController extends Controller
         return response()->json(['success' => true, 'message' => 'Data siswa berhasil dihapus.']);
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/students/options
-       Mengembalikan daftar parents & programs untuk dropdown form
-    ───────────────────────────────────────────── */
     public function options()
     {
-        // Parents
         $parentCursor = $this->parents->find([], ['sort' => ['parent_name' => 1]]);
         $parents = [];
         foreach ($parentCursor as $p) {
@@ -257,7 +219,6 @@ class StudentController extends Controller
             ];
         }
 
-        // Programs — field nama sesuai dengan InfoController: 'name'
         $programCursor = $this->programs->find([], ['sort' => ['name' => 1]]);
         $programs = [];
         foreach ($programCursor as $p) {
@@ -274,13 +235,8 @@ class StudentController extends Controller
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       Helper: format doc → array
-       Menyertakan nama parent & program dari lookup
-    ───────────────────────────────────────────── */
     private function format($doc): array
     {
-        // Lookup parent name
         $parentName = null;
         if (!empty($doc['parent_id'])) {
             try {
@@ -289,7 +245,6 @@ class StudentController extends Controller
             } catch (\Exception $e) {}
         }
 
-        // Lookup program name
         $programName = null;
         if (!empty($doc['program_id'])) {
             try {
@@ -309,6 +264,7 @@ class StudentController extends Controller
             'tempat_lahir'      => $doc['tempat_lahir'],
             'tanggal_lahir'     => $doc['tanggal_lahir'],
             'enrollment_status' => $doc['enrollment_status'],
+            'bukti_pembayaran'  => $doc['bukti_pembayaran'] ?? null,
             'created_at'        => isset($doc['created_at'])
                 ? $doc['created_at']->toDateTime()->format('Y-m-d H:i:s')
                 : null,

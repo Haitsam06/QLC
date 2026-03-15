@@ -102,7 +102,7 @@ class AgendaController extends Controller
 
         $now    = new UTCDateTime();
         $result = $this->agenda->insertOne([
-            'user_id'           => $request->user_id ?? null,
+            'user_id' => auth()->check() ? (string) auth()->user()->_id : null,
             'title'             => $request->title,
             'event_date'        => $request->event_date,
             'description'       => $request->description ?? '',

@@ -715,7 +715,7 @@ export default function CombinedDashboard() {
 
         {/* ════ MAIN ════ */}
         <main className={`main ${col ? "main--col" : "main--open"}`}>
-          {active === "guru"       ? <GuruPage /> :
+          {active === "guru"      ? <GuruPage /> :
           active === "mitra"      ? <MitraPage /> :
           active === "wali_murid" ? <WaliMuridPage /> :
           active === "siswa"      ? <SiswaPage /> :

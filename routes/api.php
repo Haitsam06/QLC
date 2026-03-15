@@ -41,7 +41,6 @@ Route::prefix('info')->group(function () {
 });
 
 // ── Agenda ──
-// /upcoming harus didaftarkan SEBELUM apiResource agar tidak tertangkap sebagai {id}
 Route::get('agenda/upcoming', [AgendaController::class, 'upcoming']);
 Route::apiResource('agenda', AgendaController::class)->parameters(['agenda' => 'id']);
 
