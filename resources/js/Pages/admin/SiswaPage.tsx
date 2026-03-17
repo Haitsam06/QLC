@@ -48,7 +48,7 @@ const EMPTY_FORM: StudentForm = {
 const API = "/api/students";
 
 /* ═══════════════════════════════════════════════════════════
-   STYLES (APPLE LIQUID GLASS)
+   STYLES (APPLE LIQUID GLASS - COMPACT TABLE)
 ═══════════════════════════════════════════════════════════ */
 const CSS = `
 .sp { width:100%; display:flex; flex-direction:column; gap:24px; color: #1e293b; }
@@ -178,34 +178,39 @@ const CSS = `
   background:rgba(255,255,255,0.4);
   border-bottom:1px solid rgba(0,0,0,0.04);
 }
+/* PERBAIKAN: Padding dikurangi dari 16px 24px menjadi 14px 16px agar tabel tidak terlalu lebar */
 .sp-tbl th {
-  padding:16px 24px; text-align:left;
+  padding:14px 16px; text-align:left;
   font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px;
   color:#64748b; white-space:nowrap;
 }
-.sp-tbl td { padding:16px 24px; font-size:13.5px; color:#334155; border-bottom:1px solid rgba(0,0,0,0.03); }
+.sp-tbl td { 
+  padding:14px 16px; font-size:13px; color:#334155; 
+  border-bottom:1px solid rgba(0,0,0,0.03); 
+}
 .sp-tbl tbody tr { transition:background 0.2s; }
 .sp-tbl tbody tr:hover { background:rgba(255,255,255,0.7); }
 .sp-tbl tbody tr:last-child td { border-bottom:none; }
 
 /* student avatar cell */
-.s-cell { display:flex; align-items:center; gap:14px; }
+/* PERBAIKAN: Gap dikurangi dan ukuran avatar sedikit dikecilkan */
+.s-cell { display:flex; align-items:center; gap:10px; }
 .s-av {
-  width:42px; height:42px; border-radius:12px; flex-shrink:0;
+  width:36px; height:36px; border-radius:10px; flex-shrink:0;
   background: linear-gradient(135deg, #d4a017, #b45309);
   display:flex; align-items:center; justify-content:center;
-  font-weight:900; font-size:14px; color:#fff;
+  font-weight:900; font-size:13px; color:#fff;
   box-shadow: 0 4px 14px rgba(212,160,23,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
   letter-spacing:0.5px;
 }
 .s-av-pending { background: linear-gradient(135deg,#f59e0b,#d97706); box-shadow: 0 4px 14px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
-.s-name { font-size:14px; font-weight:700; color:#1e293b; letter-spacing:-0.2px; }
+.s-name { font-size:13.5px; font-weight:700; color:#1e293b; letter-spacing:-0.2px; }
 .s-meta { font-size:11px; font-weight:500; color:#64748b; margin-top:2px; }
 
 /* program tag */
 .s-prog {
   display:inline-flex; align-items:center; gap:6px;
-  padding:5px 12px; border-radius:9px;
+  padding:5px 10px; border-radius:8px;
   background:rgba(212,160,23,0.08); border:1px solid rgba(212,160,23,0.15);
   font-size:12px; font-weight:600; color:#b45309; white-space:nowrap;
 }
@@ -216,8 +221,8 @@ const CSS = `
 /* status badge */
 .s-status {
   display:inline-flex; align-items:center; gap:5px;
-  padding:5px 12px; border-radius:99px;
-  font-size:12px; font-weight:700; white-space:nowrap;
+  padding:5px 10px; border-radius:99px;
+  font-size:11.5px; font-weight:700; white-space:nowrap;
 }
 .s-active   { background:rgba(22,163,74,0.08);  color:#16a34a;  border:1px solid rgba(22,163,74,0.15);  }
 .s-inactive { background:rgba(100,116,139,0.08); color:#64748b; border:1px solid rgba(100,116,139,0.15); }
@@ -231,19 +236,19 @@ const CSS = `
 /* bukti pembayaran */
 .s-bukti {
   display:inline-flex; align-items:center; gap:5px;
-  padding:5px 12px; border-radius:9px;
+  padding:5px 10px; border-radius:8px;
   background:rgba(37,99,235,0.06); border:1px solid rgba(37,99,235,0.12);
-  font-size:12px; font-weight:600; color:#2563eb;
+  font-size:11.5px; font-weight:600; color:#2563eb;
   cursor:pointer; transition:all 0.18s; white-space:nowrap;
   text-decoration:none;
 }
 .s-bukti:hover { background:rgba(37,99,235,0.12); border-color:rgba(37,99,235,0.2); }
-.s-no-bukti { font-size:13px; color:#94a3b8; }
+.s-no-bukti { font-size:12px; color:#94a3b8; }
 
 /* row actions */
-.sp-acts { display:flex; gap:8px; justify-content:flex-end; }
+.sp-acts { display:flex; gap:6px; justify-content:flex-end; }
 .sp-act {
-  width:36px; height:36px; border-radius:10px;
+  width:34px; height:34px; border-radius:10px;
   display:flex; align-items:center; justify-content:center;
   transition:all 0.2s cubic-bezier(0.25, 1, 0.5, 1); cursor:pointer; border:none; font-family:inherit;
   background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.05);

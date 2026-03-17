@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import {
     BookOpen, User, Lock, Eye, EyeOff,
     ArrowRight, ShieldCheck, AlertCircle
@@ -35,12 +35,26 @@ export default function Login({ status, canResetPassword }: Props) {
 
     return (
         <>
-            <Head title="Login" />
+            <Head title="Masuk" />
 
-            <div className="min-h-screen w-full flex font-sans text-gray-800 bg-white">
+            {/* ── CSS ANIMASI ── */}
+            <style>{`
+                @keyframes slideInLeft {
+                    0% { opacity: 0; transform: translateX(-40px); }
+                    100% { opacity: 1; transform: translateX(0); }
+                }
+                @keyframes slideInRight {
+                    0% { opacity: 0; transform: translateX(40px); }
+                    100% { opacity: 1; transform: translateX(0); }
+                }
+                .anim-slide-left { animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                .anim-slide-right { animation: slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+            `}</style>
+
+            <div className="min-h-screen w-full flex flex-row font-sans text-gray-800 bg-white">
 
                 {/* ════ SISI KIRI: BRANDING ════ */}
-                <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-green-800 to-green-900 relative items-center justify-center overflow-hidden">
+                <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-green-800 to-green-900 relative items-center justify-center overflow-hidden anim-slide-left">
                     <div className="absolute inset-0 overflow-hidden z-0">
                         <div className="absolute -top-24 -left-24 w-96 h-96 bg-white bg-opacity-5 rounded-full blur-3xl" />
                         <div className="absolute bottom-0 right-0 w-3/4 h-3/4 bg-green-500 bg-opacity-20 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
@@ -74,27 +88,36 @@ export default function Login({ status, canResetPassword }: Props) {
                 </div>
 
                 {/* ════ SISI KANAN: FORM ════ */}
-                <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative bg-gray-50">
+                <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-10 sm:px-12 relative bg-gray-50 min-h-screen overflow-y-auto anim-slide-right">
 
                     {/* Mobile brand */}
-                    <div className="absolute top-8 left-8 flex lg:hidden items-center gap-3">
+                    <div className="flex lg:hidden items-center gap-3 mb-8">
                         <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center text-white shadow-md">
                             <BookOpen size={16} strokeWidth={2.5} />
                         </div>
                         <div className="font-bold text-gray-900 text-sm">Pejuang Quran</div>
                     </div>
 
-                    <div className="w-full max-w-md">
+                    <div className="w-full max-w-md mx-auto">
+
+                        {/* ── TOGGLE BAR (REGISTER KIRI / LOGIN KANAN) ── */}
+                        <div className="flex bg-gray-200/60 p-1.5 rounded-2xl mb-10 shadow-inner">
+                            <Link href={route('register')} className="flex-1 text-center py-2.5 rounded-xl text-sm font-bold transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
+                                Daftar Wali Murid
+                            </Link>
+                            <Link href={route('login')} className="flex-1 text-center py-2.5 rounded-xl text-sm font-bold transition-all bg-white text-green-700 shadow-sm pointer-events-none">
+                                Masuk
+                            </Link>
+                        </div>
 
                         {/* Header */}
                         <div className="mb-8">
-                            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Selamat Datang</h2>
+                            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Selamat Datang Kembali</h2>
                             <p className="text-gray-500 text-sm font-medium">
                                 Silakan masuk menggunakan kredensial akun QLC Anda.
                             </p>
                         </div>
 
-                        {/* Session status */}
                         {status && (
                             <div className="mb-4 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
                                 {status}
@@ -124,7 +147,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                         placeholder="Masukkan username akun Anda"
                                         autoComplete="username"
                                         autoFocus
-                                        // Perbaikan: Menambahkan border-0 dan focus:ring-0
                                         className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
                                     />
                                 </div>
@@ -154,7 +176,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                         onChange={e => setData('password', e.target.value)}
                                         placeholder="••••••••"
                                         autoComplete="current-password"
-                                        // Perbaikan: Menambahkan border-0 dan focus:ring-0
                                         className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
                                     />
                                     <button
@@ -197,11 +218,11 @@ export default function Login({ status, canResetPassword }: Props) {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full py-3.5 mt-2 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed focus:ring-4 focus:ring-green-600 focus:ring-opacity-20 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/30"
+                                className="w-full py-4 mt-6 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed focus:ring-4 focus:ring-green-600 focus:ring-opacity-20 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/30"
                             >
                                 {processing ? (
                                     <>
-                                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                                         </svg>
@@ -216,7 +237,7 @@ export default function Login({ status, canResetPassword }: Props) {
                         </form>
 
                         {/* Footer */}
-                        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                        <div className="mt-8 pt-6 border-t border-gray-200/60 text-center">
                             <p className="text-sm font-medium text-gray-500">Kesulitan mengakses akun Anda?</p>
                             <a href="mailto:admin@qlc.sch.id" className="text-green-600 font-bold hover:text-green-800 mt-1 inline-block text-sm">
                                 Hubungi Administrator QLC
