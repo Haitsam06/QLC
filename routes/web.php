@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Parents\EnrollmentController;
+use App\Http\Controllers\Parents\AnakController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -50,7 +51,10 @@ Route::middleware(['auth', 'role:parents'])
     ->group(function () {
         Route::get('/dashboard', fn() => Inertia::render('parents/Dashboard'))->name('dashboard');
 
-        // Pendaftaran — hanya 2 route, tidak ada /sukses
+        // Halaman anak
+        Route::get('/anak', [AnakController::class, 'index'])->name('anak');
+
+        // Pendaftaran
         Route::get('/daftar',  [EnrollmentController::class, 'create'])->name('daftar');
         Route::post('/daftar', [EnrollmentController::class, 'store'])->name('daftar.store');
     });

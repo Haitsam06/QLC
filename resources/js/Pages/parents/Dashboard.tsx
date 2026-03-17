@@ -459,8 +459,12 @@ export default function ParentDashboard() {
     .join("") || "U";
 
   const [active, setActive] = useState("dashboard");
-  const handleLogout = () => {
-    router.post(route("logout"));
+  const handleLogout = () => router.post(route("logout"));
+
+  const handleNav = (id: string) => {
+    if (id === "anak")    { router.visit(route("parents.anak"));    return; }
+    if (id === "laporan") { router.visit(route("parents.laporan")); return; }
+    setActive(id);
   };
 
   return (
@@ -487,7 +491,7 @@ export default function ParentDashboard() {
               <button
                 key={id}
                 className={`topnav__nav-item ${active === id ? "topnav__nav-item--active" : ""}`}
-                onClick={() => setActive(id)}
+                onClick={() => handleNav(id)}
               >
                 <Icon size={15} strokeWidth={active === id ? 2.5 : 1.8} />
                 {label}

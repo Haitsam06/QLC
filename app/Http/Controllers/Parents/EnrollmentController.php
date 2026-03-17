@@ -17,13 +17,14 @@ class EnrollmentController extends Controller
 {
     private $programs;
     private $students;
+    private $db;
 
     public function __construct()
     {
         $client         = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
-        $db             = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
-        $this->programs = $db->selectCollection('programs');
-        $this->students = $db->selectCollection('students');
+        $this->db       = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+        $this->programs = $this->db->selectCollection('programs');
+        $this->students = $this->db->selectCollection('students');
     }
 
     /**
@@ -84,8 +85,15 @@ class EnrollmentController extends Controller
         $path    = $request->file('bukti_pembayaran')->store('enrollments/payments', 'public');
         $fileUrl = Storage::url($path);
 
+        // Ambil data parent dari collection parents berdasarkan user_id
+        $user      = Auth::user();
+        $userId    = (string) $user->_id;
+        $parentDoc = $this->db->selectCollection('parents')->findOne(['user_id' => $userId]);
+        $parentName = $parentDoc['parent_name'] ?? $user->username;
+
         $this->students->insertOne([
-            'parent_id'         => (string) Auth::id(),
+            'parent_id'         => $userId,             // user._id sebagai foreign key
+            'parent_name'       => $parentName,         // dari collection parents
             'program_id'        => $request->program_id,
             'nama'              => $request->nama,
             'tempat_lahir'      => $request->tempat_lahir,

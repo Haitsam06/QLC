@@ -81,9 +81,8 @@ class StudentController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        try {
-            $parent = $this->parents->findOne(['_id' => new ObjectId($request->parent_id)]);
-        } catch (\Exception $e) { $parent = null; }
+        // Cari parent via user_id (bukan _id) karena students.parent_id = users._id
+        $parent = $this->parents->findOne(['user_id' => (string) $request->parent_id]);
         if (!$parent) {
             return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
@@ -97,6 +96,7 @@ class StudentController extends Controller
 
         $doc = [
             'parent_id'         => $request->parent_id,
+            'parent_name'       => $parent['parent_name'] ?? null,
             'program_id'        => $request->program_id,
             'nama'              => $request->nama,
             'usia'              => (int) $request->usia,
@@ -151,9 +151,8 @@ class StudentController extends Controller
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
         }
 
-        try {
-            $parent = $this->parents->findOne(['_id' => new ObjectId($request->parent_id)]);
-        } catch (\Exception $e) { $parent = null; }
+        // Cari parent via user_id
+        $parent = $this->parents->findOne(['user_id' => (string) $request->parent_id]);
         if (!$parent) {
             return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
@@ -169,6 +168,7 @@ class StudentController extends Controller
             ['_id' => $oid],
             ['$set' => [
                 'parent_id'         => $request->parent_id,
+                'parent_name'       => $parent['parent_name'] ?? null,
                 'program_id'        => $request->program_id,
                 'nama'              => $request->nama,
                 'usia'              => (int) $request->usia,
@@ -214,7 +214,8 @@ class StudentController extends Controller
         $parents = [];
         foreach ($parentCursor as $p) {
             $parents[] = [
-                'id'    => (string) $p['_id'],
+                // Gunakan user_id agar cocok dengan students.parent_id
+                'id'    => (string) $p['user_id'],
                 'label' => $p['parent_name'] . ' — ' . ($p['phone'] ?? ''),
             ];
         }
@@ -237,12 +238,12 @@ class StudentController extends Controller
 
     private function format($doc): array
     {
-        $parentName = null;
-        if (!empty($doc['parent_id'])) {
-            try {
-                $p = $this->parents->findOne(['_id' => new ObjectId($doc['parent_id'])]);
-                $parentName = $p ? $p['parent_name'] : null;
-            } catch (\Exception $e) {}
+        // parent_id = users._id — cari lewat field user_id di collection parents
+        // Fallback: ambil langsung dari document jika sudah disimpan oleh EnrollmentController
+        $parentName = $doc['parent_name'] ?? null;
+        if (!$parentName && !empty($doc['parent_id'])) {
+            $p = $this->parents->findOne(['user_id' => (string) $doc['parent_id']]);
+            $parentName = $p ? ($p['parent_name'] ?? null) : null;
         }
 
         $programName = null;
