@@ -20,6 +20,7 @@ import WaliMuridPage from "./WalimuridPage";
 import SiswaPage from "./SiswaPage";
 import InfoPage from "./InfoPage";
 import AgendaPage from "./AgendaPage";
+import PengaturanPage from "./PengaturanPage";
 
 /* ═══════════════════════════════════════════════
    STYLES — injected as a <style> tag
@@ -721,6 +722,7 @@ export default function CombinedDashboard() {
           active === "siswa"      ? <SiswaPage /> :
           active === "info"       ? <InfoPage /> :
           active === "agenda"     ? <AgendaPage /> :
+          active === "pengaturan" ? <PengaturanPage /> :
           (
             <>
 
