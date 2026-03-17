@@ -2,7 +2,7 @@ import { useState, FormEvent } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import {
     BookOpen, User, Lock, Eye, EyeOff, Mail,
-    ArrowRight, ShieldCheck, AlertCircle, Phone, MapPin
+    ArrowRight, ShieldCheck, AlertCircle, Phone, MapPin, ArrowLeft
 } from 'lucide-react';
 
 export default function Register() {
@@ -84,15 +84,23 @@ export default function Register() {
                 {/* ════ SISI FORM (Sekarang di Kiri) ════ */}
                 <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-10 sm:px-12 relative bg-gray-50 min-h-screen overflow-y-auto anim-slide-left">
 
-                    {/* Mobile brand */}
-                    <div className="flex lg:hidden items-center gap-3 mb-8">
-                        <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center text-white shadow-md">
-                            <BookOpen size={16} strokeWidth={2.5} />
-                        </div>
-                        <div className="font-bold text-gray-900 text-sm">Pejuang Quran</div>
-                    </div>
-
                     <div className="w-full max-w-lg mx-auto">
+
+                        {/* ── TOMBOL KEMBALI KE BERANDA ── */}
+                        <div className="mb-6 flex items-center justify-between">
+                            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-colors group">
+                                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
+                                Kembali ke Beranda
+                            </Link>
+
+                            {/* Mobile brand (muncul di kanan atas pada HP) */}
+                            <div className="flex lg:hidden items-center gap-2">
+                                <div className="w-6 h-6 rounded-md bg-green-600 flex items-center justify-center text-white shadow-sm">
+                                    <BookOpen size={12} strokeWidth={2.5} />
+                                </div>
+                                <div className="font-bold text-gray-900 text-xs">QLC</div>
+                            </div>
+                        </div>
 
                         {/* ── TOGGLE BAR (REGISTER KIRI / LOGIN KANAN) ── */}
                         <div className="flex bg-gray-200/60 p-1.5 rounded-2xl mb-10 shadow-inner">
@@ -220,6 +228,7 @@ export default function Register() {
                                 )}
                             </button>
                         </form>
+
                     </div>
                 </div>
             </div>

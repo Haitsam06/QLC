@@ -96,9 +96,12 @@ const Navbar = () => {
 
                     {/* Tombol Daftar Desktop */}
                     <div className="hidden lg:block">
-                        <button className="bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm">
+                        <Link 
+                            href={route('register')} 
+                            className="inline-block bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm"
+                        >
                             Daftar Sekarang
-                        </button>
+                        </Link>
                     </div>
 
                     {/* Mobile Toggle Button */}
