@@ -94,7 +94,7 @@ export default function Login({ status, canResetPassword }: Props) {
                             </p>
                         </div>
 
-                        {/* Session status (misal setelah reset password) */}
+                        {/* Session status */}
                         {status && (
                             <div className="mb-4 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
                                 {status}
@@ -124,7 +124,8 @@ export default function Login({ status, canResetPassword }: Props) {
                                         placeholder="Masukkan username akun Anda"
                                         autoComplete="username"
                                         autoFocus
-                                        className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none"
+                                        // Perbaikan: Menambahkan border-0 dan focus:ring-0
+                                        className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
                                     />
                                 </div>
                                 {errors.username && (
@@ -153,12 +154,13 @@ export default function Login({ status, canResetPassword }: Props) {
                                         onChange={e => setData('password', e.target.value)}
                                         placeholder="••••••••"
                                         autoComplete="current-password"
-                                        className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none"
+                                        // Perbaikan: Menambahkan border-0 dan focus:ring-0
+                                        className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(v => !v)}
-                                        className="pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                        className="pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
                                     >
                                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                     </button>
@@ -227,4 +229,4 @@ export default function Login({ status, canResetPassword }: Props) {
             </div>
         </>
     );
-}   
+}

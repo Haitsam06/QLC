@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import {
   Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight,
   GraduationCap, Phone, BookOpen, Loader2, AlertCircle,
-  CheckCircle2, Filter, Eye, EyeOff,
+  CheckCircle2, Filter, Eye, EyeOff, ChevronDown, Check
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════
@@ -18,7 +18,6 @@ interface Teacher {
   created_at: string | null;
 }
 interface Meta { total: number; page: number; per_page: number; last_page: number; }
-// Form untuk TAMBAH guru (termasuk akun)
 interface AddFormData {
   nama_guru: string;
   phone: string;
@@ -27,15 +26,12 @@ interface AddFormData {
   password: string;
   email: string;
 }
-
-// Form untuk EDIT guru (tanpa ubah akun)
 interface EditFormData {
   nama_guru: string;
   phone: string;
   spesialisasi: string;
 }
 
-// Union untuk backward compat di komponen generik
 type FormData = AddFormData | EditFormData;
 
 const EMPTY_ADD: AddFormData = { nama_guru: "", phone: "", spesialisasi: "", username: "", password: "", email: "" };
@@ -43,162 +39,213 @@ const EMPTY_EDIT: EditFormData = { nama_guru: "", phone: "", spesialisasi: "" };
 const API  = "/api/teachers";
 
 /* ═══════════════════════════════════════════════════════════
-   STYLES  (shares CSS vars from parent dashboard)
+   STYLES (REFINED APPLE GLASS + HEX COLORS)
 ═══════════════════════════════════════════════════════════ */
 const CSS = `
-/* ── Page ── */
-.gp { width:100%; display:flex; flex-direction:column; gap:20px; }
+.gp { width:100%; display:flex; flex-direction:column; gap:24px; color: #1e293b; }
 
 .gp-hd { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:12px; }
-.gp-title { font-size:22px; font-weight:900; color:var(--text); line-height:1; }
-.gp-sub   { font-size:12px; color:var(--text3); margin-top:4px; }
+.gp-title { font-size:24px; font-weight:800; color:#1e293b; letter-spacing:-0.5px; line-height:1; }
+.gp-sub   { font-size:13px; color:#64748b; margin-top:6px; font-weight:500; }
 
 .gp-chips { display:flex; gap:10px; flex-wrap:wrap; }
 .gp-chip {
-  display:flex; align-items:center; gap:7px;
-  padding:7px 14px; border-radius:11px;
-  background:var(--glass); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-  border:1.5px solid var(--glass-b); box-shadow:var(--glass-sh);
-  font-size:12.5px; font-weight:700; color:var(--text);
+  display:flex; align-items:center; gap:8px;
+  padding:8px 16px; border-radius:99px;
+  background: rgba(255, 255, 255, 0.6); 
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8); 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  font-size:12.5px; font-weight:700; color:#1e293b;
 }
 .chip-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
 
-/* ── Toolbar ── */
-.gp-bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.gp-bar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
 
 .gp-search {
-  display:flex; align-items:center; gap:8px;
-  flex:1; min-width:200px; max-width:340px;
-  height:40px; padding:0 13px;
-  background:var(--glass); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-  border:1.5px solid var(--glass-b); border-radius:11px; box-shadow:var(--glass-sh);
+  display:flex; align-items:center; gap:10px;
+  flex:1; min-width:220px; 
+  height:44px; padding:0 16px;
+  background: rgba(255, 255, 255, 0.7); 
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.9);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
-.gp-search input { flex:1; font-size:13px; color:var(--text); font-family:inherit; background:transparent; }
-.gp-search input::placeholder { color:var(--text3); }
+.gp-search:focus-within {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(15,118,110,0.3);
+  box-shadow: 0 8px 24px rgba(15,118,110,0.06), 0 0 0 3px rgba(15,118,110,0.1), inset 0 1px 0 rgba(255,255,255,1);
+  transform: translateY(-1px);
+}
+.gp-search input { 
+  flex:1; font-size:14px; color:#1e293b; font-family:inherit; font-weight: 500;
+  background:transparent; border:none; outline:none; box-shadow:none; 
+}
+.gp-search input::placeholder { color:#94a3b8; font-weight: 400; }
 
+.gp-search-clear {
+  color: #64748b;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.gp-search-clear:hover { background: rgba(220,38,38,0.1); color: #dc2626; transform: scale(1.05); }
+
+/* ── CUSTOM DROPDOWN FILTER (APPLE LIQUID GLASS) ── */
+.gp-sel-wrap { position: relative; }
 .gp-sel {
-  display:flex; align-items:center; gap:7px;
-  height:40px; padding:0 13px; min-width:170px;
-  background:var(--glass); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-  border:1.5px solid var(--glass-b); border-radius:11px; box-shadow:var(--glass-sh);
+  display:flex; align-items:center; gap:8px;
+  height:44px; padding:0 16px; min-width:200px;
+  background: rgba(255, 255, 255, 0.7); 
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.9);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: pointer; user-select: none;
 }
-.gp-sel select {
-  flex:1; font-size:13px; color:var(--text); font-family:inherit;
-  background:transparent; cursor:pointer;
+.gp-sel:hover { background: rgba(255, 255, 255, 0.9); }
+.gp-sel--open {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(15,118,110,0.4);
+  box-shadow: 0 8px 24px rgba(15,118,110,0.08), 0 0 0 3px rgba(15,118,110,0.1), inset 0 1px 0 rgba(255,255,255,1);
+  transform: translateY(-1px);
 }
+.gp-sel-val { flex:1; font-size:14px; font-weight:600; color:#1e293b; text-align: left; }
+
+.sel-menu {
+  position: absolute; top: calc(100% + 10px); right: 0; min-width: 220px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: saturate(200%) blur(40px); -webkit-backdrop-filter: saturate(200%) blur(40px);
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 18px;
+  box-shadow: 0 20px 48px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,1);
+  padding: 8px; display: flex; flex-direction: column; gap: 4px;
+  z-index: 100;
+  animation: su .25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.sel-item {
+  padding: 12px 14px; border-radius: 12px;
+  font-size: 13.5px; font-weight: 500; color: #475569;
+  cursor: pointer; transition: all 0.2s ease;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sel-item:hover { background: rgba(15,118,110,0.08); color: #0f766e; }
+.sel-item.active {
+  background: linear-gradient(135deg, #0f766e, #115e59);
+  color: #fff; font-weight: 700;
+  box-shadow: 0 4px 14px rgba(15,118,110,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.sel-overlay { position: fixed; inset: 0; z-index: 99; }
 
 .btn-add {
+  margin-left: auto;
   display:flex; align-items:center; gap:6px;
-  height:40px; padding:0 18px; border-radius:11px;
-  background:var(--g); color:#fff;
-  font-size:13px; font-weight:700; font-family:inherit;
-  box-shadow:0 4px 16px rgba(15,118,110,0.32);
-  transition:all 0.18s; white-space:nowrap;
+  height:44px; padding:0 20px; border-radius:14px;
+  background:#0f766e; color:#fff;
+  font-size:14px; font-weight:700; font-family:inherit;
+  box-shadow: 0 6px 16px rgba(15,118,110,0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+  transition:all 0.25s cubic-bezier(0.25, 1, 0.5, 1); white-space:nowrap; border: none; cursor:pointer;
 }
-.btn-add:hover { box-shadow:0 6px 22px rgba(15,118,110,0.42); transform:translateY(-1px); }
+.btn-add:hover { 
+  box-shadow: 0 8px 24px rgba(15,118,110,0.35), inset 0 1px 0 rgba(255,255,255,0.3); 
+  transform:translateY(-2px); 
+}
 
-/* ── Liquid Glass Card ── */
 .gp-card {
   position: relative;
-  background: rgba(255,255,255,0.62);
-  backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
-  border-radius: 24px;
-  border: 1.5px solid rgba(255,255,255,0.95);
-  box-shadow:
-    0 8px 32px rgba(15,118,110,0.10),
-    0 2px 8px  rgba(0,0,0,0.06),
-    inset 0 1.5px 0 rgba(255,255,255,1),
-    inset 0 -1px 0 rgba(255,255,255,0.4);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,1);
   overflow: hidden;
-}
-/* glossy top sheen */
-.gp-card::before {
-  content: "";
-  position: absolute; top:0; left:0; right:0; height:56px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%);
-  pointer-events: none; border-radius: 24px 24px 0 0; z-index: 0;
 }
 
 .gp-tbl-wrap { overflow-x:auto; position:relative; z-index:1; }
 
 table { width:100%; border-collapse:collapse; }
 thead tr {
-  background: linear-gradient(90deg, rgba(15,118,110,0.12) 0%, rgba(37,99,235,0.08) 100%);
-  border-bottom: 1.5px solid rgba(15,118,110,0.15);
+  background: rgba(255,255,255,0.4);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
 }
 th {
-  padding: 13px 20px; text-align:left;
-  font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.9px;
-  color:var(--g); white-space:nowrap;
+  padding: 16px 24px; text-align:left;
+  font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px;
+  color:#64748b; white-space:nowrap;
 }
 td {
-  padding: 14px 20px; font-size:13px; color:var(--text2);
-  border-bottom: 1px solid rgba(255,255,255,0.7);
+  padding: 16px 24px; font-size:13.5px; color:#334155;
+  border-bottom: 1px solid rgba(0,0,0,0.03);
 }
-tbody tr { transition: background 0.18s; }
-tbody tr:hover {
-  background: rgba(255,255,255,0.72);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
-}
+tbody tr { transition: background 0.2s; }
+tbody tr:hover { background: rgba(255,255,255,0.7); }
 tbody tr:last-child td { border-bottom: none; }
 
-.g-cell { display:flex; align-items:center; gap:12px; }
+.g-cell { display:flex; align-items:center; gap:14px; }
 .g-av {
-  width:38px; height:38px; border-radius:11px; flex-shrink:0;
-  background: #0f766e;
+  width:42px; height:42px; border-radius:12px; flex-shrink:0;
+  background: linear-gradient(135deg, #0f766e, #115e59);
   display:flex; align-items:center; justify-content:center;
-  font-weight:900; font-size:13px; color:#fff;
-  box-shadow:0 3px 12px rgba(15,118,110,0.4);
+  font-weight:900; font-size:14px; color:#fff;
+  box-shadow: 0 4px 14px rgba(15,118,110,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
   letter-spacing:0.5px;
 }
-.g-name { font-size:13.5px; font-weight:700; color:var(--text); }
-.g-uid  { font-size:10.5px; color:var(--text3); margin-top:1px; }
+.g-name { font-size:14px; font-weight:700; color:#1e293b; letter-spacing:-0.2px; }
+.g-uid  { font-size:11px; font-weight:500; color:#64748b; margin-top:2px; }
 
 .spec {
-  display:inline-flex; align-items:center; gap:5px;
-  padding:4px 10px; border-radius:8px;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 12px; border-radius:9px;
   background:rgba(15,118,110,0.08); border:1px solid rgba(15,118,110,0.15);
-  font-size:11.5px; font-weight:600; color:var(--g); white-space:nowrap;
+  font-size:12px; font-weight:600; color:#0f766e; white-space:nowrap;
 }
 
-.acts { display:flex; gap:6px; justify-content:flex-end; }
+.acts { display:flex; gap:8px; justify-content:flex-end; }
 .act {
-  width:32px; height:32px; border-radius:9px;
+  width:36px; height:36px; border-radius:10px;
   display:flex; align-items:center; justify-content:center;
-  transition:all 0.18s; font-family:inherit; cursor:pointer;
+  transition:all 0.2s cubic-bezier(0.25, 1, 0.5, 1); font-family:inherit; cursor:pointer;
+  background: rgba(255,255,255,0.8);
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
-.act-e { background:rgba(37,99,235,0.08);  color:var(--b);   border:1px solid rgba(37,99,235,0.15); }
-.act-d { background:rgba(220,38,38,0.08);  color:var(--red); border:1px solid rgba(220,38,38,0.15); }
-.act-e:hover { background:var(--b);   color:#fff; border-color:var(--b);   }
-.act-d:hover { background:var(--red); color:#fff; border-color:var(--red); }
+.act-e { color:#2563eb; }
+.act-d { color:#dc2626; }
+.act-e:hover { background:#2563eb; color:#fff; border-color:#2563eb; transform:scale(1.05); box-shadow:0 4px 12px rgba(37,99,235,0.25); }
+.act-d:hover { background:#dc2626; color:#fff; border-color:#dc2626; transform:scale(1.05); box-shadow:0 4px 12px rgba(220,38,38,0.25); }
 
 .gp-empty {
-  padding:60px 20px; text-align:center;
-  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:80px 20px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:12px;
 }
-.gp-empty-lbl { font-size:14px; color:var(--text3); font-weight:600; }
-.gp-spin  { padding:60px 20px; display:flex; justify-content:center; }
+.gp-empty-lbl { font-size:15px; color:#64748b; font-weight:600; }
+.gp-spin  { padding:80px 20px; display:flex; justify-content:center; }
 
-/* ── Pagination ── */
 .gp-pag {
   display:flex; align-items:center; justify-content:space-between;
-  padding:14px 20px; border-top:1px solid rgba(0,0,0,0.05); flex-wrap:wrap; gap:10px;
+  padding:16px 24px; border-top:1px solid rgba(0,0,0,0.04); flex-wrap:wrap; gap:10px;
+  background: rgba(255,255,255,0.3);
 }
-.pag-info { font-size:12px; color:var(--text3); }
-.pag-btns { display:flex; gap:5px; }
+.pag-info { font-size:13px; font-weight:500; color:#64748b; }
+.pag-btns { display:flex; gap:6px; }
 .pb {
-  width:32px; height:32px; border-radius:9px;
+  width:34px; height:34px; border-radius:10px;
   display:flex; align-items:center; justify-content:center;
-  font-size:12px; font-weight:700;
-  background:rgba(15,118,110,0.08); border:1.5px solid rgba(15,118,110,0.15);
-  color:#0f766e; transition:all 0.18s; cursor:pointer; font-family:inherit;
+  font-size:13px; font-weight:700;
+  background: rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05);
+  color:#0f766e; transition:all 0.2s; cursor:pointer; font-family:inherit;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
-.pb:hover:not(:disabled) { background:rgba(15,118,110,0.16); border-color:rgba(15,118,110,0.3); }
-.pb:disabled { opacity:.35; cursor:not-allowed; }
+.pb:hover:not(:disabled) { background:#fff; border-color:rgba(15,118,110,0.2); transform:translateY(-1px); }
+.pb:disabled { opacity:.4; cursor:not-allowed; }
 .pb--on {
   background:#0f766e; color:#fff; border-color:#0f766e;
-  box-shadow:0 3px 10px rgba(15,118,110,0.35);
-  font-weight:800;
+  box-shadow:0 4px 12px rgba(15,118,110,0.3);
 }
 
 /* ════════════════════════════════════════════════
@@ -206,135 +253,130 @@ tbody tr:last-child td { border-bottom: none; }
 ════════════════════════════════════════════════ */
 .mbk {
   position:fixed; inset:0; z-index:700;
-  background:rgba(15,23,42,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  background:rgba(15,23,42,0.4); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   display:flex; align-items:center; justify-content:center; padding:20px;
-  animation:fi .18s ease;
-  overflow-y:auto;
+  animation:fi .2s ease; 
 }
 @keyframes fi { from{opacity:0} to{opacity:1} }
-@keyframes su { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+@keyframes su { from{transform:scale(0.96);opacity:0} to{transform:scale(1);opacity:1} }
 @keyframes spin { to{transform:rotate(360deg)} }
 
 .m {
-  width:100%; max-width:460px;
-  max-height:90vh; overflow-y:auto;
-  background:rgba(255,255,255,0.9); backdrop-filter:blur(32px); -webkit-backdrop-filter:blur(32px);
-  border:1.5px solid rgba(255,255,255,0.95); border-radius:22px;
-  box-shadow:0 24px 80px rgba(15,118,110,0.16), 0 4px 16px rgba(0,0,0,0.08);
-  animation:su .22s cubic-bezier(.4,0,.2,1);
+  width:100%; max-width:480px;
+  max-height:90vh; display: flex; flex-direction: column;
+  background:rgba(255,255,255,0.92); 
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border:1px solid rgba(255,255,255,1); border-radius:24px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,1);
+  animation:su .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
 }
 .m-hd {
   display:flex; align-items:center; justify-content:space-between;
-  padding:20px 24px 16px; border-bottom:1px solid rgba(0,0,0,0.06);
-  position:sticky; top:0; background:rgba(255,255,255,0.96);
-  border-radius:22px 22px 0 0; z-index:1;
+  padding:24px 28px 16px; border-bottom:1px solid rgba(0,0,0,0.06);
+  background:transparent;
 }
-.m-title { font-size:17px; font-weight:800; color:var(--text); }
+.m-title { font-size:18px; font-weight:800; color:#1e293b; letter-spacing:-0.3px; }
 .m-cls {
-  width:30px; height:30px; border-radius:9px;
+  width:32px; height:32px; border-radius:10px;
   display:flex; align-items:center; justify-content:center;
-  background:rgba(0,0,0,0.05); color:var(--text3);
-  transition:all 0.18s; cursor:pointer; font-family:inherit;
+  background:rgba(0,0,0,0.05); color:#64748b;
+  transition:all 0.2s; cursor:pointer; border:none;
 }
-.m-cls:hover { background:rgba(220,38,38,0.1); color:var(--red); }
+.m-cls:hover { background:rgba(220,38,38,0.1); color:#dc2626; transform:scale(1.05); }
 
-.m-body { padding:20px 24px; display:flex; flex-direction:column; gap:15px; }
-.fg { display:flex; flex-direction:column; gap:6px; }
-.fl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text3); }
+.m-body { padding:24px 28px; display:flex; flex-direction:column; gap:18px; overflow-y: auto; flex: 1; }
+.fg { display:flex; flex-direction:column; gap:8px; }
+.fl { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; }
 .fi {
-  height:42px; padding:0 14px;
-  background:rgba(255,255,255,0.7); border:1.5px solid rgba(0,0,0,0.1);
-  border-radius:11px; font-size:13.5px; color:var(--text);
-  font-family:inherit; transition:border-color 0.18s, box-shadow 0.18s; width:100%;
+  height:44px; padding:0 16px;
+  background:#ffffff; border:1px solid #d1d5db;
+  border-radius:12px; font-size:14px; font-weight:500; color:#1e293b;
+  font-family:inherit; transition:all 0.2s; width:100%;
 }
-.fi:focus { border-color:var(--g); box-shadow:0 0 0 3px rgba(15,118,110,0.12); outline:none; }
-.fi.err { border-color:var(--red); }
-.fe { font-size:11px; color:var(--red); font-weight:600; }
+.fi:focus { border-color:#0f766e; box-shadow:0 0 0 3px rgba(15,118,110,0.15); outline:none; }
+.fi.err { border-color:#dc2626; }
+.fe { font-size:11.5px; color:#dc2626; font-weight:600; }
 
-/* password field wrapper */
 .pw-wrap { position:relative; }
-.pw-wrap .fi { padding-right:42px; }
+.pw-wrap .fi { padding-right:44px; }
 .pw-eye {
-  position:absolute; right:12px; top:50%; transform:translateY(-50%);
-  color:var(--text3); cursor:pointer; display:flex; align-items:center;
-  background:none; transition:color 0.18s;
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  color:#64748b; cursor:pointer; display:flex; align-items:center;
+  background:none; border:none; transition:color 0.2s;
 }
-.pw-eye:hover { color:var(--g); }
+.pw-eye:hover { color:#0f766e; }
 
-/* section divider inside modal */
 .m-divider {
-  display:flex; align-items:center; gap:10px;
-  font-size:10.5px; font-weight:700; text-transform:uppercase;
-  letter-spacing:.8px; color:var(--text3); margin:4px 0 2px;
+  display:flex; align-items:center; gap:12px;
+  font-size:11px; font-weight:800; text-transform:uppercase;
+  letter-spacing:1px; color:#64748b; margin:6px 0 4px;
 }
-.m-divider::before, .m-divider::after {
-  content:""; flex:1; height:1px; background:rgba(0,0,0,0.07);
-}
+.m-divider::before, .m-divider::after { content:""; flex:1; height:1px; background:rgba(0,0,0,0.08); }
 
 .m-ft {
-  display:flex; justify-content:flex-end; gap:8px;
-  padding:14px 24px 20px; border-top:1px solid rgba(0,0,0,0.06);
-  position:sticky; bottom:0; background:rgba(255,255,255,0.96);
-  border-radius:0 0 22px 22px;
+  display:flex; justify-content:flex-end; gap:10px;
+  padding:16px 28px 24px; border-top:1px solid rgba(0,0,0,0.06);
+  background:transparent; 
 }
 .btn-cncl {
-  padding:0 18px; height:40px; border-radius:11px;
-  font-size:13px; font-weight:700; color:var(--text2);
-  background:rgba(0,0,0,0.05); font-family:inherit; cursor:pointer;
-  transition:background 0.18s;
+  padding:0 20px; height:44px; border-radius:12px;
+  font-size:14px; font-weight:700; color:#475569;
+  background:rgba(0,0,0,0.05); border:none; cursor:pointer;
+  transition:all 0.2s;
 }
-.btn-cncl:hover { background:rgba(0,0,0,0.09); }
+.btn-cncl:hover { background:rgba(0,0,0,0.1); }
 .btn-sv {
-  padding:0 22px; height:40px; border-radius:11px;
-  font-size:13px; font-weight:700; color:#fff;
-  background:var(--g); font-family:inherit; cursor:pointer;
-  box-shadow:0 4px 14px rgba(15,118,110,0.3);
-  display:flex; align-items:center; gap:7px; transition:all 0.18s;
+  padding:0 24px; height:44px; border-radius:12px;
+  font-size:14px; font-weight:700; color:#fff;
+  background:#0f766e; border:none; cursor:pointer;
+  box-shadow:0 4px 14px rgba(15,118,110,0.25);
+  display:flex; align-items:center; gap:8px; transition:all 0.2s;
 }
-.btn-sv:hover:not(:disabled) { box-shadow:0 6px 20px rgba(15,118,110,0.4); transform:translateY(-1px); }
-.btn-sv:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+.btn-sv:hover:not(:disabled) { box-shadow:0 6px 20px rgba(15,118,110,0.35); transform:translateY(-1px); }
+.btn-sv:disabled { opacity:.5; cursor:not-allowed; transform:none; }
 
 /* Delete modal */
-.m-del { max-width:380px; }
-.del-bdy { padding:24px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:12px; }
+.m-del { max-width:400px; }
+.del-bdy { padding:32px 28px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px; }
 .del-ico {
-  width:56px; height:56px; border-radius:16px;
-  background:rgba(220,38,38,0.1); color:var(--red);
+  width:64px; height:64px; border-radius:20px;
+  background: linear-gradient(135deg, rgba(220,38,38,0.1), rgba(220,38,38,0.05)); color:#dc2626;
   display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 8px 24px rgba(220,38,38,0.1);
 }
-.del-t { font-size:17px; font-weight:800; color:var(--text); }
-.del-d { font-size:13px; color:var(--text3); line-height:1.5; }
-.del-ft { display:flex; gap:8px; padding:0 24px 22px; }
+.del-t { font-size:19px; font-weight:800; color:#1e293b; letter-spacing:-0.3px; }
+.del-d { font-size:14px; font-weight:500; color:#64748b; line-height:1.5; }
+.del-ft { display:flex; gap:10px; padding:0 28px 28px; }
 .del-ft .btn-cncl { flex:1; text-align:center; }
 .btn-del {
-  flex:1; height:40px; border-radius:11px;
-  font-size:13px; font-weight:700; color:#fff; background:var(--red);
-  box-shadow:0 4px 14px rgba(220,38,38,0.3);
+  flex:1; height:44px; border-radius:12px; border:none;
+  font-size:14px; font-weight:700; color:#fff; background:#dc2626;
+  box-shadow:0 4px 14px rgba(220,38,38,0.25);
   display:flex; align-items:center; justify-content:center; gap:6px;
-  font-family:inherit; cursor:pointer; transition:all 0.18s;
+  transition:all 0.2s; cursor:pointer;
 }
-.btn-del:hover:not(:disabled) { box-shadow:0 6px 20px rgba(220,38,38,0.4); transform:translateY(-1px); }
-.btn-del:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+.btn-del:hover:not(:disabled) { box-shadow:0 6px 20px rgba(220,38,38,0.35); transform:translateY(-1px); }
+.btn-del:disabled { opacity:.5; cursor:not-allowed; transform:none; }
 
 /* Toast */
 .toast {
   position:fixed; bottom:24px; right:24px; z-index:999;
-  display:flex; align-items:center; gap:10px;
-  padding:12px 18px; border-radius:13px;
-  background:rgba(255,255,255,0.94); backdrop-filter:blur(20px);
-  border:1.5px solid rgba(255,255,255,0.9);
-  box-shadow:0 8px 32px rgba(0,0,0,0.12);
-  font-size:13px; font-weight:600; color:var(--text);
-  animation:su .22s ease; max-width:320px;
+  display:flex; align-items:center; gap:12px;
+  padding:14px 20px; border-radius:16px;
+  background:rgba(255,255,255,0.9); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,1);
+  box-shadow:0 12px 40px rgba(0,0,0,0.1);
+  font-size:14px; font-weight:600; color:#1e293b;
+  animation:su .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-width:340px;
 }
 .toast-ok  { border-left:4px solid #16a34a; }
-.toast-err { border-left:4px solid var(--red); }
+.toast-err { border-left:4px solid #dc2626; }
 
 @media (max-width:640px) {
   th:nth-child(5), td:nth-child(5) { display:none; }
   .gp-bar { flex-direction:column; align-items:stretch; }
   .gp-search { max-width:100%; }
-  .btn-add { justify-content:center; }
+  .btn-add { justify-content:center; margin-left: 0; }
 }
 `;
 
@@ -351,13 +393,13 @@ function Toast({ msg, type, onClose }: { msg:string; type:"success"|"error"; onC
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
   return (
     <div className={`toast ${type==="success"?"toast-ok":"toast-err"}`}>
-      {type==="success" ? <CheckCircle2 size={16} color="#16a34a"/> : <AlertCircle size={16} color="var(--red)"/>}
+      {type==="success" ? <CheckCircle2 size={18} color="#16a34a"/> : <AlertCircle size={18} color="#dc2626"/>}
       {msg}
     </div>
   );
 }
 
-/* ── Add Modal (nama, phone, spesialisasi + username, password, email) ── */
+/* ── Add Modal ── */
 function AddModal({ specs, onClose, onSave }: {
   specs: string[];
   onClose: ()=>void;
@@ -378,9 +420,9 @@ function AddModal({ specs, onClose, onSave }: {
     else if (!/^[0-9+\-\s]{8,20}$/.test(f.phone)) err.phone = "Format tidak valid.";
     if (!f.spesialisasi.trim()) err.spesialisasi = "Spesialisasi wajib diisi.";
     if (!f.username.trim())     err.username     = "Username wajib diisi.";
-    else if (!/^[a-zA-Z0-9]{4,50}$/.test(f.username)) err.username = "Min 4 karakter, hanya huruf & angka.";
+    else if (!/^[a-zA-Z0-9]{4,50}$/.test(f.username)) err.username = "Min 4 karakter, huruf & angka.";
     if (!f.password)            err.password     = "Password wajib diisi.";
-    else if (f.password.length < 8) err.password = "Password minimal 8 karakter.";
+    else if (f.password.length < 8) err.password = "Min 8 karakter.";
     if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) err.email = "Format email tidak valid.";
     setE(err);
     return !Object.keys(err).length;
@@ -394,10 +436,10 @@ function AddModal({ specs, onClose, onSave }: {
 
   return createPortal(
     <div className="mbk" onClick={ev => ev.target===ev.currentTarget && onClose()}>
-      <div className="m" style={{ maxWidth:500 }}>
+      <div className="m">
         <div className="m-hd">
           <span className="m-title">Tambah Guru Baru</span>
-          <button className="m-cls" onClick={onClose}><X size={15}/></button>
+          <button className="m-cls" onClick={onClose}><X size={16}/></button>
         </div>
         <div className="m-body">
 
@@ -410,7 +452,7 @@ function AddModal({ specs, onClose, onSave }: {
             {e.nama_guru && <span className="fe">{e.nama_guru}</span>}
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
             <div className="fg">
               <label className="fl">Nomor Telepon</label>
               <input className={`fi ${e.phone?"err":""}`} placeholder="08123456789" value={f.phone} onChange={upd("phone")}/>
@@ -425,7 +467,7 @@ function AddModal({ specs, onClose, onSave }: {
           </div>
 
           {/* ── Akun ── */}
-          <div className="m-divider">Akun Login <span style={{ color:"var(--g)", fontSize:9, fontWeight:700, background:"rgba(15,118,110,0.1)", padding:"2px 7px", borderRadius:99, textTransform:"none", letterSpacing:0 }}>role: teacher</span></div>
+          <div className="m-divider">Akun Login <span style={{ color:"#0f766e", fontSize:9.5, fontWeight:700, background:"rgba(15,118,110,0.1)", padding:"3px 8px", borderRadius:99, textTransform:"none", letterSpacing:0 }}>role: teacher</span></div>
 
           <div className="fg">
             <label className="fl">Username</label>
@@ -445,14 +487,14 @@ function AddModal({ specs, onClose, onSave }: {
                 autoComplete="new-password"
               />
               <button className="pw-eye" type="button" onClick={() => setShowPw(p=>!p)}>
-                {showPw ? <EyeOff size={15}/> : <Eye size={15}/>}
+                {showPw ? <EyeOff size={16}/> : <Eye size={16}/>}
               </button>
             </div>
             {e.password && <span className="fe">{e.password}</span>}
           </div>
 
           <div className="fg">
-            <label className="fl">Email <span style={{ color:"var(--text3)", fontWeight:400, textTransform:"none" }}>(opsional)</span></label>
+            <label className="fl">Email <span style={{ color:"#94a3b8", fontWeight:500, textTransform:"none" }}>(opsional)</span></label>
             <input className={`fi ${e.email?"err":""}`} type="email" placeholder="guru@sekolah.ac.id" value={f.email} onChange={upd("email")}/>
             {e.email && <span className="fe">{e.email}</span>}
           </div>
@@ -462,8 +504,8 @@ function AddModal({ specs, onClose, onSave }: {
           <button className="btn-cncl" onClick={onClose}>Batal</button>
           <button className="btn-sv" onClick={submit} disabled={busy}>
             {busy
-              ? <><Loader2 size={14} style={{ animation:"spin 1s linear infinite" }}/> Menyimpan...</>
-              : <><CheckCircle2 size={14}/> Tambah Guru</>}
+              ? <><Loader2 size={16} style={{ animation:"spin 1s linear infinite" }}/> Menyimpan...</>
+              : <><CheckCircle2 size={16}/> Tambah Guru</>}
           </button>
         </div>
       </div>
@@ -472,7 +514,7 @@ function AddModal({ specs, onClose, onSave }: {
   );
 }
 
-/* ── Edit Modal (hanya data guru, tidak ubah akun) ── */
+/* ── Edit Modal ── */
 function EditModal({ init, specs, onClose, onSave }: {
   init: EditFormData; specs: string[];
   onClose: ()=>void; onSave: (d: EditFormData)=>Promise<void>;
@@ -505,7 +547,7 @@ function EditModal({ init, specs, onClose, onSave }: {
       <div className="m">
         <div className="m-hd">
           <span className="m-title">Edit Data Guru</span>
-          <button className="m-cls" onClick={onClose}><X size={15}/></button>
+          <button className="m-cls" onClick={onClose}><X size={16}/></button>
         </div>
         <div className="m-body">
           <div className="fg">
@@ -513,7 +555,7 @@ function EditModal({ init, specs, onClose, onSave }: {
             <input className={`fi ${e.nama_guru?"err":""}`} placeholder="Contoh: Ahmad Fauzi, S.Pd" value={f.nama_guru} onChange={upd("nama_guru")}/>
             {e.nama_guru && <span className="fe">{e.nama_guru}</span>}
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
             <div className="fg">
               <label className="fl">Nomor Telepon</label>
               <input className={`fi ${e.phone?"err":""}`} placeholder="08123456789" value={f.phone} onChange={upd("phone")}/>
@@ -527,10 +569,9 @@ function EditModal({ init, specs, onClose, onSave }: {
             </div>
           </div>
 
-          {/* Info: akun tidak diubah di sini */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 13px", borderRadius:11, background:"rgba(37,99,235,0.06)", border:"1px solid rgba(37,99,235,0.15)" }}>
-            <CheckCircle2 size={14} color="var(--b)"/>
-            <span style={{ fontSize:12, color:"var(--b)", fontWeight:600 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 16px", borderRadius:12, background:"rgba(37,99,235,0.06)", border:"1px solid rgba(37,99,235,0.15)" }}>
+            <CheckCircle2 size={16} color="#2563eb"/>
+            <span style={{ fontSize:13, color:"#2563eb", fontWeight:600 }}>
               Username & password tidak berubah. Hubungi admin untuk reset akun.
             </span>
           </div>
@@ -539,8 +580,8 @@ function EditModal({ init, specs, onClose, onSave }: {
           <button className="btn-cncl" onClick={onClose}>Batal</button>
           <button className="btn-sv" onClick={submit} disabled={busy}>
             {busy
-              ? <><Loader2 size={14} style={{ animation:"spin 1s linear infinite" }}/> Menyimpan...</>
-              : <><CheckCircle2 size={14}/> Simpan Perubahan</>}
+              ? <><Loader2 size={16} style={{ animation:"spin 1s linear infinite" }}/> Menyimpan...</>
+              : <><CheckCircle2 size={16}/> Simpan Perubahan</>}
           </button>
         </div>
       </div>
@@ -559,14 +600,14 @@ function DeleteModal({ teacher, onClose, onConfirm }: {
     <div className="mbk" onClick={ev => ev.target===ev.currentTarget && onClose()}>
       <div className="m m-del">
         <div className="del-bdy">
-          <div className="del-ico"><Trash2 size={24}/></div>
+          <div className="del-ico"><Trash2 size={28}/></div>
           <div className="del-t">Hapus Guru?</div>
           <div className="del-d">Data <b>{teacher.nama_guru}</b> akan dihapus permanen dan tidak dapat dikembalikan.</div>
         </div>
         <div className="del-ft">
           <button className="btn-cncl" onClick={onClose}>Batal</button>
           <button className="btn-del" onClick={go} disabled={busy}>
-            {busy ? <><Loader2 size={14} style={{ animation:"spin 1s linear infinite" }}/> Menghapus...</> : <><Trash2 size={14}/> Hapus</>}
+            {busy ? <><Loader2 size={16} style={{ animation:"spin 1s linear infinite" }}/> Menghapus...</> : <><Trash2 size={16}/> Hapus</>}
           </button>
         </div>
       </div>
@@ -588,6 +629,9 @@ export default function GuruPage() {
   const [modal,   setModal]   = useState<"add"|"edit"|"delete"|null>(null);
   const [sel,     setSel]     = useState<Teacher|null>(null);
   const [toast,   setToast]   = useState<{ msg:string; type:"success"|"error" }|null>(null);
+  
+  // STATE BARU UNTUK FILTER DROPDOWN
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const dSearch = useDebounce(search);
 
@@ -612,7 +656,6 @@ export default function GuruPage() {
     const j = await (await fetch(API, { method:"POST", headers:{ "Content-Type":"application/json","Accept":"application/json" }, body:JSON.stringify(d) })).json();
     if (j.success) { setToast({ msg:"Guru & akun berhasil ditambahkan.", type:"success" }); setModal(null); load(1); loadSpecs(); }
     else if (j.errors) {
-      // tampilkan error validasi pertama
       const firstErr = Object.values(j.errors as Record<string, string[]>)[0]?.[0];
       setToast({ msg: firstErr ?? "Validasi gagal.", type:"error" });
     }
@@ -652,12 +695,12 @@ export default function GuruPage() {
           </div>
           <div className="gp-chips">
             <div className="gp-chip">
-              <span className="chip-dot" style={{ background:"var(--g)" }}/>
+              <span className="chip-dot" style={{ background:"#0f766e" }}/>
               {meta.total} Guru Terdaftar
             </div>
             {specs.length > 0 && (
               <div className="gp-chip">
-                <span className="chip-dot" style={{ background:"var(--b)" }}/>
+                <span className="chip-dot" style={{ background:"#2563eb" }}/>
                 {specs.length} Spesialisasi
               </div>
             )}
@@ -666,30 +709,73 @@ export default function GuruPage() {
 
         {/* Toolbar */}
         <div className="gp-bar">
+          {/* Pencarian */}
           <div className="gp-search">
-            <Search size={15} color="var(--text3)"/>
+            <Search size={16} color="#64748b" className="flex-shrink-0" />
             <input
               placeholder="Cari nama, telepon, spesialisasi..."
               value={search}
               onChange={e => setSearch(e.target.value)}
+              className="border-0 focus:ring-0 outline-none flex-1"
             />
-            {search && <button onClick={()=>setSearch("")} style={{ color:"var(--text3)",display:"flex" }}><X size={13}/></button>}
+            {search && (
+              <button onClick={()=>setSearch("")} className="gp-search-clear" title="Bersihkan pencarian">
+                <X size={14} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
 
-          <div className="gp-sel">
-            <Filter size={14} color="var(--text3)"/>
-            <select value={spec} onChange={e=>setSpec(e.target.value)}>
-              <option value="">Semua Spesialisasi</option>
-              {specs.map(s=><option key={s} value={s}>{s}</option>)}
-            </select>
+          {/* PERBAIKAN: Custom Dropdown Filter */}
+          <div className="gp-sel-wrap">
+            <div 
+              className={`gp-sel ${filterOpen ? 'gp-sel--open' : ''}`} 
+              onClick={() => setFilterOpen(!filterOpen)}
+            >
+              <Filter size={15} color="#64748b" className="flex-shrink-0" />
+              <span className="gp-sel-val">{spec || "Semua Spesialisasi"}</span>
+              <ChevronDown 
+                size={16} 
+                color="#64748b" 
+                className={`flex-shrink-0 transition-transform duration-200 ${filterOpen ? 'rotate-180' : ''}`} 
+              />
+            </div>
+
+            {filterOpen && (
+              <>
+                {/* Overlay transparan untuk mendeteksi klik di luar menu agar menu menutup */}
+                <div className="sel-overlay" onClick={() => setFilterOpen(false)} />
+                <div className="sel-menu">
+                  
+                  <div 
+                    className={`sel-item ${spec === "" ? "active" : ""}`} 
+                    onClick={() => { setSpec(""); setFilterOpen(false); }}
+                  >
+                    <span>Semua Spesialisasi</span>
+                    {spec === "" && <Check size={16} />}
+                  </div>
+
+                  {specs.map(s => (
+                    <div 
+                      key={s} 
+                      className={`sel-item ${spec === s ? "active" : ""}`} 
+                      onClick={() => { setSpec(s); setFilterOpen(false); }}
+                    >
+                      <span>{s}</span>
+                      {spec === s && <Check size={16} />}
+                    </div>
+                  ))}
+
+                </div>
+              </>
+            )}
           </div>
 
           <button className="btn-add" onClick={()=>{ setSel(null); setModal("add"); }}>
-            <Plus size={15}/> Tambah Guru
+            <Plus size={16}/> Tambah Guru
           </button>
         </div>
 
-        {/* Table */}
+        {/* Table Card */}
         <div className="gp-card">
           <div className="gp-tbl-wrap">
             <table>
@@ -706,7 +792,7 @@ export default function GuruPage() {
               <tbody>
                 {!loading && data.map((t, i) => (
                   <tr key={t.id}>
-                    <td style={{ color:"var(--text3)", fontSize:12 }}>{(meta.page-1)*meta.per_page+i+1}</td>
+                    <td style={{ color:"#64748b", fontSize:12, fontWeight:600 }}>{(meta.page-1)*meta.per_page+i+1}</td>
                     <td>
                       <div className="g-cell">
                         <div className="g-av">{initials(t.nama_guru)}</div>
@@ -716,19 +802,19 @@ export default function GuruPage() {
                         </div>
                       </div>
                     </td>
-                    <td><span className="spec"><BookOpen size={11}/>{t.spesialisasi}</span></td>
+                    <td><span className="spec"><BookOpen size={12}/>{t.spesialisasi}</span></td>
                     <td>
-                      <span style={{ display:"flex", alignItems:"center", gap:5 }}>
-                        <Phone size={12} color="var(--text3)"/>{t.phone}
+                      <span style={{ display:"flex", alignItems:"center", gap:6, fontWeight:500 }}>
+                        <Phone size={13} color="#64748b"/>{t.phone}
                       </span>
                     </td>
-                    <td style={{ color:"var(--text3)", fontSize:12 }}>
+                    <td style={{ color:"#64748b", fontSize:12.5, fontWeight:500 }}>
                       {t.created_at ? new Date(t.created_at).toLocaleDateString("id-ID",{ day:"numeric", month:"short", year:"numeric" }) : "—"}
                     </td>
                     <td>
                       <div className="acts">
-                        <button className="act act-e" title="Edit" onClick={()=>{ setSel(t); setModal("edit"); }}><Pencil size={13}/></button>
-                        <button className="act act-d" title="Hapus" onClick={()=>{ setSel(t); setModal("delete"); }}><Trash2 size={13}/></button>
+                        <button className="act act-e" title="Edit" onClick={()=>{ setSel(t); setModal("edit"); }}><Pencil size={15}/></button>
+                        <button className="act act-d" title="Hapus" onClick={()=>{ setSel(t); setModal("delete"); }}><Trash2 size={15}/></button>
                       </div>
                     </td>
                   </tr>
@@ -738,19 +824,19 @@ export default function GuruPage() {
 
             {loading && (
               <div className="gp-spin">
-                <Loader2 size={28} color="var(--g)" style={{ animation:"spin 1s linear infinite" }}/>
+                <Loader2 size={32} color="#0f766e" style={{ animation:"spin 1s linear infinite" }}/>
               </div>
             )}
 
             {!loading && data.length === 0 && (
               <div className="gp-empty">
-                <GraduationCap size={40} color="var(--text3)"/>
+                <GraduationCap size={48} color="#94a3b8" style={{ opacity: 0.5 }}/>
                 <div className="gp-empty-lbl">
                   {search||spec ? "Tidak ada guru yang sesuai pencarian." : "Belum ada guru terdaftar."}
                 </div>
                 {!search && !spec && (
-                  <button className="btn-add" style={{ marginTop:4 }} onClick={()=>setModal("add")}>
-                    <Plus size={14}/> Tambah Guru Pertama
+                  <button className="btn-add" style={{ marginTop:8, marginInline:"auto" }} onClick={()=>setModal("add")}>
+                    <Plus size={16}/> Tambah Guru Pertama
                   </button>
                 )}
               </div>
@@ -765,13 +851,13 @@ export default function GuruPage() {
               </span>
               <div className="pag-btns">
                 <button className="pb" disabled={meta.page===1} onClick={()=>load(meta.page-1)}>
-                  <ChevronLeft size={14}/>
+                  <ChevronLeft size={16}/>
                 </button>
                 {pgs().map(p => (
                   <button key={p} className={`pb ${p===meta.page?"pb--on":""}`} onClick={()=>load(p)}>{p}</button>
                 ))}
                 <button className="pb" disabled={meta.page===meta.last_page} onClick={()=>load(meta.page+1)}>
-                  <ChevronRight size={14}/>
+                  <ChevronRight size={16}/>
                 </button>
               </div>
             </div>
