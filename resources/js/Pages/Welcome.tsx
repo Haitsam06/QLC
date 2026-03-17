@@ -1,366 +1,520 @@
-import { PageProps } from "@/types";
-import { Head, Link } from "@inertiajs/react";
+import React, { useState, useEffect } from 'react';
+import { router } from '@inertiajs/react';
+import Navbar from '@/Components/Navbar';
+import Footer from '@/Components/Footer';
 
-export default function Welcome({
-    auth,
-    laravelVersion,
-    phpVersion,
-}: PageProps<{ laravelVersion: string; phpVersion: string }>) {
-    const handleImageError = () => {
-        document
-            .getElementById("screenshot-container")
-            ?.classList.add("!hidden");
-        document.getElementById("docs-card")?.classList.add("!row-span-1");
-        document
-            .getElementById("docs-card-content")
-            ?.classList.add("!flex-row");
-        document.getElementById("background")?.classList.add("!hidden");
+const LandingPage = () => {
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [activeSection, setActiveSection] = useState('beranda');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20);
+            const sections = ['beranda', 'tentang', 'pendiri', 'visi-misi', 'pilar', 'program'];
+            let current = 'beranda';
+            for (const section of sections) {
+                const element = document.getElementById(section);
+                if (element && window.scrollY >= element.offsetTop - 150) {
+                    current = section;
+                }
+            }
+            setActiveSection(current);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('opacity-100', 'translate-y-0');
+                        entry.target.classList.remove('opacity-0', 'translate-y-8');
+                    }
+                });
+            },
+            { threshold: 0.1 }
+        );
+        document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+        return () => observer.disconnect();
+    }, []);
+
+    const scrollTo = (id: string) => {
+        const el = document.getElementById(id);
+        if (el) {
+            window.scrollTo({ top: el.offsetTop - 100, behavior: 'smooth' });
+            setIsMobileMenuOpen(false);
+        }
     };
 
+    const glassClass = 'bg-white/60 backdrop-blur-lg border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)]';
+
     return (
-        <>
-            <Head title="Welcome" />
-            <div className="bg-gray-50 text-black/50 dark:bg-black dark:text-white/50">
-                <img
-                    id="background"
-                    className="absolute -left-20 top-0 max-w-[877px]"
-                    src="https://laravel.com/assets/img/welcome/background.svg"
-                />
-                <div className="relative flex min-h-screen flex-col items-center justify-center selection:bg-[#FF2D20] selection:text-white">
-                    <div className="relative w-full max-w-2xl px-6 lg:max-w-7xl">
-                        <header className="grid grid-cols-2 items-center gap-2 py-10 lg:grid-cols-3">
-                            <div className="flex lg:col-start-2 lg:justify-center">
-                                <svg
-                                    className="h-12 w-auto text-white lg:h-16 lg:text-[#FF2D20]"
-                                    viewBox="0 0 62 65"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
+        <div className="font-sans text-gray-800 bg-white min-h-screen overflow-x-hidden selection:bg-[#1B6B3A]/20">
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
+        .reveal { transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+      `,
+                }}
+            />
+
+            <Navbar />
+
+            {/* 2. HERO SECTION */}
+            <section id="beranda" className="pt-32 pb-20 lg:pt-38 lg:pb-32 relative bg-gradient-to-br from-[#e6f4f1] via-[#ffffff] to-[#e9f1ff] overflow-hidden">
+                {/* OPTIMASI 1: Ganti efek 'blur-3xl' yang berat dengan 'radial-gradient' murni */}
+                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-80 h-80 bg-[radial-gradient(circle,rgba(212,160,23,0.15)_0%,transparent_70%)] rounded-full z-0"></div>
+                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-[radial-gradient(circle,rgba(27,107,58,0.15)_0%,transparent_70%)] rounded-full z-0"></div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+                        <div className="reveal opacity-0 translate-y-8 text-center lg:text-left animate-in fade-in slide-in-from-bottom-10 duration-1000">
+                            {/* OPTIMASI 2: Hapus 'backdrop-blur-md' dan naikkan opacity warna putihnya */}
+                            <span className="inline-block py-2.5 px-5 rounded-full bg-white/90 border border-white/80 shadow-sm text-[#1B6B3A] text-sm font-bold tracking-wider mb-6">
+                                ✨ ERA KEPEMIMPINAN AL-QUR'AN
+                            </span>
+
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 tracking-tight leading-[1.1] mb-8">
+                                Membangun Generasi Rabbani bersama <br className="hidden xl:block" />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1B6B3A] to-[#0a381d]">Pejuang Quran</span>
+                            </h1>
+
+                            <p className="text-lg sm:text-xl text-gray-600 mb-12 leading-relaxed lg:pr-10">
+                                Pusat pembelajaran komprehensif (QLC) yang berdedikasi mencetak pemimpin masa depan dengan kurikulum terpadu dan sistem pelaporan mutakhir.
+                            </p>
+
+                            <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 mb-8">
+                                <button
+                                    onClick={() => scrollTo('tentang')}
+                                    className="bg-[#1B6B3A] text-white px-9 py-4 rounded-full font-bold text-lg transition-all shadow-md hover:shadow-lg hover:shadow-[#1B6B3A]/30 hover:-translate-y-1 transform duration-300"
                                 >
-                                    <path
-                                        d="M61.8548 14.6253C61.8778 14.7102 61.8895 14.7978 61.8897 14.8858V28.5615C61.8898 28.737 61.8434 28.9095 61.7554 29.0614C61.6675 29.2132 61.5409 29.3392 61.3887 29.4265L49.9104 36.0351V49.1337C49.9104 49.4902 49.7209 49.8192 49.4118 49.9987L25.4519 63.7916C25.3971 63.8227 25.3372 63.8427 25.2774 63.8639C25.255 63.8714 25.2338 63.8851 25.2101 63.8913C25.0426 63.9354 24.8666 63.9354 24.6991 63.8913C24.6716 63.8838 24.6467 63.8689 24.6205 63.8589C24.5657 63.8389 24.5084 63.8215 24.456 63.7916L0.501061 49.9987C0.348882 49.9113 0.222437 49.7853 0.134469 49.6334C0.0465019 49.4816 0.000120578 49.3092 0 49.1337L0 8.10652C0 8.01678 0.0124642 7.92953 0.0348998 7.84477C0.0423783 7.8161 0.0598282 7.78993 0.0697995 7.76126C0.0884958 7.70891 0.105946 7.65531 0.133367 7.6067C0.152063 7.5743 0.179485 7.54812 0.20192 7.51821C0.230588 7.47832 0.256763 7.43719 0.290416 7.40229C0.319084 7.37362 0.356476 7.35243 0.388883 7.32751C0.425029 7.29759 0.457436 7.26518 0.498568 7.2415L12.4779 0.345059C12.6296 0.257786 12.8015 0.211853 12.9765 0.211853C13.1515 0.211853 13.3234 0.257786 13.475 0.345059L25.4531 7.2415H25.4556C25.4955 7.26643 25.5292 7.29759 25.5653 7.32626C25.5977 7.35119 25.6339 7.37362 25.6625 7.40104C25.6974 7.43719 25.7224 7.47832 25.7523 7.51821C25.7735 7.54812 25.8021 7.5743 25.8196 7.6067C25.8483 7.65656 25.8645 7.70891 25.8844 7.76126C25.8944 7.78993 25.9118 7.8161 25.9193 7.84602C25.9423 7.93096 25.954 8.01853 25.9542 8.10652V33.7317L35.9355 27.9844V14.8846C35.9355 14.7973 35.948 14.7088 35.9704 14.6253C35.9792 14.5954 35.9954 14.5692 36.0053 14.5405C36.0253 14.4882 36.0427 14.4346 36.0702 14.386C36.0888 14.3536 36.1163 14.3274 36.1375 14.2975C36.1674 14.2576 36.1923 14.2165 36.2272 14.1816C36.2559 14.1529 36.292 14.1317 36.3244 14.1068C36.3618 14.0769 36.3942 14.0445 36.4341 14.0208L48.4147 7.12434C48.5663 7.03694 48.7383 6.99094 48.9133 6.99094C49.0883 6.99094 49.2602 7.03694 49.4118 7.12434L61.3899 14.0208C61.4323 14.0457 61.4647 14.0769 61.5021 14.1055C61.5333 14.1305 61.5694 14.1529 61.5981 14.1803C61.633 14.2165 61.6579 14.2576 61.6878 14.2975C61.7103 14.3274 61.7377 14.3536 61.7551 14.386C61.7838 14.4346 61.8 14.4882 61.8199 14.5405C61.8312 14.5692 61.8474 14.5954 61.8548 14.6253ZM59.893 27.9844V16.6121L55.7013 19.0252L49.9104 22.3593V33.7317L59.8942 27.9844H59.893ZM47.9149 48.5566V37.1768L42.2187 40.4299L25.953 49.7133V61.2003L47.9149 48.5566ZM1.99677 9.83281V48.5566L23.9562 61.199V49.7145L12.4841 43.2219L12.4804 43.2194L12.4754 43.2169C12.4368 43.1945 12.4044 43.1621 12.3682 43.1347C12.3371 43.1097 12.3009 43.0898 12.2735 43.0624L12.271 43.0586C12.2386 43.0275 12.2162 42.9888 12.1887 42.9539C12.1638 42.9203 12.1339 42.8916 12.114 42.8567L12.1127 42.853C12.0903 42.8156 12.0766 42.7707 12.0604 42.7283C12.0442 42.6909 12.023 42.656 12.013 42.6161C12.0005 42.5688 11.998 42.5177 11.9931 42.4691C11.9881 42.4317 11.9781 42.3943 11.9781 42.3569V15.5801L6.18848 12.2446L1.99677 9.83281ZM12.9777 2.36177L2.99764 8.10652L12.9752 13.8513L22.9541 8.10527L12.9752 2.36177H12.9777ZM18.1678 38.2138L23.9574 34.8809V9.83281L19.7657 12.2459L13.9749 15.5801V40.6281L18.1678 38.2138ZM48.9133 9.14105L38.9344 14.8858L48.9133 20.6305L58.8909 14.8846L48.9133 9.14105ZM47.9149 22.3593L42.124 19.0252L37.9323 16.6121V27.9844L43.7219 31.3174L47.9149 33.7317V22.3593ZM24.9533 47.987L39.59 39.631L46.9065 35.4555L36.9352 29.7145L25.4544 36.3242L14.9907 42.3482L24.9533 47.987Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
+                                    Pelajari Lebih Lanjut
+                                </button>
+                                <button
+                                    onClick={() => router.get('/landing/agenda')}
+                                    className={`${glassClass} px-9 py-4 rounded-full font-bold text-lg text-gray-700 hover:bg-white hover:border-gray-200 transition-all transform duration-300 hover:-translate-y-0.5`}
+                                >
+                                    Lihat Agenda
+                                </button>
                             </div>
-                            <nav className="-mx-3 flex flex-1 justify-end">
-                                {auth.user ? (
-                                    <Link
-                                        href={route("dashboard")}
-                                        className="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-                                    >
-                                        Dashboard
-                                    </Link>
-                                ) : (
-                                    <>
-                                        <Link
-                                            href={route("login")}
-                                            className="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-                                        >
-                                            Log in
-                                        </Link>
-                                        <Link
-                                            href={route("register")}
-                                            className="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-                                        >
-                                            Register
-                                        </Link>
-                                    </>
-                                )}
-                            </nav>
-                        </header>
+                        </div>
 
-                        <main className="mt-6">
-                            <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-                                <a
-                                    href="https://laravel.com/docs"
-                                    id="docs-card"
-                                    className="flex flex-col items-start gap-6 overflow-hidden rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] md:row-span-3 lg:p-10 lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                                >
-                                    <div
-                                        id="screenshot-container"
-                                        className="relative flex w-full flex-1 items-stretch"
-                                    >
-                                        <img
-                                            src="https://laravel.com/assets/img/welcome/docs-light.svg"
-                                            alt="Laravel documentation screenshot"
-                                            className="aspect-video h-full w-full flex-1 rounded-[10px] object-cover object-top drop-shadow-[0px_4px_34px_rgba(0,0,0,0.06)] dark:hidden"
-                                            onError={handleImageError}
-                                        />
-                                        <img
-                                            src="https://laravel.com/assets/img/welcome/docs-dark.svg"
-                                            alt="Laravel documentation screenshot"
-                                            className="hidden aspect-video h-full w-full flex-1 rounded-[10px] object-cover object-top drop-shadow-[0px_4px_34px_rgba(0,0,0,0.25)] dark:block"
-                                        />
-                                        <div className="absolute -bottom-16 -left-16 h-40 w-[calc(100%+8rem)] bg-gradient-to-b from-transparent via-white to-white dark:via-zinc-900 dark:to-zinc-900"></div>
-                                    </div>
+                        <div className="reveal opacity-0 translate-y-8 delay-300 relative animate-in fade-in slide-in-from-right-10 duration-1000">
+                            {/* OPTIMASI 3: Hapus 'backdrop-blur-sm' pada frame foto, cukup gunakan background transparan */}
+                            <div className="absolute inset-0 bg-white/60 rounded-[3rem] border-4 border-white transform rotate-3 z-0 shadow-lg"></div>
 
-                                    <div className="relative flex items-center gap-6 lg:items-end">
-                                        <div
-                                            id="docs-card-content"
-                                            className="flex items-start gap-6 lg:flex-col"
-                                        >
-                                            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
-                                                <svg
-                                                    className="size-5 sm:size-6"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        fill="#FF2D20"
-                                                        d="M23 4a1 1 0 0 0-1.447-.894L12.224 7.77a.5.5 0 0 1-.448 0L2.447 3.106A1 1 0 0 0 1 4v13.382a1.99 1.99 0 0 0 1.105 1.79l9.448 4.728c.14.065.293.1.447.1.154-.005.306-.04.447-.105l9.453-4.724a1.99 1.99 0 0 0 1.1-1.789V4ZM3 6.023a.25.25 0 0 1 .362-.223l7.5 3.75a.251.251 0 0 1 .138.223v11.2a.25.25 0 0 1-.362.224l-7.5-3.75a.25.25 0 0 1-.138-.22V6.023Zm18 11.2a.25.25 0 0 1-.138.224l-7.5 3.75a.249.249 0 0 1-.329-.099.249.249 0 0 1-.033-.12V9.772a.251.251 0 0 1 .138-.224l7.5-3.75a.25.25 0 0 1 .362.224v11.2Z"
-                                                    />
-                                                    <path
-                                                        fill="#FF2D20"
-                                                        d="m3.55 1.893 8 4.048a1.008 1.008 0 0 0 .9 0l8-4.048a1 1 0 0 0-.9-1.785l-7.322 3.706a.506.506 0 0 1-.452 0L4.454.108a1 1 0 0 0-.9 1.785H3.55Z"
-                                                    />
-                                                </svg>
-                                            </div>
+                            {/* OPTIMASI 4: Kurangi shadow dari 2xl ke xl, dan hapus blur */}
+                            <div className="relative z-10 p-2 bg-white/40 rounded-[3rem] border border-white shadow-xl aspect-[4/3] lg:aspect-square overflow-hidden group">
+                                <img
+                                    src="/image/landing/hero-image.png"
+                                    alt="Santri Pejuang Quran QLC"
+                                    className="w-full h-full object-cover rounded-[2.5rem] transition-transform duration-700 group-hover:scale-105"
+                                    onError={(e) => {
+                                        e.currentTarget.src = 'https://ui-avatars.com/api/?name=QLC+Hero&background=1B6B3A&color=fff&size=500';
+                                    }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-[2.5rem]"></div>
+                            </div>
 
-                                            <div className="pt-3 sm:pt-5 lg:pt-0">
-                                                <h2 className="text-xl font-semibold text-black dark:text-white">
-                                                    Documentation
-                                                </h2>
+                            {/* OPTIMASI 5: Hapus 'animate-bounce-slow'. Animasi terus-menerus pada elemen dengan shadow sangat membebani GPU */}
+                            <div
+                                className={`${glassClass} absolute -bottom-6 -left-6 p-4 rounded-2xl shadow-lg z-20 flex items-center gap-3 border border-white/80 transition-transform duration-300 hover:-translate-y-2`}
+                            >
+                                <div className="w-12 h-12 rounded-full bg-[#D4A017] flex items-center justify-center text-white text-2xl">✨</div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900">Mencetak</p>
+                                    <p className="text-xs text-gray-600">Generasi Hafidz Mutqin</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-                                                <p className="mt-4 text-sm/relaxed">
-                                                    Laravel has wonderful
-                                                    documentation covering every
-                                                    aspect of the framework.
-                                                    Whether you are a newcomer
-                                                    or have prior experience
-                                                    with Laravel, we recommend
-                                                    reading our documentation
-                                                    from beginning to end.
-                                                </p>
-                                            </div>
+            {/* 3. TENTANG QLC */}
+            <section id="tentang" className="py-24 relative bg-[#FDFBF7] border-t border-b border-[#F0ECE1]">
+                {/* Background gradient tetap aman karena sangat ringan */}
+                <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-[#f4f1e1]/50 to-transparent"></div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    {/* OPTIMASI 1: Menghapus glassClass (backdrop-blur) dan menggantinya dengan bg-white/95. 
+            Mengurangi shadow-xl menjadi shadow-md agar rendering GPU lebih santai. */}
+                    <div className="bg-white/95 rounded-[3rem] p-8 md:p-14 shadow-md border border-white/60 transition-shadow duration-300 hover:shadow-lg">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                            <div className="relative group">
+                                {/* OPTIMASI 2: Efek hover translation tetap ada, tapi kita pastikan efisien */}
+                                <div className="absolute inset-0 bg-[#D4A017]/20 rounded-[2.5rem] transform translate-x-4 translate-y-4 group-hover:translate-x-3 group-hover:translate-y-3 transition-transform duration-500 ease-out"></div>
+
+                                {/* OPTIMASI 3: Shadow pada gambar diturunkan sedikit intensitasnya */}
+                                <img src="/image/landing/1 (1).png" alt="Tentang QLC" className="relative z-10 w-full h-auto rounded-[2.5rem] shadow-sm object-cover" />
+                            </div>
+
+                            <div className="reveal opacity-0 translate-y-8" style={{ transitionDelay: '0.2s' }}>
+                                <span className="text-[#D4A017] font-bold text-sm tracking-widest uppercase mb-2 block">Mengenal Kami</span>
+                                <h2 className="text-3xl md:text-4xl font-extrabold mb-6 text-gray-900 leading-tight">Tentang QLC</h2>
+                                <div className="w-20 h-1.5 bg-gradient-to-r from-[#1B6B3A] to-[#34ad62] rounded-full mb-8"></div>
+
+                                <p className="text-gray-600 text-lg leading-relaxed mb-8 text-justify">
+                                    Menjawab kerinduan dan tingginya antusiasme umat untuk kembali kepada Al-Qur'an, <strong className="text-[#1B6B3A]">Qur’anic Leadership Centre (QLC)</strong> hadir
+                                    memberikan bimbingan pengajaran secara komprehensif. Kami membina santri tidak hanya untuk menghafal, tetapi juga memahami (terjemah), merenungi (tadabur), dan
+                                    mengaplikasikan nilai-nilai Al-Qur'an.
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-6 mt-8">
+                                    {/* Efek hover background pada kotak kecil ini sudah ringan, aman untuk dipertahankan */}
+                                    <div className="bg-gradient-to-br from-[#1B6B3A]/5 to-transparent p-6 rounded-3xl border border-[#1B6B3A]/10 flex flex-col items-center text-center hover:bg-[#1B6B3A]/5 transition-colors duration-300">
+                                        <div className="w-12 h-12 rounded-full bg-[#1B6B3A]/10 flex items-center justify-center mb-3">
+                                            <span className="text-2xl">🕌</span>
                                         </div>
-
-                                        <svg
-                                            className="size-6 shrink-0 stroke-[#FF2D20]"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                            />
-                                        </svg>
-                                    </div>
-                                </a>
-
-                                <a
-                                    href="https://laracasts.com"
-                                    className="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                                >
-                                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
-                                        <svg
-                                            className="size-5 sm:size-6"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <g fill="#FF2D20">
-                                                <path d="M24 8.25a.5.5 0 0 0-.5-.5H.5a.5.5 0 0 0-.5.5v12a2.5 2.5 0 0 0 2.5 2.5h19a2.5 2.5 0 0 0 2.5-2.5v-12Zm-7.765 5.868a1.221 1.221 0 0 1 0 2.264l-6.626 2.776A1.153 1.153 0 0 1 8 18.123v-5.746a1.151 1.151 0 0 1 1.609-1.035l6.626 2.776ZM19.564 1.677a.25.25 0 0 0-.177-.427H15.6a.106.106 0 0 0-.072.03l-4.54 4.543a.25.25 0 0 0 .177.427h3.783c.027 0 .054-.01.073-.03l4.543-4.543ZM22.071 1.318a.047.047 0 0 0-.045.013l-4.492 4.492a.249.249 0 0 0 .038.385.25.25 0 0 0 .14.042h5.784a.5.5 0 0 0 .5-.5v-2a2.5 2.5 0 0 0-1.925-2.432ZM13.014 1.677a.25.25 0 0 0-.178-.427H9.101a.106.106 0 0 0-.073.03l-4.54 4.543a.25.25 0 0 0 .177.427H8.4a.106.106 0 0 0 .073-.03l4.54-4.543ZM6.513 1.677a.25.25 0 0 0-.177-.427H2.5A2.5 2.5 0 0 0 0 3.75v2a.5.5 0 0 0 .5.5h1.4a.106.106 0 0 0 .073-.03l4.54-4.543Z" />
-                                            </g>
-                                        </svg>
+                                        <span className="text-lg font-bold text-gray-900">21 Juni 2016</span>
+                                        <span className="text-sm text-gray-500 mt-1 font-medium">Berdiri di Bekasi</span>
                                     </div>
 
-                                    <div className="pt-3 sm:pt-5">
-                                        <h2 className="text-xl font-semibold text-black dark:text-white">
-                                            Laracasts
-                                        </h2>
-
-                                        <p className="mt-4 text-sm/relaxed">
-                                            Laracasts offers thousands of video
-                                            tutorials on Laravel, PHP, and
-                                            JavaScript development. Check them
-                                            out, see for yourself, and massively
-                                            level up your development skills in
-                                            the process.
-                                        </p>
-                                    </div>
-
-                                    <svg
-                                        className="size-6 shrink-0 self-center stroke-[#FF2D20]"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth="1.5"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                        />
-                                    </svg>
-                                </a>
-
-                                <a
-                                    href="https://laravel-news.com"
-                                    className="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                                >
-                                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
-                                        <svg
-                                            className="size-5 sm:size-6"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <g fill="#FF2D20">
-                                                <path d="M8.75 4.5H5.5c-.69 0-1.25.56-1.25 1.25v4.75c0 .69.56 1.25 1.25 1.25h3.25c.69 0 1.25-.56 1.25-1.25V5.75c0-.69-.56-1.25-1.25-1.25Z" />
-                                                <path d="M24 10a3 3 0 0 0-3-3h-2V2.5a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2V20a3.5 3.5 0 0 0 3.5 3.5h17A3.5 3.5 0 0 0 24 20V10ZM3.5 21.5A1.5 1.5 0 0 1 2 20V3a.5.5 0 0 1 .5-.5h14a.5.5 0 0 1 .5.5v17c0 .295.037.588.11.874a.5.5 0 0 1-.484.625L3.5 21.5ZM22 20a1.5 1.5 0 1 1-3 0V9.5a.5.5 0 0 1 .5-.5H21a1 1 0 0 1 1 1v10Z" />
-                                                <path d="M12.751 6.047h2a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-2A.75.75 0 0 1 12 7.3v-.5a.75.75 0 0 1 .751-.753ZM12.751 10.047h2a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-2A.75.75 0 0 1 12 11.3v-.5a.75.75 0 0 1 .751-.753ZM4.751 14.047h10a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-10A.75.75 0 0 1 4 15.3v-.5a.75.75 0 0 1 .751-.753ZM4.75 18.047h7.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-7.5A.75.75 0 0 1 4 19.3v-.5a.75.75 0 0 1 .75-.753Z" />
-                                            </g>
-                                        </svg>
-                                    </div>
-
-                                    <div className="pt-3 sm:pt-5">
-                                        <h2 className="text-xl font-semibold text-black dark:text-white">
-                                            Laravel News
-                                        </h2>
-
-                                        <p className="mt-4 text-sm/relaxed">
-                                            Laravel News is a community driven
-                                            portal and newsletter aggregating
-                                            all of the latest and most important
-                                            news in the Laravel ecosystem,
-                                            including new package releases and
-                                            tutorials.
-                                        </p>
-                                    </div>
-
-                                    <svg
-                                        className="size-6 shrink-0 self-center stroke-[#FF2D20]"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth="1.5"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                        />
-                                    </svg>
-                                </a>
-
-                                <div className="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800">
-                                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
-                                        <svg
-                                            className="size-5 sm:size-6"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <g fill="#FF2D20">
-                                                <path d="M16.597 12.635a.247.247 0 0 0-.08-.237 2.234 2.234 0 0 1-.769-1.68c.001-.195.03-.39.084-.578a.25.25 0 0 0-.09-.267 8.8 8.8 0 0 0-4.826-1.66.25.25 0 0 0-.268.181 2.5 2.5 0 0 1-2.4 1.824.045.045 0 0 0-.045.037 12.255 12.255 0 0 0-.093 3.86.251.251 0 0 0 .208.214c2.22.366 4.367 1.08 6.362 2.118a.252.252 0 0 0 .32-.079 10.09 10.09 0 0 0 1.597-3.733ZM13.616 17.968a.25.25 0 0 0-.063-.407A19.697 19.697 0 0 0 8.91 15.98a.25.25 0 0 0-.287.325c.151.455.334.898.548 1.328.437.827.981 1.594 1.619 2.28a.249.249 0 0 0 .32.044 29.13 29.13 0 0 0 2.506-1.99ZM6.303 14.105a.25.25 0 0 0 .265-.274 13.048 13.048 0 0 1 .205-4.045.062.062 0 0 0-.022-.07 2.5 2.5 0 0 1-.777-.982.25.25 0 0 0-.271-.149 11 11 0 0 0-5.6 2.815.255.255 0 0 0-.075.163c-.008.135-.02.27-.02.406.002.8.084 1.598.246 2.381a.25.25 0 0 0 .303.193 19.924 19.924 0 0 1 5.746-.438ZM9.228 20.914a.25.25 0 0 0 .1-.393 11.53 11.53 0 0 1-1.5-2.22 12.238 12.238 0 0 1-.91-2.465.248.248 0 0 0-.22-.187 18.876 18.876 0 0 0-5.69.33.249.249 0 0 0-.179.336c.838 2.142 2.272 4 4.132 5.353a.254.254 0 0 0 .15.048c1.41-.01 2.807-.282 4.117-.802ZM18.93 12.957l-.005-.008a.25.25 0 0 0-.268-.082 2.21 2.21 0 0 1-.41.081.25.25 0 0 0-.217.2c-.582 2.66-2.127 5.35-5.75 7.843a.248.248 0 0 0-.09.299.25.25 0 0 0 .065.091 28.703 28.703 0 0 0 2.662 2.12.246.246 0 0 0 .209.037c2.579-.701 4.85-2.242 6.456-4.378a.25.25 0 0 0 .048-.189 13.51 13.51 0 0 0-2.7-6.014ZM5.702 7.058a.254.254 0 0 0 .2-.165A2.488 2.488 0 0 1 7.98 5.245a.093.093 0 0 0 .078-.062 19.734 19.734 0 0 1 3.055-4.74.25.25 0 0 0-.21-.41 12.009 12.009 0 0 0-10.4 8.558.25.25 0 0 0 .373.281 12.912 12.912 0 0 1 4.826-1.814ZM10.773 22.052a.25.25 0 0 0-.28-.046c-.758.356-1.55.635-2.365.833a.25.25 0 0 0-.022.48c1.252.43 2.568.65 3.893.65.1 0 .2 0 .3-.008a.25.25 0 0 0 .147-.444c-.526-.424-1.1-.917-1.673-1.465ZM18.744 8.436a.249.249 0 0 0 .15.228 2.246 2.246 0 0 1 1.352 2.054c0 .337-.08.67-.23.972a.25.25 0 0 0 .042.28l.007.009a15.016 15.016 0 0 1 2.52 4.6.25.25 0 0 0 .37.132.25.25 0 0 0 .096-.114c.623-1.464.944-3.039.945-4.63a12.005 12.005 0 0 0-5.78-10.258.25.25 0 0 0-.373.274c.547 2.109.85 4.274.901 6.453ZM9.61 5.38a.25.25 0 0 0 .08.31c.34.24.616.561.8.935a.25.25 0 0 0 .3.127.631.631 0 0 1 .206-.034c2.054.078 4.036.772 5.69 1.991a.251.251 0 0 0 .267.024c.046-.024.093-.047.141-.067a.25.25 0 0 0 .151-.23A29.98 29.98 0 0 0 15.957.764a.25.25 0 0 0-.16-.164 11.924 11.924 0 0 0-2.21-.518.252.252 0 0 0-.215.076A22.456 22.456 0 0 0 9.61 5.38Z" />
-                                            </g>
-                                        </svg>
-                                    </div>
-
-                                    <div className="pt-3 sm:pt-5">
-                                        <h2 className="text-xl font-semibold text-black dark:text-white">
-                                            Vibrant Ecosystem
-                                        </h2>
-
-                                        <p className="mt-4 text-sm/relaxed">
-                                            Laravel's robust library of
-                                            first-party tools and libraries,
-                                            such as{" "}
-                                            <a
-                                                href="https://forge.laravel.com"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white dark:focus-visible:ring-[#FF2D20]"
-                                            >
-                                                Forge
-                                            </a>
-                                            ,{" "}
-                                            <a
-                                                href="https://vapor.laravel.com"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Vapor
-                                            </a>
-                                            ,{" "}
-                                            <a
-                                                href="https://nova.laravel.com"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Nova
-                                            </a>
-                                            ,{" "}
-                                            <a
-                                                href="https://envoyer.io"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Envoyer
-                                            </a>
-                                            , and{" "}
-                                            <a
-                                                href="https://herd.laravel.com"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Herd
-                                            </a>{" "}
-                                            help you take your projects to the
-                                            next level. Pair them with powerful
-                                            open source libraries like{" "}
-                                            <a
-                                                href="https://laravel.com/docs/billing"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Cashier
-                                            </a>
-                                            ,{" "}
-                                            <a
-                                                href="https://laravel.com/docs/dusk"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Dusk
-                                            </a>
-                                            ,{" "}
-                                            <a
-                                                href="https://laravel.com/docs/broadcasting"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Echo
-                                            </a>
-                                            ,{" "}
-                                            <a
-                                                href="https://laravel.com/docs/horizon"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Horizon
-                                            </a>
-                                            ,{" "}
-                                            <a
-                                                href="https://laravel.com/docs/sanctum"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Sanctum
-                                            </a>
-                                            ,{" "}
-                                            <a
-                                                href="https://laravel.com/docs/telescope"
-                                                className="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                            >
-                                                Telescope
-                                            </a>
-                                            , and more.
-                                        </p>
+                                    <div className="bg-gradient-to-br from-[#D4A017]/5 to-transparent p-6 rounded-3xl border border-[#D4A017]/10 flex flex-col items-center text-center hover:bg-[#D4A017]/5 transition-colors duration-300">
+                                        <div className="w-12 h-12 rounded-full bg-[#D4A017]/10 flex items-center justify-center mb-3">
+                                            <span className="text-2xl">📖</span>
+                                        </div>
+                                        <span className="text-lg font-bold text-gray-900">Fokus Utama</span>
+                                        <span className="text-sm text-gray-500 mt-1 font-medium">Pengembangan SDM</span>
                                     </div>
                                 </div>
                             </div>
-                        </main>
-
-                        <footer className="py-16 text-center text-sm text-black dark:text-white/70">
-                            Laravel v{laravelVersion} (PHP v{phpVersion})
-                        </footer>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </>
+            </section>
+            {/* 4. PENDIRI & PENGURUS */}
+            {/* 4. PENDIRI QLC */}
+            <section id="pendiri" className="py-24 bg-[#1B6B3A] text-white relative overflow-hidden">
+                {/* OPTIMASI 1: Ganti blur-3xl dengan radial-gradient yang sangat ringan di-render */}
+                <div className="absolute top-0 left-0 -mt-20 -ml-20 w-80 h-80 bg-[radial-gradient(circle,rgba(52,173,98,0.3)_0%,transparent_70%)] rounded-full z-0"></div>
+                <div className="absolute bottom-0 right-0 -mb-20 -mr-20 w-80 h-80 bg-[radial-gradient(circle,rgba(212,160,23,0.2)_0%,transparent_70%)] rounded-full z-0"></div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="text-center mb-20 reveal opacity-0 translate-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+                        {/* OPTIMASI 2: Hapus backdrop-blur-sm, ganti dengan warna background sedikit lebih terang (bg-white/15) */}
+                        <span className="inline-block py-2 px-5 rounded-full bg-white/15 border border-white/20 shadow-sm text-gray-100 text-sm font-bold tracking-wider mb-4">
+                            👥 PEMIMPIN LEMBAGA
+                        </span>
+                        <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4">
+                            Pendiri <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4A017] to-[#F0B429]">QLC</span>
+                        </h2>
+                        <p className="text-lg text-gray-200 max-w-2xl mx-auto">Dibalik lahirnya Quantum Learning Center, terdapat tokoh-tokoh berdedikasi tinggi untuk mencetak generasi Rabbani.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-y-20 md:gap-x-8 md:gap-y-8">
+                        {[
+                            {
+                                nama: "Ainun Na'im Al-Hafidh",
+                                jabatan: "Ketua Yayasan Pejuang Qur'an Indonesia",
+                                poin: ["Hafidh Qur'an 30 Juz Bersanad", "Master Trainer Metode Yanbu'a"],
+                                shadow: 'hover:shadow-red-500/20',
+                            },
+                            {
+                                nama: 'Mushadi Sumaryanto',
+                                jabatan: 'Direktur Program QLC',
+                                poin: ['Hafidh 30 Juz 42 Hari Ziyadah', 'Master Trainer Metode Tamasya'],
+                                shadow: 'hover:shadow-orange-500/20',
+                            },
+                            {
+                                nama: 'K.H. Supriyatno, M.Pd.I',
+                                jabatan: 'General Manager QLC',
+                                poin: ['Dosen', 'Konsultan Lembaga Pendidikan', "Da'i dan Motivator"],
+                                shadow: 'hover:shadow-green-500/20',
+                            },
+                        ].map((dewan, idx) => (
+                            <div
+                                key={idx}
+                                // OPTIMASI 3: Hapus backdrop-blur-xl dan turunkan hover:shadow-2xl menjadi hover:shadow-xl
+                                className={`reveal opacity-0 translate-y-8 bg-white/10 border border-white/10 rounded-[2.5rem] p-8 pt-20 relative flex flex-col hover:-translate-y-3 transition-all duration-300 group ${dewan.shadow} hover:shadow-xl hover:border-white/30 animate-in fade-in slide-in-from-bottom-10`}
+                                style={{ transitionDelay: `${idx * 0.15}s`, animationFillMode: 'both' }}
+                            >
+                                <div className="absolute -top-16 left-1/2 transform -translate-x-1/2">
+                                    <div className="relative w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-100 overflow-hidden flex justify-center items-center group-hover:scale-105 transition-transform duration-500">
+                                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                                        <img src={`/image/landing/1 (${idx + 2}).png`} alt={dewan.nama} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-[#D4A017] to-[#F0B429] rounded-full border-4 border-[#1B6B3A] flex items-center justify-center shadow-md z-10">
+                                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.35.35l2.13 3.13c.2.2.4.4.6.5l3.13 2.13a1 1 0 001.03-.03l3.13-2.13c.2-.1.4-.3.6-.5l2.13-3.13a.999.999 0 01.35-.35l2.644-1.131a1 1 0 000-1.84l-7-3z"></path>
+                                            <path d="M11.764 11.881l-2.096 1.428-2.096-1.428c-.1-.0-.1-.1-.1-.1l-1.428-2.096a1 1 0 00-1.84-.1L1.1 11.764a1 1 0 000 1.03l2.096 2.096c.1.1.3.1.5.1h13.2a1 1 0 00.5-.1l2.096-2.096a1 1 0 000-1.03l-1.428-2.096a1 1 0 00-1.84.1l-1.428 2.096s-.1.1-.1.1z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div className="text-center mb-6 pb-6 border-b border-white/10 flex-1 mt-3">
+                                    <h3 className="text-xl font-extrabold text-white mb-1.5 drop-shadow-sm">{dewan.nama}</h3>
+                                    <p className="text-sm font-semibold text-gray-200 bg-white/5 inline-block px-3 py-1 rounded-full border border-white/10">{dewan.jabatan}</p>
+                                </div>
+                                <ul className="text-sm text-gray-100 space-y-3 lg:space-y-4 px-1">
+                                    {dewan.poin.map((p, i) => (
+                                        <li key={i} className="flex items-start">
+                                            <svg
+                                                className="w-5 h-5 text-[#D4A017] mr-3 mt-0.5 flex-shrink-0 group-hover:scale-110 transition-transform"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            <span className="leading-snug font-medium text-gray-100">{p}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-20 text-center reveal opacity-0 translate-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000" style={{ transitionDelay: '0.5s' }}>
+                        <button
+                            onClick={() => router.get('/pengurus')}
+                            className="bg-white text-[#1B6B3A] hover:bg-gray-100 hover:scale-105 border-2 border-white px-9 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-xl flex items-center gap-2 mx-auto"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Lihat Detail Pendiri QLC
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            {/* 5. VISI & MISI */}
+            <section id="visi-misi" className="py-24 bg-white relative overflow-hidden">
+                {/* OPTIMASI 4: Hapus background blur-3xl berukuran besar yang sangat memberatkan rendering */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[600px] bg-[radial-gradient(ellipse,rgba(27,107,58,0.06)_0%,rgba(212,160,23,0.06)_50%,transparent_70%)] rounded-full z-0"></div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                        {/* OPTIMASI 5: Hapus glassClass (karena mengandung backdrop-blur-xl) pada Visi */}
+                        <div
+                            className={`reveal opacity-0 translate-y-8 lg:col-span-5 rounded-[3rem] p-10 md:p-14 bg-gradient-to-br from-[#114a27] to-[#1B6B3A] text-white shadow-xl relative overflow-hidden`}
+                        >
+                            <div className="absolute -right-10 -bottom-10 opacity-10">
+                                <svg width="200" height="200" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zm0 7l-10 5 10 5 10-5-10-5z" />
+                                </svg>
+                            </div>
+                            {/* OPTIMASI 6: Hapus backdrop-blur pada icon wrapper */}
+                            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-10 border border-white/20">
+                                <svg className="w-8 h-8 text-[#F0B429]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                    ></path>
+                                </svg>
+                            </div>
+                            <h2 className="text-3xl font-bold mb-6 text-[#F0B429] tracking-wide">VISI KAMI</h2>
+                            <p className="text-2xl leading-relaxed font-light italic text-white/95">
+                                "Menjadi salah satu LEMBAGA PENDIDIKAN QUR'AN UNGGULAN yang mencetak para PEMIMPIN / LEADER berdasarkan Al Qur'an dan Sunnah."
+                            </p>
+                        </div>
+
+                        {/* OPTIMASI 7: Hapus backdrop-blur-md dan ubah transparansi pada Misi menjadi background putih padat (bg-white/95) */}
+                        <div className={`reveal opacity-0 translate-y-8 lg:col-span-7 bg-white/95 border border-gray-100 shadow-xl rounded-[3rem] p-10 md:p-14`} style={{ transitionDelay: '0.2s' }}>
+                            <h2 className="text-3xl font-bold mb-10 text-gray-900 border-b pb-4">MISI KAMI</h2>
+                            <ul className="space-y-6">
+                                {[
+                                    'Mencetak pribadi yang KOKOH/KUAT Aqidahnya.',
+                                    'Mencetak pribadi yang TAAT Menjalankan perintah Allah SWT dan beribadah sesuai dengan tuntunan Rasulullah SAW.',
+                                    'Mencetak pribadi yang sehat jiwa, raga dan muamalahnya.',
+                                    'Mencetak pribadi yang mengikuti teladan orang-orang HEBAT dari Zaman Rasulullah SAW, Sahabat, Tabiin, Tabiut Tabiin dan Ilmuan Islam.',
+                                    'Mencetak pribadi yang BERMANFAAT bagi orang lain.',
+                                ].map((misi, idx) => (
+                                    <li key={idx} className="flex items-start space-x-5 group">
+                                        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gray-100 group-hover:bg-[#D4A017] group-hover:text-white text-[#1B6B3A] flex items-center justify-center font-bold text-base transition-colors duration-300 shadow-sm border border-gray-200 group-hover:border-[#D4A017]">
+                                            {idx + 1}
+                                        </div>
+                                        <span className="text-gray-700 leading-relaxed text-lg font-medium pt-1.5">{misi}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            {/* 6. PILAR INTI */}
+            <section id="pilar" className="py-24 bg-gradient-to-b from-[#f0f7f6] to-[#ffffff]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16 reveal opacity-0 translate-y-8">
+                        <span className="text-[#34ad62] font-bold text-sm tracking-widest uppercase mb-2 block">Fondasi Karakter</span>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">5 Pilar Inti Realisasi Konsep</h2>
+                        <p className="text-gray-600 text-lg">Membentuk Pribadi Muslim Kaaffah yang Paripurna</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 justify-center">
+                        {[
+                            { title: 'PRIBADI KUAT', desc: 'Kuat secara AQIDAH Islamiyah mencakup keimanan kepada rukun iman.', color: 'from-rose-500 to-red-600', shadow: 'shadow-red-500/20' },
+                            {
+                                title: 'PRIBADI TAAT',
+                                desc: 'Taat menjalankan SYARIAT Islam melingkupi pengamalan 5 Rukun Islam.',
+                                color: 'from-amber-500 to-orange-500',
+                                shadow: 'shadow-orange-500/20',
+                            },
+                            { title: 'PRIBADI SEHAT', desc: 'Sehat secara Jiwa (Ruhiyah), Jasadiyah, Aqliyah, dan Muamalah.', color: 'from-emerald-500 to-green-600', shadow: 'shadow-green-500/20' },
+                            { title: 'PRIBADI HEBAT', desc: 'Mendalami sejarah dan mengambil teladan dari para Nabi dan Ulama.', color: 'from-blue-500 to-indigo-600', shadow: 'shadow-blue-500/20' },
+                            {
+                                title: 'PRIBADI MANFAAT',
+                                desc: 'Menggali potensi anak sesuai fitrahnya untuk mengejar cita-cita.',
+                                color: 'from-purple-500 to-fuchsia-600',
+                                shadow: 'shadow-purple-500/20',
+                            },
+                        ].map((pilar, idx) => (
+                            <div
+                                key={idx}
+                                className={`reveal opacity-0 translate-y-8 bg-white border border-gray-100 hover:border-transparent hover:shadow-xl transition-all duration-300 rounded-[2.5rem] p-8 flex flex-col ${idx === 3 ? 'lg:col-start-1 lg:ml-auto lg:w-full' : ''} ${idx === 4 ? 'lg:col-start-2 lg:mr-auto lg:w-full' : ''}`}
+                                style={{ transitionDelay: `${idx * 0.1}s` }}
+                            >
+                                <div
+                                    className={`w-14 h-14 bg-gradient-to-br ${pilar.color} rounded-2xl flex items-center justify-center text-white font-extrabold text-xl mb-6 shadow-lg ${pilar.shadow}`}
+                                >
+                                    {idx + 1}
+                                </div>
+                                <h3 className="text-xl font-extrabold text-gray-900 mb-3 tracking-tight">{pilar.title}</h3>
+                                <p className="text-base text-gray-600 leading-relaxed flex-1">{pilar.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* 7. PROGRAM PENDIDIKAN */}
+            <section id="program" className="py-24 bg-[#FAFAFA] border-t border-gray-200/50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16 reveal opacity-0 translate-y-8">
+                        <span className="inline-block py-2 px-5 rounded-full bg-white border border-gray-200 shadow-sm text-[#1B6B3A] text-sm font-bold tracking-wider mb-4">
+                            📚 EDUKASI BERKELANJUTAN
+                        </span>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
+                            Program Layanan <span className="text-[#D4A017]">QLC</span>
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+                        {[
+                            { slug: 'ql-school', title: 'QL - SCHOOL', desc: "Program pendidikan berkesinambungan terpadu berbasis Al-Qur'an." },
+                            { slug: 'ql-tft', title: 'QL - TFT', desc: 'Training for Trainers. Pelatihan intensif mencetak instruktur.' },
+                            { slug: 'ql-parenting', title: 'QL - PARENTING', desc: 'Bimbingan untuk orang tua dalam mendidik anak sesuai fitrah.' },
+                            { slug: 'ql-kids', title: 'QL - KIDS', desc: 'Edukasi penanaman nilai tauhid dasar untuk usia dini.' },
+                            { slug: 'ql-teens', title: 'QL - TEENS', desc: 'Pembinaan karakter & kepemimpinan remaja.' },
+                            { slug: 'ql-teacher', title: 'QL - TEACHER', desc: 'Pengembangan kapasitas profesionalisme guru.' },
+                        ].map((prog, idx) => (
+                            <div
+                                key={idx}
+                                className={`reveal opacity-0 translate-y-8 bg-white border border-gray-200/60 shadow-md hover:shadow-2xl transition-all duration-300 rounded-[2.5rem] overflow-hidden flex flex-col group`}
+                                style={{ transitionDelay: `${idx * 0.1}s` }}
+                            >
+                                <div className="h-48 overflow-hidden relative">
+                                    <div className="absolute inset-0 bg-[#1B6B3A]/10 group-hover:bg-transparent transition-colors z-10"></div>
+                                    <img
+                                        src={`/image/landing/1 (${idx + 5 <= 9 ? idx + 5 : 9}).png`}
+                                        alt={prog.title}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                    />
+                                </div>
+                                <div className="p-8 flex-1 flex flex-col bg-white">
+                                    <h3 className="text-xl font-extrabold text-gray-900 mb-3 group-hover:text-[#1B6B3A] transition-colors">{prog.title}</h3>
+                                    <p className="text-gray-600 text-base mb-8 flex-1 leading-relaxed">{prog.desc}</p>
+                                    {/* Rute Hardcoded ke /program-detail */}
+                                    <button
+                                        onClick={() => router.get('/program-detail')}
+                                        className="w-full py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-[#1B6B3A] font-bold hover:bg-[#1B6B3A] hover:text-white hover:border-[#1B6B3A] transition-all shadow-sm text-sm"
+                                    >
+                                        Lihat Detail
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* 8. GALERI */}
+            <section id="galeri" className="py-20 relative">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16 reveal opacity-0 translate-y-8">
+                        <span className="inline-block py-2 px-5 rounded-full bg-white/60 border border-white shadow-sm text-[#1B6B3A] text-sm font-bold tracking-wider mb-4 backdrop-blur-md">
+                            📸 DOKUMENTASI
+                        </span>
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                            Galeri Kegiatan <span className="text-[#D4A017]">QLC</span>
+                        </h2>
+                        <p className="text-gray-600 max-w-2xl mx-auto">Momen-momen berharga santri dalam kegiatan belajar, menghafal, dan aktivitas pembentukan karakter.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 auto-rows-[250px] gap-4 md:gap-6">
+                        {/* Item 1 */}
+                        <div
+                            className={`reveal opacity-0 translate-y-8 md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-[2rem] shadow-sm cursor-pointer border border-white/50 bg-gray-100`}
+                            style={{ transitionDelay: '0.1s' }}
+                        >
+                            <img src="/image/landing/1 (6).png" alt="Halaqah Pagi" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#1B6B3A]/95 via-[#1B6B3A]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
+                                <span className="text-[#D4A017] font-bold text-sm tracking-wider mb-1 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                    KBM UTAMA
+                                </span>
+                                <h3 className="text-white font-bold text-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 delay-75">Halaqah Tahfidz Pagi</h3>
+                            </div>
+                        </div>
+
+                        {/* Item 2 */}
+                        <div
+                            className={`reveal opacity-0 translate-y-8 md:col-span-1 md:row-span-1 group relative overflow-hidden rounded-[2rem] shadow-sm cursor-pointer border border-white/50 bg-gray-100`}
+                            style={{ transitionDelay: '0.2s' }}
+                        >
+                            <img src="/image/landing/1 (3).png" alt="Ujian Tahfidz" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#1B6B3A]/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                                <h3 className="text-white font-bold text-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">Ujian Sertifikasi</h3>
+                            </div>
+                        </div>
+
+                        {/* Item 3 */}
+                        <div
+                            className={`reveal opacity-0 translate-y-8 md:col-span-1 md:row-span-2 group relative overflow-hidden rounded-[2rem] shadow-sm cursor-pointer border border-white/50 bg-gray-100`}
+                            style={{ transitionDelay: '0.3s' }}
+                        >
+                            <img src="/image/landing/1 (4).png" alt="Kajian Rutin" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#1B6B3A]/95 via-[#1B6B3A]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                                <span className="text-[#D4A017] font-bold text-xs tracking-wider mb-1 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                    KEAGAMAAN
+                                </span>
+                                <h3 className="text-white font-bold text-xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 delay-75">Kajian & Mabit</h3>
+                            </div>
+                        </div>
+
+                        {/* Item 4 */}
+                        <div
+                            className={`reveal opacity-0 translate-y-8 md:col-span-1 md:row-span-1 group relative overflow-hidden rounded-[2rem] shadow-sm cursor-pointer border border-white/50 bg-gray-100`}
+                            style={{ transitionDelay: '0.4s' }}
+                        >
+                            <img src="/image/landing/1 (5).png" alt="Outbound Santri" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#1B6B3A]/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                                <h3 className="text-white font-bold text-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">Outbound Santri</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="text-center mt-12 reveal opacity-0 translate-y-8">
+                        {/* Rute Hardcoded ke /galeri */}
+                        <button
+                            onClick={() => router.get('/galeri')}
+                            className="bg-white border border-gray-200 text-gray-700 hover:border-[#1B6B3A] hover:text-[#1B6B3A] px-8 py-3.5 rounded-full font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                        >
+                            Lihat Semua Galeri
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <Footer />
+        </div>
     );
-}
+};
+
+export default LandingPage;
