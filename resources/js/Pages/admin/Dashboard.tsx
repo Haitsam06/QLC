@@ -1,925 +1,728 @@
 import { useState, useEffect } from "react";
-import { router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import type { PageProps } from "@/types";
+import axios from "axios";
 import {
   LayoutDashboard, BookOpen, Users, CalendarDays,
-  CreditCard, Bell, MessageSquare, Settings, LogOut,
-  ChevronLeft, ChevronRight, Plus, Search, GraduationCap,
-  CheckCircle2, AlertCircle, Clock, TrendingUp,
-  Award, Star, X, Menu, FileText, ShieldUser,
-  BookOpenCheck, Info,
-  Badge,
-  Handshake,
+  Bell, Settings, LogOut, ChevronLeft, ChevronRight,
+  GraduationCap, CheckCircle2, Clock, TrendingUp,
+  Award, Star, Menu, FileText, ShieldUser,
+  Info, Handshake, ArrowUpRight, ArrowRight, UserPlus,
+  Search, Loader2
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
-import GuruPage from "./GuruPage";
-import MitraPage from "./MitraPage";
-import WaliMuridPage from "./WalimuridPage";
-import SiswaPage from "./SiswaPage";
-import InfoPage from "./InfoPage";
-import AgendaPage from "./AgendaPage";
-import ProgressPage from "./ProgressPage";
+
+import GuruPage       from "./GuruPage";
+import MitraPage      from "./MitraPage";
+import WaliMuridPage  from "./WalimuridPage";
+import SiswaPage      from "./SiswaPage";
+import InfoPage       from "./InfoPage";
+import AgendaPage     from "./AgendaPage";
+import ProgressPage   from "./ProgressPage";
 import PengaturanPage from "./PengaturanPage";
 
 /* ═══════════════════════════════════════════════
-   STYLES — injected as a <style> tag
+   TYPES
+═══════════════════════════════════════════════ */
+interface DashStats {
+  total_siswa:   number;
+  total_pending: number;
+  total_guru:    number;
+  total_program: number;
+  total_mitra:   number;
+}
+
+interface ChartPoint   { name: string; pendaftar: number; }
+interface AgendaItem   { id: string; title: string; date: string; type: string; }
+interface PendingItem  { id: string; nama: string; prog: string; date: string; }
+interface ReportItem   { id: string; student_id: string; nama: string; capaian: string; report_type: string | null; kualitas: string | null; }
+
+/* ═══════════════════════════════════════════════
+   STYLES
 ═══════════════════════════════════════════════ */
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-button { cursor: pointer; font-family: inherit; border: none; }
-input  { font-family: inherit; outline: none; border: none; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+input  { font-family: inherit; outline: none; border: none; background: none; }
 
 :root {
-  --green:        #0f766e;
-  --green-mid:    #14b8a6;
-  --green-light:  #ccfbf1;
-  --blue:         #2563eb;
-  --blue-light:   #dbeafe;
-  --gold:         #d4a017;
-  --gold-light:   #fef9c3;
-  --red:          #dc2626;
-  --red-light:    #fee2e2;
-
-  --sidebar-bg:   #0f766e;
-  --sw:           238px;
-  --sw-col:       68px;
-  --gap:          14px;
-  --tbh:          60px;
-  --pad:          18px;
-
-  --text:         #1e293b;
-  --text-2:       #475569;
-  --text-3:       #94a3b8;
-
-  --card:         rgba(255,255,255,0.7);
-  --card-b:       rgba(255,255,255,0.92);
-  --card-sh:      0 2px 20px rgba(15,118,110,0.08), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,1);
-
-  font-family: 'Plus Jakarta Sans', 'Nunito', sans-serif;
+  --green:       #0f766e;
+  --green-mid:   #14b8a6;
+  --green-light: #ccfbf1;
+  --blue:        #2563eb;
+  --blue-light:  #dbeafe;
+  --gold:        #d4a017;
+  --red:         #dc2626;
+  --bg:          #f1f5f9;
+  --text:        #0f172a;
+  --text2:       #475569;
+  --text3:       #94a3b8;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* ── Root ── */
-.root {
-  min-height: 100vh;
-  background: linear-gradient(150deg, #f0fdf9 0%, #eff6ff 40%, #fefce8 75%, #f0fdf9 100%);
-  position: relative;
-  overflow-x: hidden;
+.layout {
+  display: flex; min-height: 100vh; background: var(--bg);
+  position: relative; overflow: hidden;
 }
 
-/* ambient blobs */
-.blob { position:fixed; border-radius:50%; filter:blur(80px); pointer-events:none; z-index:0; }
-.b1   { width:480px; height:480px; top:-100px; left:5%;  background:rgba(15,118,110,0.11); }
-.b2   { width:320px; height:320px; bottom:0;   right:5%; background:rgba(37,99,235,0.08); }
-.b3   { width:280px; height:280px; top:45%;    left:45%; background:rgba(212,160,23,0.07); }
+.bg-decor { position: fixed; border-radius: 50%; filter: blur(80px); z-index: 0; opacity: 0.4; pointer-events: none; }
+.dec-1 { width: 400px; height: 400px; background: var(--green-light); top: -100px; left: -100px; }
+.dec-2 { width: 500px; height: 500px; background: var(--blue-light); bottom: -150px; right: -100px; }
+.dec-3 { width: 300px; height: 300px; background: #fef08a; top: 40%; left: 30%; opacity: 0.2; }
 
-/* ══════════════════════════════════════════════
-   SIDEBAR
-══════════════════════════════════════════════ */
+/* ── SIDEBAR ── */
 .sb {
-  position:fixed; left:var(--gap); top:var(--gap); bottom:var(--gap);
-  z-index:100; display:flex; flex-direction:column;
-  padding:22px 10px 18px;
-  background:var(--sidebar-bg);
-  border-radius:22px;
-  box-shadow:0 16px 48px rgba(15,118,110,0.38), 0 2px 8px rgba(15,118,110,0.2), inset 1px 0 0 rgba(255,255,255,0.1);
-  overflow:hidden;
-  transition:width 0.3s cubic-bezier(.4,0,.2,1);
+  width: 220px; background: var(--green); color: #fff;
+  display: flex; flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative; z-index: 20;
+  box-shadow: 4px 0 24px rgba(15,118,110,0.15);
+  margin: 12px 0 12px 12px; border-radius: 20px; overflow: hidden;
+  flex-shrink: 0;
 }
-.sb::before {
-  content:""; position:absolute; inset:0;
-  background:linear-gradient(170deg, rgba(255,255,255,0.1) 0%, transparent 50%);
-  pointer-events:none; border-radius:inherit;
+.sb--col { width: 64px; }
+.sb-hd {
+  height: 64px; display: flex; align-items: center; padding: 0 18px; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  white-space: nowrap; overflow: hidden;
 }
-.sb--open { width:var(--sw); }
-.sb--col  { width:var(--sw-col); }
+.sb-logo {
+  width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+  background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.2);
+}
+.sb-brand { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; }
+.sb-sub   { font-size: 9.5px; font-weight: 500; color: var(--green-light); opacity: 0.8; }
+.sb-nav { flex: 1; padding: 16px 10px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; overflow-x: hidden; }
+.sb-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 10px; border-radius: 12px;
+  color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
+  transition: all 0.2s; white-space: nowrap; cursor: pointer; position: relative;
+}
+.sb-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.sb-item--on {
+  color: #fff; background: rgba(255,255,255,0.15);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); font-weight: 700;
+}
+.sb-item--on::before {
+  content: ""; position: absolute; left: 0; top: 10px; bottom: 10px;
+  width: 3px; background: #fff; border-radius: 0 3px 3px 0;
+}
+.sb-ico { flex-shrink: 0; }
+.sb-lbl { transition: opacity 0.2s; }
+.sb--col .sb-lbl { opacity: 0; width: 0; display: none; }
+.sb-badge {
+  margin-left: auto; background: var(--red); color: #fff;
+  font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 99px;
+  box-shadow: 0 2px 8px rgba(220,38,38,0.4);
+}
+.sb--col .sb-badge {
+  position: absolute; top: 6px; right: 6px; padding: 0; width: 7px; height: 7px; font-size: 0;
+}
+.sb-ft { padding: 12px 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+.sb-tog {
+  position: absolute; top: 28px; right: -10px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; border: 1px solid rgba(0,0,0,0.1);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); cursor: pointer; z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: 0.2s;
+}
+.sb-tog:hover { color: var(--green); transform: scale(1.1); }
 
-/* brand */
-.sb-brand {
-  display:flex; align-items:center; gap:10px;
-  padding:4px 4px 20px; overflow:hidden;
-}
-.sb-icon {
-  width:40px; height:40px; border-radius:12px; flex-shrink:0;
-  background:rgba(255,255,255,0.18);
-  border:1.5px solid rgba(255,255,255,0.28);
-  display:flex; align-items:center; justify-content:center;
-  box-shadow:0 4px 12px rgba(0,0,0,0.18);
-}
-.sb-icon-sm { width:34px; height:34px; border-radius:10px; }
-.sb-name { color:#fff; font-weight:800; font-size:14.5px; line-height:1; white-space:nowrap; }
-.sb-sub  { color:rgba(255,255,255,0.5); font-size:10px; margin-top:3px; white-space:nowrap; }
-
-/* hide text when collapsed */
-.sb--col .sb-name, .sb--col .sb-sub,
-.sb--col .ni-label, .sb--col .ni-badge,
-.sb--col .sb-logout span { display:none; }
-.sb--col .sb-brand { padding-bottom:14px; }
-
-/* toggle */
-.sb-toggle {
-  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
-  border-radius:9px; color:rgba(255,255,255,0.75);
-  width:27px; height:27px;
-  display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; align-self:flex-end; margin-bottom:10px;
-  transition:background 0.2s;
-}
-.sb-toggle:hover { background:rgba(255,255,255,0.22); }
-.sb--col .sb-toggle { align-self:center; }
-
-/* nav */
-.sb-nav { display:flex; flex-direction:column; gap:2px; }
-.ni {
-  display:flex; align-items:center; gap:10px;
-  padding:10px 10px; border-radius:11px;
-  background:transparent; color:rgba(255,255,255,0.62);
-  transition:all 0.18s; width:100%; text-align:left;
-  position:relative; flex-shrink:0; white-space:nowrap;
-}
-.ni:hover { background:rgba(255,255,255,0.1); color:#fff; }
-.ni--on {
-  background:rgba(255,255,255,0.17); color:#fff; font-weight:700;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);
-}
-.ni--on::before {
-  content:""; position:absolute; left:0; top:22%; height:56%;
-  width:3px; border-radius:2px;
-  background:linear-gradient(180deg,#facc15,#d4a017);
-}
-.ni-icon { display:flex; align-items:center; justify-content:center; flex-shrink:0; width:20px; }
-.ni-label { font-size:12.5px; flex:1; }
-.ni-badge {
-  background:var(--red); border-radius:99px;
-  min-width:17px; height:17px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:9px; font-weight:800; color:#fff;
-}
-
-.sb-spacer { flex:1; }
-
-.sb-logout {
-  display:flex; align-items:center; gap:10px;
-  padding:10px 10px; border-radius:11px;
-  color:rgba(255,255,255,0.45); background:transparent;
-  width:100%; font-size:12.5px;
-  border-top:1px solid rgba(255,255,255,0.1);
-  padding-top:14px; margin-top:6px;
-  transition:all 0.18s;
-}
-.sb-logout:hover { color:rgba(255,255,255,0.8); background:rgba(255,255,255,0.08); }
-
-/* ══════════════════════════════════════════════
-   MOBILE DRAWER
-══════════════════════════════════════════════ */
-.mob-overlay {
-  display:none; position:fixed; inset:0;
-  background:rgba(15,23,42,0.42);
-  backdrop-filter:blur(5px); z-index:200;
-}
-.mob-overlay--show { display:block; }
-
-.mob-drawer {
-  position:fixed; left:0; top:0; bottom:0; width:265px;
-  z-index:201; display:flex; flex-direction:column;
-  padding:28px 12px 22px;
-  background:var(--sidebar-bg);
-  border-top-right-radius:24px; border-bottom-right-radius:24px;
-  box-shadow:14px 0 48px rgba(15,118,110,0.38);
-  transform:translateX(-100%);
-  transition:transform 0.3s cubic-bezier(.4,0,.2,1);
-}
-.mob-drawer::before {
-  content:""; position:absolute; inset:0;
-  background:linear-gradient(170deg, rgba(255,255,255,0.08) 0%, transparent 50%);
-  pointer-events:none; border-radius:inherit;
-}
-.mob-drawer--open { transform:translateX(0); }
-.mob-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
-.mob-close {
-  background:rgba(255,255,255,0.12); border-radius:9px; padding:7px;
-  color:rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center;
-}
-.drawer-ni {
-  gap:13px; padding:13px 12px; border-radius:12px;
-}
-.mob-profile {
-  display:flex; align-items:center; gap:9px;
-  padding:11px 10px; border-radius:12px;
-  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
-  margin-top:8px;
-}
-
-/* ══════════════════════════════════════════════
-   TOPBAR — single unified frosted bar
-══════════════════════════════════════════════ */
-.topbar {
-  position:fixed; top:var(--gap); right:var(--pad); z-index:99;
-  display:flex; align-items:center; gap:10px;
-  height:var(--tbh);
-  background:rgba(255,255,255,0.68);
-  backdrop-filter:blur(24px);
-  -webkit-backdrop-filter:blur(24px);
-  border:1.5px solid rgba(255,255,255,0.9);
-  border-radius:18px;
-  box-shadow:0 4px 24px rgba(15,118,110,0.1), inset 0 1px 0 #fff;
-  padding:0 14px 0 16px;
-  transition:left 0.3s cubic-bezier(.4,0,.2,1);
-}
-.tb--open { left:calc(var(--gap) + var(--sw) + 16px); }
-.tb--col  { left:calc(var(--gap) + var(--sw-col) + 16px); }
-
-.tb-hamburger {
-  display:none; width:36px; height:36px; border-radius:10px;
-  background:rgba(15,118,110,0.08); flex-shrink:0;
-  align-items:center; justify-content:center;
-  color:var(--text); transition:background 0.2s;
-}
-.tb-hamburger:hover { background:rgba(15,118,110,0.14); }
-
-.tb-greeting { display:flex; flex-direction:column; flex-shrink:0; }
-.tb-sub  { color:var(--text-3); font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
-.tb-name { color:var(--text); font-weight:800; font-size:15.5px; line-height:1.2; }
-.wave    { color:var(--gold); }
-
-.tb-gap { flex:1; }
-
-.tb-search {
-  display:flex; align-items:center; gap:8px;
-  padding:0 13px; height:36px; width:200px; flex-shrink:0;
-  background:rgba(15,118,110,0.06);
-  border:1px solid rgba(15,118,110,0.12);
-  border-radius:11px;
-}
-.tb-search input { background:transparent; color:var(--text); font-size:12.5px; width:100%; }
-.tb-search input::placeholder { color:var(--text-3); }
-
-.tb-bell {
-  width:36px; height:36px; border-radius:10px; flex-shrink:0;
-  background:rgba(15,118,110,0.06); border:1px solid rgba(15,118,110,0.1);
-  display:flex; align-items:center; justify-content:center;
-  position:relative;
-}
-.bell-dot {
-  position:absolute; top:7px; right:7px;
-  width:7px; height:7px; border-radius:50%;
-  background:var(--red); box-shadow:0 0 7px rgba(220,38,38,0.85);
-}
-
-.tb-divider { width:1px; height:28px; background:rgba(15,118,110,0.12); flex-shrink:0; }
-
-.tb-profile { display:flex; align-items:center; gap:8px; cursor:pointer; flex-shrink:0; }
-.av {
-  border-radius:50%; display:flex; align-items:center; justify-content:center;
-  font-weight:800; color:#fff; flex-shrink:0;
-  background:linear-gradient(135deg, var(--green), var(--blue));
-  box-shadow:0 3px 10px rgba(15,118,110,0.28);
-}
-.av-sm { width:32px; height:32px; font-size:12px; }
-.av-md { width:36px; height:36px; font-size:13px; }
-.tb-pname { color:var(--text); font-weight:700; font-size:12.5px; white-space:nowrap; }
-.tb-prole { color:var(--text-3); font-size:10px; }
-
-/* ══════════════════════════════════════════════
-   MAIN
-══════════════════════════════════════════════ */
+/* ── MAIN ── */
 .main {
-  min-height:100vh; position:relative; z-index:1;
-  padding-top:calc(var(--gap) + var(--tbh) + 14px);
-  padding-bottom:20px; padding-right:var(--pad); padding-left:var(--pad);
-  display:flex; flex-direction:column; gap:16px;
-  transition:margin-left 0.3s cubic-bezier(.4,0,.2,1);
+  flex: 1; display: flex; flex-direction: column;
+  transition: all 0.3s; z-index: 10; height: 100vh; overflow-y: auto; scroll-behavior: smooth;
+  min-width: 0;
 }
-.main--open { margin-left:calc(var(--gap) + var(--sw) + 16px); }
-.main--col  { margin-left:calc(var(--gap) + var(--sw-col) + 16px); }
-
-/* Page title */
-.ph { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; }
-.ph-title { color:var(--text); font-size:21px; font-weight:800; line-height:1; }
-.ph-sub   { color:var(--text-3); font-size:11px; margin-top:4px; }
-.ph-btns  { display:flex; gap:8px; }
-.btn-ghost {
-  display:flex; align-items:center; gap:5px;
-  padding:8px 14px; border-radius:10px; font-size:12px; font-weight:700;
-  background:rgba(255,255,255,0.7); border:1.5px solid rgba(255,255,255,0.9);
-  color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,0.04);
-  transition:all 0.18s;
+.main--open { max-width: calc(100vw - 232px); }
+.main--col  { max-width: calc(100vw - 76px); }
+/* ── TOPBAR — floating pills ── */
+.top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; position: sticky; top: 0; z-index: 50;
+  background: transparent; pointer-events: none;
 }
-.btn-ghost:hover { background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-.btn-solid {
-  display:flex; align-items:center; gap:5px;
-  padding:8px 14px; border-radius:10px; font-size:12px; font-weight:700;
-  background:linear-gradient(135deg, var(--green), var(--blue));
-  color:#fff;
-  box-shadow:0 4px 14px rgba(15,118,110,0.32);
-  transition:all 0.18s;
+.top > * { pointer-events: auto; }
+
+/* Search pill */
+.top-search {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  padding: 0 16px; height: 40px; border-radius: 99px; width: 260px;
+  border: 1px solid rgba(255,255,255,0.95);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
+  transition: 0.25s cubic-bezier(0.25,1,0.5,1);
 }
-.btn-solid:hover { box-shadow:0 6px 20px rgba(15,118,110,0.42); transform:translateY(-1px); }
-
-/* ── Glass card ── */
-.card {
-  background:var(--card);
-  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-  border:1.5px solid var(--card-b); border-radius:18px;
-  box-shadow:var(--card-sh);
-  padding:18px 20px;
+.top-search:focus-within {
+  background: rgba(255,255,255,0.88); width: 310px;
+  border-color: rgba(15,118,110,0.35);
+  box-shadow: 0 6px 24px rgba(15,118,110,0.1), inset 0 1px 0 rgba(255,255,255,1);
 }
+.top-search input { flex: 1; font-size: 13px; color: var(--text); background: transparent; }
+.top-search input::placeholder { color: var(--text3); }
 
-/* ── Stat strip ── */
-.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
-.sc { display:flex; align-items:center; gap:13px; }
-.sc-icon {
-  width:46px; height:46px; border-radius:13px; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
+/* Notif pill — square-ish rounded */
+.top-acts { display: flex; align-items: center; gap: 8px; }
+
+.top-notif-pill {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 14px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255,255,255,0.95);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
+  color: var(--text2); position: relative; cursor: pointer; transition: 0.2s;
 }
-.sc-val   { font-size:28px; font-weight:800; line-height:1; }
-.sc-label { font-size:11.5px; color:var(--text-2); font-weight:600; margin-top:2px; }
-.sc-sub   { font-size:10px; color:var(--text-3); margin-top:1px; }
-
-/* ── Row grids ── */
-.g3     { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
-.gchart { display:grid; grid-template-columns:1.65fr 1fr; gap:14px; }
-.gmsg   { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:12px; }
-
-/* ── Eyebrow ── */
-.eyebrow {
-  font-size:10px; font-weight:700; text-transform:uppercase;
-  letter-spacing:1px; color:var(--text-3);
+.top-notif-pill:hover {
+  background: rgba(255,255,255,0.88); color: var(--green);
+  box-shadow: 0 6px 20px rgba(15,118,110,0.1), inset 0 1px 0 rgba(255,255,255,1);
+  transform: translateY(-1px);
+}
+.top-dot {
+  position: absolute; top: 8px; right: 8px;
+  width: 7px; height: 7px; background: var(--red); border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.9);
+  box-shadow: 0 0 0 2px rgba(220,38,38,0.15);
 }
 
-/* ── Section head ── */
-.sh {
-  display:flex; justify-content:space-between; align-items:center;
-  margin-bottom:14px;
+/* Profile pill */
+.top-prof {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  padding: 5px 14px 5px 5px; border-radius: 99px;
+  border: 1px solid rgba(255,255,255,0.95);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
+  cursor: pointer; transition: 0.2s;
 }
-.sh-icon-btn {
-  width:24px; height:24px; border-radius:8px;
-  background:linear-gradient(135deg, var(--green), var(--blue));
-  display:flex; align-items:center; justify-content:center;
+.top-prof:hover {
+  background: rgba(255,255,255,0.88);
+  box-shadow: 0 6px 20px rgba(15,118,110,0.1), inset 0 1px 0 rgba(255,255,255,1);
+  transform: translateY(-1px);
 }
-.sh-link {
-  background:none; color:var(--green); font-size:11.5px; font-weight:700;
-  padding:0; transition:opacity 0.18s;
+.top-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  box-shadow: 0 2px 8px rgba(15,118,110,0.35);
 }
-.sh-link:hover { opacity:.7; }
+.top-pname { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.top-prole { font-size: 10px; color: var(--text3); font-weight: 600; }
 
-/* ── Profile card ── */
-.pcard-top { display:flex; align-items:center; gap:13px; margin-bottom:14px; }
-.stu-emoji {
-  width:52px; height:52px; border-radius:15px; flex-shrink:0; font-size:24px;
-  background:linear-gradient(135deg, var(--green-mid), var(--blue));
-  display:flex; align-items:center; justify-content:center;
-  box-shadow:0 8px 20px rgba(20,184,166,0.28);
+/* mobile menu btn — juga pill */
+.top-menu-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 14px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255,255,255,0.95);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
+  color: var(--text2); cursor: pointer; transition: 0.2s;
 }
-.stu-name  { color:var(--text); font-weight:800; font-size:16px; }
-.stu-class { color:var(--text-3); font-size:11px; margin-top:2px; }
-.pcard-meta {
-  display:flex; gap:18px;
-  border-top:1px solid rgba(30,41,59,0.07);
-  padding-top:11px; margin-bottom:11px;
-}
-.meta-l { font-size:9px; text-transform:uppercase; color:var(--text-3); letter-spacing:.5px; }
-.meta-v { font-size:12px; font-weight:700; color:var(--text); margin-top:2px; }
-.gold-badge {
-  display:inline-flex; align-items:center; gap:5px;
-  padding:4px 10px; border-radius:99px;
-  background:rgba(212,160,23,0.1); border:1px solid rgba(212,160,23,0.25);
-  font-size:10.5px; font-weight:700; color:var(--gold);
-}
+.top-menu-btn:hover { background: rgba(255,255,255,0.88); color: var(--green); }
+.content { padding: 4px 24px 40px; flex: 1; display: flex; flex-direction: column; gap: 20px; animation: fi .4s ease; }
+@keyframes fi { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
 
-/* ── Attendance ── */
-.att-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-.att-pct  { font-size:30px; font-weight:800; color:var(--text); line-height:1.1; margin-top:4px; }
-.att-up   { font-size:13px; color:#16a34a; }
-.good-badge {
-  display:flex; align-items:center; gap:4px;
-  padding:5px 10px; border-radius:99px; font-size:11px; font-weight:700;
-  background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.28); color:#16a34a;
-}
-.days { display:flex; gap:7px; margin-bottom:12px; }
-.day  { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
-.day-box {
-  width:100%; height:38px; border-radius:9px;
-  display:flex; align-items:center; justify-content:center;
-}
-.day-box--ok { background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.28); color:#16a34a; }
-.day-box--no { background:rgba(220,38,38,0.08);  border:1px solid rgba(220,38,38,0.22); color:var(--red); }
-.day-lbl  { font-size:9.5px; color:var(--text-3); }
-.att-stat { display:flex; gap:14px; font-size:11px; color:var(--text-3); flex-wrap:wrap; }
-
-/* ── Payment ── */
-.pay-list { display:flex; flex-direction:column; gap:9px; }
-.pay-row  {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:10px 12px; border-radius:11px;
-  border:1px solid transparent;
-}
-.pay-row--ok  { background:rgba(20,184,166,0.06); border-color:rgba(20,184,166,0.2); }
-.pay-row--due { background:rgba(220,38,38,0.06);  border-color:rgba(220,38,38,0.18); }
-.pay-name   { font-size:11.5px; font-weight:600; color:var(--text); }
-.pay-status { font-size:10.5px; font-weight:700; margin-top:2px; }
-.pay-ok  { color:#16a34a; }
-.pay-due { color:var(--red); }
-.pay-amt { font-size:11.5px; font-weight:700; color:var(--text-2); }
-
-/* ── Chart ── */
-.ch-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
-.ch-title { font-size:15.5px; font-weight:800; color:var(--text); margin-top:3px; }
-.tabs { display:flex; gap:5px; }
-.tab {
-  padding:5px 11px; border-radius:9px; font-size:10.5px; font-weight:700;
-  background:rgba(30,41,59,0.06); color:var(--text-3); transition:all 0.18s;
-}
-.tab--on {
-  background:linear-gradient(135deg, var(--green), var(--blue));
-  color:#fff; box-shadow:0 3px 10px rgba(15,118,110,0.25);
-}
-.sbadges { display:flex; gap:8px; margin-top:13px; flex-wrap:wrap; }
-.sbadge  { display:flex; flex-direction:column; align-items:center; gap:4px; }
-.sbadge-val {
-  width:38px; height:38px; border-radius:11px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:12px; font-weight:800;
-  background:rgba(30,41,59,0.05); border:1px solid rgba(30,41,59,0.1); color:var(--text-2);
-}
-.sbadge-val--hi { background:rgba(15,118,110,0.1); border-color:rgba(15,118,110,0.28); color:var(--green); }
-.sbadge-lbl { font-size:9px; color:var(--text-3); }
-
-/* ── Announcements ── */
-.ann-list { display:flex; flex-direction:column; gap:10px; }
-.ann-item {
-  padding:11px 13px; border-radius:12px;
-  background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.88);
-  cursor:pointer; transition:box-shadow 0.2s;
-}
-.ann-item:hover { box-shadow:0 4px 16px rgba(15,118,110,0.1); }
-.ann-row  { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:4px; }
-.ann-ttl  { font-size:12.5px; font-weight:700; color:var(--text); }
-.ann-desc { font-size:10.5px; color:var(--text-3); margin-bottom:5px; line-height:1.4; }
-.ann-date { display:flex; align-items:center; gap:4px; font-size:9.5px; color:var(--text-3); }
-.ann-tag  { font-size:8.5px; font-weight:700; padding:2px 7px; border-radius:99px; white-space:nowrap; flex-shrink:0; }
-.ann-tag--urgent { background:rgba(220,38,38,0.1);  color:var(--red);  border:1px solid rgba(220,38,38,0.22); }
-.ann-tag--info   { background:rgba(37,99,235,0.1);  color:var(--blue); border:1px solid rgba(37,99,235,0.2); }
-.ann-tag--normal { background:rgba(30,41,59,0.06);  color:var(--text-3); border:1px solid rgba(30,41,59,0.1); }
-
-/* ── Messages ── */
-.msg-item {
-  padding:12px 13px; border-radius:13px;
-  background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.8);
-  display:flex; gap:10px; align-items:flex-start;
-  cursor:pointer; transition:all 0.18s;
-}
-.msg-item:hover { box-shadow:0 4px 16px rgba(15,118,110,0.1); transform:translateY(-1px); }
-.msg-item--unread { background:rgba(37,99,235,0.05); border-color:rgba(37,99,235,0.17); }
-.msg-av {
-  width:36px; height:36px; border-radius:10px; flex-shrink:0;
-  background:linear-gradient(135deg, var(--green), var(--blue));
-  display:flex; align-items:center; justify-content:center;
-  font-weight:800; font-size:13px; color:#fff;
-  box-shadow:0 4px 10px rgba(15,118,110,0.22);
-}
-.msg-body { flex:1; overflow:hidden; }
-.msg-top  { display:flex; justify-content:space-between; margin-bottom:3px; }
-.msg-from { font-size:12px; font-weight:700; color:var(--text); }
-.msg-time { font-size:9.5px; color:var(--text-3); }
-.msg-txt  { font-size:11px; color:var(--text-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.msg-dot  { width:8px; height:8px; border-radius:50%; background:var(--blue); flex-shrink:0; margin-top:4px; box-shadow:0 0 6px rgba(37,99,235,0.5); }
-
-/* ══════════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════════ */
-@media (max-width:1100px) {
-  :root { --sw:200px; }
-  .stats  { grid-template-columns:repeat(2,1fr); }
-  .g3     { grid-template-columns:1fr 1fr; }
-  .gchart { grid-template-columns:1fr; }
-  .gmsg   { grid-template-columns:1fr 1fr; }
-  .tb-search { width:150px; }
+/* ── GLASS CARD ── */
+.glass-card {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: saturate(200%) blur(32px); -webkit-backdrop-filter: saturate(200%) blur(32px);
+  border-radius: 20px; border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,1);
+  padding: 20px; overflow: hidden; position: relative;
 }
 
-@media (max-width:767px) {
-  :root { --pad:12px; --tbh:52px; }
-  .sb { display:none; }
-  .tb-hamburger   { display:flex; }
-  .mob-overlay    { display:block; }
-  .topbar, .tb--col { left:var(--pad); padding:0 12px; gap:8px; }
-  .tb-search, .tb-divider, .tb-pname, .tb-prole { display:none; }
-  .tb-greeting { gap:0; }
-  .tb-sub  { font-size:8.5px; }
-  .tb-name { font-size:13px; }
-  .tb-bell { width:34px; height:34px; }
-  .main, .main--col {
-    margin-left:0;
-    padding-left:var(--pad); padding-right:var(--pad);
-    padding-top:calc(var(--pad) + var(--tbh) + 10px);
+/* Banner */
+.dash-banner {
+  background: linear-gradient(135deg, var(--green), #0d5c56, var(--blue));
+  border-radius: 20px; padding: 24px 32px; color: #fff;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 8px 24px rgba(15,118,110,0.2); position: relative; overflow: hidden;
+}
+.dash-banner::after {
+  content: ""; position: absolute; right: -40px; top: -80px;
+  width: 240px; height: 240px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+}
+.db-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.5px; position:relative; z-index:2; }
+.db-sub { font-size: 13px; opacity: 0.82; font-weight: 500; position:relative; z-index:2; }
+.db-date {
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(10px);
+  padding: 7px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 700;
+  display: flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,0.25);
+  position:relative; z-index:2; white-space: nowrap;
+}
+
+/* Stats */
+.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.stat-box { display: flex; align-items: center; gap: 14px; padding: 16px 18px; transition: transform 0.2s; cursor: pointer; }
+.stat-box:hover { transform: translateY(-2px); }
+.st-icon-wrap { width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.st-info { flex: 1; min-width: 0; }
+.st-val { font-size: 22px; font-weight: 900; color: var(--text); line-height: 1.1; }
+.st-lbl { font-size: 11px; color: var(--text3); font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-val-skel { height: 26px; width: 48px; background: #e2e8f0; border-radius: 6px; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* Grid */
+.dash-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; }
+.dash-grid-bot { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.sec-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.sec-ttl { font-size: 14.5px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 7px; }
+.sec-btn { font-size: 11.5px; font-weight: 700; color: var(--green); display: flex; align-items: center; gap: 4px; transition: 0.2s; white-space: nowrap; }
+.sec-btn:hover { color: var(--green-mid); transform: translateX(2px); }
+
+/* List items */
+.list-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.04); border-radius: 14px; margin-bottom: 8px; transition: 0.2s;
+}
+.list-item:hover { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.04); transform: scale(1.005); }
+.list-item:last-child { margin-bottom: 0; }
+.li-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.li-av {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  background: rgba(15,118,110,0.1); color: var(--green);
+  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;
+}
+.li-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.li-sub { font-size: 11.5px; color: var(--text3); font-weight: 500; display:flex; align-items:center; gap:4px; }
+.li-r { text-align: right; flex-shrink: 0; margin-left: 8px; }
+.li-badge { padding: 3px 8px; border-radius: 7px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; }
+.b-warn { background: rgba(245,158,11,0.1); color: #d97706; }
+.b-ok   { background: rgba(22,163,74,0.1); color: #16a34a; }
+.b-blue { background: rgba(37,99,235,0.1); color: #2563eb; }
+
+/* Empty/loading state inside cards */
+.card-empty { text-align:center; padding:24px 20px; color:var(--text3); font-size:13px; font-weight:600; }
+
+@media (max-width: 1280px) {
+  .dash-grid { grid-template-columns: 3fr 2fr; }
+}
+@media (max-width: 1024px) {
+  .dash-grid, .dash-grid-bot { grid-template-columns: 1fr; }
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Desktop: sembunyikan hamburger, tampilkan search & nama profil */
+.top-menu-btn  { display: none; }
+.top-search    { display: flex; }
+.top-pname-wrap { display: block; }
+
+@media (max-width: 768px) {
+  /* Sidebar: tersembunyi, muncul saat .sb--open-mob */
+  .sb {
+    position: fixed; top: 0; left: 0;
+    height: 100vh; margin: 0; border-radius: 0; z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   }
-  .stats, .g3, .gchart, .gmsg { grid-template-columns:1fr; }
-  .ph { flex-direction:column; align-items:flex-start; }
-  .ph-title { font-size:18px; }
-  .ph-btns { width:100%; }
-  .btn-ghost, .btn-solid { flex:1; justify-content:center; }
-}
+  .sb--open-mob { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.2); }
 
-@media (max-width:400px) {
-  .sc-val   { font-size:24px; }
-  .att-pct  { font-size:26px; }
-  .sbadge-val { width:32px; height:32px; font-size:11px; }
+  /* Hamburger tampil di mobile */
+  .top-menu-btn { display: flex; }
+
+  /* Search & nama profil hilang di mobile */
+  .top-search    { display: none; }
+  .top-pname-wrap { display: none; }
+
+  .main { max-width: 100vw; }
+  .top  { padding: 12px 16px; }
+  .content { padding: 4px 16px 32px; gap: 14px; }
+  .dash-stats { grid-template-columns: 1fr 1fr; }
+  .dash-banner { flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
+  .dash-grid, .dash-grid-bot { grid-template-columns: 1fr; }
 }
 `;
 
 /* ═══════════════════════════════════════════════
-   DATA
+   HELPERS
 ═══════════════════════════════════════════════ */
-const monthlyGrades = [
-  { b:"Jul",v:78 }, { b:"Agu",v:82 }, { b:"Sep",v:79 },
-  { b:"Okt",v:85 }, { b:"Nov",v:88 }, { b:"Des",v:91 },
-];
-const subjects = [
-  { s:"Mat",v:88 }, { s:"IPA",v:92 }, { s:"IPS",v:75 },
-  { s:"B.Ing",v:85 }, { s:"B.Ind",v:90 }, { s:"PKn",v:78 },
-];
-const announcements = [
-  { id:1, title:"Ujian Tengah Semester", date:"5 Des 2024",  type:"urgent", desc:"UTS dilaksanakan mulai 9 Desember 2024." },
-  { id:2, title:"Pentas Seni Sekolah",   date:"10 Des 2024", type:"info",   desc:"Pentas seni tahunan akan digelar di aula sekolah." },
-  { id:3, title:"Libur Nasional",        date:"15 Des 2024", type:"normal", desc:"Sekolah libur tanggal 25 Desember 2024." },
-];
-const messages = [
-  { id:1, from:"Wali Kelas",      av:"W", t:"10:30",   txt:"Ada info jadwal belajar tambahan minggu ini.",  unread:true },
-  { id:2, from:"Guru Matematika", av:"M", t:"09:15",   txt:"Nilai ulangan harian sudah diinput di sistem.", unread:true },
-  { id:3, from:"TU Sekolah",      av:"T", t:"Kemarin", txt:"Pengingat pembayaran SPP bulan Desember.",      unread:false },
-];
-const payments = [
-  { label:"SPP Desember 2024", ok:false, status:"Belum Bayar", amount:"Rp 350.000" },
-  { label:"SPP November 2024", ok:true,  status:"Lunas",       amount:"Rp 350.000" },
-  { label:"Kegiatan Sekolah",  ok:true,  status:"Lunas",       amount:"Rp 150.000" },
-];
-const navItems = [
-  { icon:LayoutDashboard, label:"Dashboard",      id:"dashboard"      },
-  { icon:CalendarDays,    label:"Agenda",         id:"agenda"         },
-  { icon:GraduationCap,   label:"Guru",           id:"guru"           },
-  { icon:Handshake,       label:"Mitra",          id:"mitra"          },
-  { icon:ShieldUser,      label:"Wali Murid",     id:"wali_murid"     },
-  { icon:Users,           label:"Siswa",          id:"siswa", badge:3 },
-  { icon:BookOpenCheck,   label:"Progress Siswa", id:"progress_siswa" },
-  { icon:Info,            label:"Info",           id:"info"           },
-  { icon:Settings,        label:"Pengaturan",     id:"pengaturan"     },
-];
+const QUAL_LABEL: Record<string, string> = {
+  sangat_lancar: 'Sangat Lancar',
+  lancar:        'Lancar',
+  mengulang:     'Mengulang',
+};
 
 /* ═══════════════════════════════════════════════
-   COMPONENT
+   MAIN COMPONENT
 ═══════════════════════════════════════════════ */
-export default function CombinedDashboard() {
-  const user = usePage<PageProps>().props.auth.user;
-  const displayName = user?.name || user?.username || user?.email || "Pengguna";
-  const roleLabel = user?.role_id === "RL01" ? "Admin" : "Pengguna";
-  const initials = displayName
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "U";
+export default function DashboardAdmin() {
+  const { auth } = usePage().props as PageProps;
+  const user      = auth?.user;
+  const adminName = (user as any)?.name || (user as any)?.username || "Admin QLC";
+  const initial   = adminName.substring(0, 2).toUpperCase();
 
-  const [active,  setActive]  = useState(() => {
-    if (typeof window === "undefined") return "dashboard";
-    const tab = new URLSearchParams(window.location.search).get("tab");
-    return tab === "guru" ? "guru" : "dashboard";
-  });
   const [col,     setCol]     = useState(false);
-  const [drawer,  setDrawer]  = useState(false);
+  const [mobOpen, setMobOpen] = useState(false);
 
-  const handleLogout = () => {
-    router.post(route("logout"));
-  };
+  const urlParams  = new URLSearchParams(window.location.search);
+  const [active, setActive] = useState(urlParams.get('tab') || "dashboard");
 
-  const nav = (id: string) => {
-    setActive(id);
-    setDrawer(false);
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      params.set("tab", id);
-      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-    }
-  };
+  useEffect(() => {
+    if (active !== "dashboard") window.history.pushState(null, '', `?tab=${active}`);
+    else window.history.pushState(null, '', window.location.pathname);
+  }, [active]);
 
-  const NavList = ({ drawer: isDrawer }: { drawer?: boolean }) => (
-    <nav className="sb-nav">
-      {navItems.map(({ icon: Icon, label, id, badge }) => {
-        const on = active === id;
-        return (
-          <button key={id} className={`ni ${isDrawer ? "drawer-ni" : ""} ${on ? "ni--on" : ""}`} onClick={() => nav(id)}>
-            <span className="ni-icon"><Icon size={isDrawer ? 18 : 17} strokeWidth={on ? 2.5 : 1.8} /></span>
-            <span className="ni-label">{label}</span>
-            {badge && <span className="ni-badge">{badge}</span>}
-          </button>
-        );
-      })}
-    </nav>
-  );
+  // ── Dashboard Data ──────────────────────────────────────
+  const [stats,    setStats]    = useState<DashStats | null>(null);
+  const [chart,    setChart]    = useState<ChartPoint[]>([]);
+  const [agendas,  setAgendas]  = useState<AgendaItem[]>([]);
+  const [pending,  setPending]  = useState<PendingItem[]>([]);
+  const [topRep,   setTopRep]   = useState<ReportItem[]>([]);
+  const [loading,  setLoading]  = useState(true);
+
+  // Fetch semua data dashboard sekaligus saat tab = dashboard
+  useEffect(() => {
+    if (active !== "dashboard") return;
+
+    setLoading(true);
+    Promise.all([
+      axios.get<DashStats>('/api/admin/dashboard/stats'),
+      axios.get<ChartPoint[]>('/api/admin/dashboard/chart'),
+      axios.get<AgendaItem[]>('/api/admin/dashboard/upcoming-agenda'),
+      axios.get<PendingItem[]>('/api/admin/dashboard/pending-students'),
+      axios.get<ReportItem[]>('/api/admin/dashboard/top-reports'),
+    ]).then(([s, c, a, p, r]) => {
+      setStats(s.data);
+      setChart(c.data);
+      setAgendas(a.data);
+      setPending(p.data);
+      setTopRep(r.data);
+    }).catch(console.error)
+      .finally(() => setLoading(false));
+  }, [active]);
+
+  const NAV = [
+    { id: "dashboard",  l: "Beranda",         i: LayoutDashboard, badge: 0 },
+    { id: "agenda",     l: "Agenda QLC",      i: CalendarDays,    badge: 0 },
+    { id: "guru",       l: "Manajemen Guru",  i: GraduationCap,   badge: 0 },
+    { id: "mitra",      l: "Data Mitra",      i: Handshake,       badge: 0 },
+    { id: "wali_murid", l: "Wali Murid",      i: ShieldUser,      badge: 0 },
+    { id: "siswa",      l: "Data Siswa",      i: Users,           badge: stats?.total_pending ?? 0 },
+    { id: "progress",   l: "Laporan Progress", i: BookOpen,        badge: 0 },
+    { id: "info",       l: "Info Sekolah",    i: Info,            badge: 0 },
+    { id: "pengaturan", l: "Pengaturan",      i: Settings,        badge: 0 },
+  ];
+
+  const handleLogout = () => router.post(route("logout"));
+  const today = new Date().toLocaleDateString("id-ID", {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
 
   return (
     <>
+      <Head title="Admin Dashboard | QLC" />
       <style>{CSS}</style>
-      <div className="root">
 
-        {/* blobs */}
-        <div className="blob b1" /><div className="blob b2" /><div className="blob b3" />
+      <div className="layout">
+        <div className="bg-decor dec-1" />
+        <div className="bg-decor dec-2" />
+        <div className="bg-decor dec-3" />
 
         {/* ════ SIDEBAR ════ */}
-        <aside className={`sb ${col ? "sb--col" : "sb--open"}`}>
-          <div className="sb-brand">
-            <div className="sb-icon"><BookOpen size={20} color="#fff" strokeWidth={2.5} /></div>
-            <div style={{ overflow:"hidden" }}>
-              <div className="sb-name">EduConnect</div>
-              <div className="sb-sub">Parent Portal</div>
+        <aside className={`sb ${col ? "sb--col" : ""} ${mobOpen ? "sb--open-mob" : ""}`}>
+          <div className="sb-hd">
+            <div className="sb-logo"><BookOpen size={20} color="#fff" /></div>
+            <div className="sb-lbl">
+              <div className="sb-brand">EduConnect</div>
+              <div className="sb-sub">Admin Portal</div>
             </div>
           </div>
 
-          <button className="sb-toggle" onClick={() => setCol(!col)}>
-            {col ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+          <button className="sb-tog hidden md:flex" onClick={() => setCol(!col)}>
+            {col ? <ChevronRight size={14}/> : <ChevronLeft size={14}/>}
           </button>
 
-          <NavList />
-          <div className="sb-spacer" />
-
-          <button className="sb-logout" onClick={handleLogout}>
-            <LogOut size={15} strokeWidth={1.8} />
-            <span>Keluar</span>
-          </button>
-        </aside>
-
-        {/* ════ MOBILE DRAWER ════ */}
-        <div className={`mob-overlay ${drawer ? "mob-overlay--show" : ""}`} onClick={() => setDrawer(false)} />
-        <aside className={`mob-drawer ${drawer ? "mob-drawer--open" : ""}`}>
-          <div className="mob-head">
-            <div className="sb-brand" style={{ paddingBottom:0 }}>
-              <div className="sb-icon sb-icon-sm"><BookOpen size={17} color="#fff" strokeWidth={2.5} /></div>
-              <div style={{ overflow:"hidden" }}>
-                <div className="sb-name">EduConnect</div>
-                <div className="sb-sub">Parent Portal</div>
-              </div>
-            </div>
-            <button className="mob-close" onClick={() => setDrawer(false)}><X size={15} /></button>
-          </div>
-
-          <NavList drawer />
-          <div className="sb-spacer" />
-
-          <div className="mob-profile">
-            <div className="av av-md">{initials}</div>
-            <div>
-              <div style={{ color:"#fff", fontWeight:700, fontSize:13 }}>{displayName}</div>
-              <div style={{ color:"rgba(255,255,255,0.5)", fontSize:10.5 }}>{roleLabel}</div>
-            </div>
-          </div>
-
-          <button className="sb-logout drawer-ni" onClick={handleLogout}>
-            <LogOut size={15} strokeWidth={1.8} />
-            <span>Keluar</span>
-          </button>
-        </aside>
-
-        {/* ════ TOPBAR ════ */}
-        <header className={`topbar ${col ? "tb--col" : "tb--open"}`}>
-          <button className="tb-hamburger" onClick={() => setDrawer(true)}>
-            <Menu size={17} />
-          </button>
-
-          <div className="tb-greeting">
-            <span className="tb-sub">Selamat Datang</span>
-            <span className="tb-name">{displayName} <span className="wave">👋</span></span>
-          </div>
-
-          <div className="tb-gap" />
-
-          <div className="tb-search">
-            <Search size={13} color="var(--text-3)" />
-            <input placeholder="Cari sesuatu..." />
-          </div>
-
-          <div className="tb-bell">
-            <Bell size={15} color="var(--text-2)" />
-            <span className="bell-dot" />
-          </div>
-
-          <div className="tb-divider" />
-
-          <div className="tb-profile">
-            <div className="av av-sm">{initials}</div>
-            <div>
-              <div className="tb-pname">{displayName}</div>
-              <div className="tb-prole">{roleLabel}</div>
-            </div>
-          </div>
-        </header>
-
-        {/* ════ MAIN ════ */}
-        <main className={`main ${col ? "main--col" : "main--open"}`}>
-          {active === "guru"      ? <GuruPage /> :
-          active === "mitra"      ? <MitraPage /> :
-          active === "wali_murid" ? <WaliMuridPage /> :
-          active === "siswa"      ? <SiswaPage /> :
-          active === "info"       ? <InfoPage /> :
-          active === "agenda"     ? <AgendaPage /> :
-          active === "progress_siswa" ? <ProgressPage /> :
-          active === "pengaturan" ? <PengaturanPage /> :
-          (
-            <>
-
-          {/* Heading */}
-          <div className="ph">
-            <div>
-              <div className="ph-title">Dashboard Orang Tua</div>
-              <div className="ph-sub">Update terakhir: 4 Maret 2026</div>
-            </div>
-            <div className="ph-btns">
-              <button className="btn-ghost"><FileText size={13} /> Lihat Laporan</button>
-              <button className="btn-solid"><TrendingUp size={13} /> Perkembangan</button>
-            </div>
-          </div>
-
-          {/* ── Stat strip ── */}
-          <div className="stats">
-            {[
-              { label:"Kehadiran",     value:"96%",  sub:"↑ 2% bulan ini", color:"var(--green)",   bg:"rgba(15,118,110,0.1)", icon:<CheckCircle2 size={18}/> },
-              { label:"Rata-rata Nilai",value:"88.5", sub:"Semester Ganjil", color:"var(--blue)",    bg:"rgba(37,99,235,0.1)",  icon:<Star size={18}/> },
-              { label:"Tagihan Aktif", value:"1",    sub:"SPP Desember",   color:"var(--red)",     bg:"rgba(220,38,38,0.1)", icon:<CreditCard size={18}/> },
-              { label:"Pesan Baru",    value:"2",    sub:"Belum dibaca",   color:"var(--gold)",    bg:"rgba(212,160,23,0.1)", icon:<MessageSquare size={18}/> },
-            ].map(s => (
-              <div key={s.label} className="card sc">
-                <div className="sc-icon" style={{ background:s.bg, color:s.color }}>{s.icon}</div>
-                <div>
-                  <div className="sc-val" style={{ color:s.color }}>{s.value}</div>
-                  <div className="sc-label">{s.label}</div>
-                  <div className="sc-sub">{s.sub}</div>
-                </div>
+          <div className="sb-nav">
+            {NAV.map(n => (
+              <div key={n.id}
+                className={`sb-item ${active === n.id ? "sb-item--on" : ""}`}
+                onClick={() => { setActive(n.id); setMobOpen(false); }}>
+                <n.i size={18} className="sb-ico" />
+                <span className="sb-lbl">{n.l}</span>
+                {n.badge > 0 && <span className="sb-badge">{n.badge}</span>}
               </div>
             ))}
           </div>
 
-          {/* ── Row 2: Profile + Attendance + Payment ── */}
-          <div className="g3">
-
-            {/* Profile */}
-            <div className="card">
-              <div className="pcard-top">
-                <div className="stu-emoji">🧒</div>
-                <div>
-                  <div className="eyebrow" style={{ marginBottom:2 }}>Profil Siswa</div>
-                  <div className="stu-name">Rizki Fauzi</div>
-                  <div className="stu-class">Kelas 8A · SMPN 5 Jakarta</div>
-                </div>
-              </div>
-              <div className="pcard-meta">
-                {[["NIS","23041"],["Semester","Ganjil"],["T.A","2024/25"]].map(([l,v]) => (
-                  <div key={l}>
-                    <div className="meta-l">{l}</div>
-                    <div className="meta-v">{v}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="gold-badge"><Award size={11} /> Siswa Berprestasi</div>
-            </div>
-
-            {/* Attendance */}
-            <div className="card">
-              <div className="att-head">
-                <div>
-                  <div className="eyebrow">Kehadiran Bulan Ini</div>
-                  <div className="att-pct">96% <span className="att-up">↑ 2%</span></div>
-                </div>
-                <div className="good-badge"><CheckCircle2 size={11} /> Sangat Baik</div>
-              </div>
-              <div className="days">
-                {["Sen","Sel","Rab","Kam","Jum"].map((d,i) => (
-                  <div key={d} className="day">
-                    <div className={`day-box ${i===2?"day-box--no":"day-box--ok"}`}>
-                      {i===2 ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
-                    </div>
-                    <span className="day-lbl">{d}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="att-stat">
-                <span>Hadir <b style={{ color:"#16a34a" }}>23</b></span>
-                <span>Sakit <b style={{ color:"var(--gold)" }}>1</b></span>
-                <span>Alpa <b style={{ color:"var(--red)" }}>0</b></span>
-              </div>
-            </div>
-
-            {/* Payment */}
-            <div className="card">
-              <div className="sh">
-                <span className="eyebrow">Status Pembayaran</span>
-              </div>
-              <div className="pay-list">
-                {payments.map(p => (
-                  <div key={p.label} className={`pay-row ${p.ok?"pay-row--ok":"pay-row--due"}`}>
-                    <div>
-                      <div className="pay-name">{p.label}</div>
-                      <div className={`pay-status ${p.ok?"pay-ok":"pay-due"}`}>{p.status}</div>
-                    </div>
-                    <div className="pay-amt">{p.amount}</div>
-                  </div>
-                ))}
-              </div>
+          <div className="sb-ft">
+            <div className="sb-item" onClick={handleLogout} style={{ color: "#fca5a5" }}>
+              <LogOut size={18} className="sb-ico" />
+              <span className="sb-lbl">Keluar</span>
             </div>
           </div>
+        </aside>
 
-          {/* ── Row 3: Chart + Announcements ── */}
-          <div className="gchart">
+        {mobOpen && (
+          <div
+            style={{ position:'fixed', inset:0, zIndex:40, background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)' }}
+            onClick={() => setMobOpen(false)}
+          />
+        )}
 
-            {/* Chart */}
-            <div className="card">
-              <div className="ch-head">
-                <div>
-                  <div className="eyebrow">Perkembangan Nilai</div>
-                  <div className="ch-title">Rata-rata: <span style={{ color:"var(--green)" }}>88.5</span></div>
+        {/* ════ MAIN ════ */}
+        <main className={`main ${col ? "main--col" : "main--open"}`}>
+
+          {/* Topbar — floating pills */}
+          <header className="top">
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <button className="top-menu-btn" onClick={() => setMobOpen(true)}>
+                <Menu size={17}/>
+              </button>
+              <div className="top-search">
+                <Search size={14} color="#94a3b8" />
+                <input placeholder="Cari siswa, guru, atau program..." />
+              </div>
+            </div>
+
+            <div className="top-acts">
+              {/* Notifikasi — pill sendiri */}
+              <button className="top-notif-pill">
+                <Bell size={17} />
+                <span className="top-dot"/>
+              </button>
+
+              {/* Profile — pill sendiri */}
+              <div className="top-prof" onClick={() => setActive("pengaturan")}>
+                <div className="top-av">{initial}</div>
+                <div className="top-pname-wrap">
+                  <div className="top-pname">{adminName}</div>
+                  <div className="top-prole">Administrator</div>
                 </div>
-                <div className="tabs">
-                  {["Semester","Bulan","Minggu"].map((t,i) => (
-                    <button key={t} className={`tab ${i===1?"tab--on":""}`}>{t}</button>
+              </div>
+            </div>
+          </header>
+
+          {/* ════ CONTENT ════ */}
+          <div className="content">
+            {active === "guru"       ? <GuruPage /> :
+             active === "mitra"      ? <MitraPage /> :
+             active === "wali_murid" ? <WaliMuridPage /> :
+             active === "siswa"      ? <SiswaPage /> :
+             active === "info"       ? <InfoPage /> :
+             active === "agenda"     ? <AgendaPage /> :
+             active === "progress"   ? <ProgressPage /> :
+             active === "pengaturan" ? <PengaturanPage /> :
+            (
+              /* ════ BERANDA ════ */
+              <>
+                {/* Banner */}
+                <div className="dash-banner">
+                  <div>
+                    <div className="db-title">Selamat Datang, {adminName.split(' ')[0]} 👋</div>
+                    <div className="db-sub">Berikut adalah ringkasan operasional QLC hari ini.</div>
+                  </div>
+                  <div className="db-date"><CalendarDays size={16}/> {today}</div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="dash-stats">
+                  {[
+                    {
+                      val: stats?.total_siswa,
+                      lbl: 'Total Siswa',
+                      icon: <Users size={22} strokeWidth={2}/>,
+                      bg: 'rgba(15,118,110,0.1)', color: 'var(--green)',
+                      tab: 'siswa',
+                    },
+                    {
+                      val: stats?.total_guru,
+                      lbl: 'Pengajar Aktif',
+                      icon: <GraduationCap size={22} strokeWidth={2}/>,
+                      bg: 'rgba(37,99,235,0.1)', color: 'var(--blue)',
+                      tab: 'guru',
+                    },
+                    {
+                      val: stats?.total_program,
+                      lbl: 'Program Studi',
+                      icon: <BookOpen size={22} strokeWidth={2}/>,
+                      bg: 'rgba(124,58,237,0.1)', color: '#7c3aed',
+                      tab: 'info',
+                    },
+                    {
+                      val: stats?.total_mitra,
+                      lbl: 'Mitra Aktif',
+                      icon: <Handshake size={22} strokeWidth={2}/>,
+                      bg: 'rgba(212,160,23,0.1)', color: 'var(--gold)',
+                      tab: 'mitra',
+                    },
+                  ].map(({ val, lbl, icon, bg, color, tab }) => (
+                    <div key={lbl} className="glass-card stat-box" onClick={() => setActive(tab)}>
+                      <div className="st-icon-wrap" style={{ background: bg, color }}>{icon}</div>
+                      <div className="st-info">
+                        {loading
+                          ? <div className="st-val-skel" />
+                          : <div className="st-val">{val ?? 0}</div>
+                        }
+                        <div className="st-lbl">{lbl}</div>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
 
-              <ResponsiveContainer width="100%" height={140}>
-                <AreaChart data={monthlyGrades} margin={{ top:4, right:4, left:-16, bottom:0 }}>
-                  <defs>
-                    <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#0f766e" stopOpacity={0.22} />
-                      <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="b" tick={{ fill:"#94a3b8", fontSize:10 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[60,100]} tick={{ fill:"#94a3b8", fontSize:10 }} axisLine={false} tickLine={false} width={28} />
-                  <Tooltip contentStyle={{ background:"#fff", border:"1px solid rgba(15,118,110,0.18)", borderRadius:10, fontSize:12, color:"#1e293b" }} cursor={{ stroke:"rgba(15,118,110,0.18)" }} />
-                  <Area type="monotone" dataKey="v" stroke="#0f766e" strokeWidth={2.5} fill="url(#gg)" dot={{ fill:"#0f766e", r:4, strokeWidth:0 }} />
-                </AreaChart>
-              </ResponsiveContainer>
-
-              <div className="sbadges">
-                {subjects.map(g => (
-                  <div key={g.s} className="sbadge">
-                    <div className={`sbadge-val ${g.v>=88?"sbadge-val--hi":""}`}>{g.v}</div>
-                    <span className="sbadge-lbl">{g.s}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Announcements */}
-            <div className="card">
-              <div className="sh">
-                <span className="eyebrow">Pengumuman</span>
-                <button className="sh-icon-btn"><Plus size={12} color="#fff" /></button>
-              </div>
-              <div className="ann-list">
-                {announcements.map(a => (
-                  <div key={a.id} className="ann-item">
-                    <div className="ann-row">
-                      <span className="ann-ttl">{a.title}</span>
-                      <span className={`ann-tag ann-tag--${a.type}`}>
-                        {a.type==="urgent"?"Penting":a.type==="info"?"Info":"Umum"}
-                      </span>
+                {/* Chart & Agenda */}
+                <div className="dash-grid">
+                  {/* Chart */}
+                  <div className="glass-card">
+                    <div className="sec-hd">
+                      <div className="sec-ttl"><TrendingUp size={18} color="var(--green)"/> Grafik Pendaftaran</div>
                     </div>
-                    <p className="ann-desc">{a.desc}</p>
-                    <div className="ann-date"><Clock size={9} />{a.date}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Row 4: Messages ── */}
-          <div className="card">
-            <div className="sh">
-              <span className="eyebrow">Pesan Terbaru</span>
-              <button className="sh-link">Lihat Semua →</button>
-            </div>
-            <div className="gmsg">
-              {messages.map(m => (
-                <div key={m.id} className={`msg-item ${m.unread?"msg-item--unread":""}`}>
-                  <div className="msg-av">{m.av}</div>
-                  <div className="msg-body">
-                    <div className="msg-top">
-                      <span className="msg-from">{m.from}</span>
-                      <span className="msg-time">{m.t}</span>
+                    <div style={{ height: 260, width: "100%", marginTop: 10 }}>
+                      {loading ? (
+                        <div style={{ height: '100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          <Loader2 size={28} style={{ color:'var(--green)', animation:'spin 1s linear infinite' }} />
+                        </div>
+                      ) : (
+                        <ResponsiveContainer>
+                          <AreaChart data={chart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%"  stopColor="var(--green)" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="var(--green)" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
+                            <Tooltip contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }} />
+                            <Area type="monotone" dataKey="pendaftar" stroke="var(--green)" strokeWidth={3} fillOpacity={1} fill="url(#colorReg)" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      )}
                     </div>
-                    <p className="msg-txt">{m.txt}</p>
                   </div>
-                  {m.unread && <span className="msg-dot" />}
+
+                  {/* Agenda Terdekat */}
+                  <div className="glass-card">
+                    <div className="sec-hd">
+                      <div className="sec-ttl"><CalendarDays size={18} color="var(--blue)"/> Agenda Terdekat</div>
+                      <button className="sec-btn" onClick={() => setActive("agenda")}>Lihat Semua <ArrowRight size={14}/></button>
+                    </div>
+                    {loading ? (
+                      <div className="card-empty"><Loader2 size={20} style={{ animation:'spin 1s linear infinite', display:'inline' }}/></div>
+                    ) : agendas.length === 0 ? (
+                      <div className="card-empty">Tidak ada agenda mendatang.</div>
+                    ) : (
+                      <div className="flex flex-col">
+                        {agendas.map(a => (
+                          <div key={a.id} className="list-item">
+                            <div className="li-l">
+                              <div className="li-av" style={{
+                                background: a.type === "urgent" ? "rgba(220,38,38,0.1)" : "rgba(37,99,235,0.1)",
+                                color:      a.type === "urgent" ? "var(--red)"          : "var(--blue)",
+                              }}>
+                                {a.date.split(" ")[0]}
+                              </div>
+                              <div>
+                                <div className="li-title">{a.title}</div>
+                                <div className="li-sub"><Clock size={11}/> {a.date}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-            </>
-          )}
 
+                {/* Bottom: Pending & Top Reports */}
+                <div className="dash-grid-bot">
+                  {/* Perlu Persetujuan */}
+                  <div className="glass-card">
+                    <div className="sec-hd">
+                      <div className="sec-ttl">
+                        <UserPlus size={18} color="var(--gold)"/> Perlu Persetujuan
+                        {stats && stats.total_pending > 0 && (
+                          <span style={{ background:'rgba(245,158,11,0.12)', color:'#d97706', fontSize:11, fontWeight:800, padding:'2px 8px', borderRadius:8, marginLeft:4 }}>
+                            {stats.total_pending}
+                          </span>
+                        )}
+                      </div>
+                      <button className="sec-btn" onClick={() => setActive("siswa")}>Kelola Siswa <ArrowRight size={14}/></button>
+                    </div>
+                    {loading ? (
+                      <div className="card-empty"><Loader2 size={20} style={{ animation:'spin 1s linear infinite', display:'inline' }}/></div>
+                    ) : pending.length === 0 ? (
+                      <div className="card-empty" style={{ color:'#16a34a' }}>
+                        <CheckCircle2 size={20} style={{ display:'inline', marginRight:6 }}/>
+                        Semua pendaftaran sudah diproses.
+                      </div>
+                    ) : (
+                      <div className="flex flex-col">
+                        {pending.map(s => (
+                          <div key={s.id} className="list-item">
+                            <div className="li-l">
+                              <div className="li-av">{s.nama.charAt(0)}</div>
+                              <div>
+                                <div className="li-title">{s.nama}</div>
+                                <div className="li-sub"><BookOpen size={11}/> {s.prog}</div>
+                              </div>
+                            </div>
+                            <div className="li-r">
+                              <span className="li-badge b-warn">Menunggu</span>
+                              <div style={{ fontSize:10, color:'var(--text3)', marginTop:4, fontWeight:600 }}>{s.date}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Laporan Terbaik */}
+                  <div className="glass-card">
+                    <div className="sec-hd">
+                      <div className="sec-ttl"><Star size={18} color="#7c3aed"/> Laporan Terbaik Hari Ini</div>
+                      <button className="sec-btn" onClick={() => setActive("progress")}>Semua Laporan <ArrowRight size={14}/></button>
+                    </div>
+                    {loading ? (
+                      <div className="card-empty"><Loader2 size={20} style={{ animation:'spin 1s linear infinite', display:'inline' }}/></div>
+                    ) : topRep.length === 0 ? (
+                      <div className="card-empty">Belum ada laporan hari ini.</div>
+                    ) : (
+                      <div className="flex flex-col">
+                        {topRep.map(r => (
+                          <div key={r.id} className="list-item">
+                            <div className="li-l">
+                              <div className="li-av" style={{ background:'rgba(124,58,237,0.1)', color:'#7c3aed' }}>
+                                {r.nama.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="li-title">{r.nama}</div>
+                                <div className="li-sub">
+                                  <FileText size={11}/>
+                                  {r.report_type ? r.report_type.toUpperCase() : '—'} · {r.capaian}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="li-r">
+                              <span className={`li-badge ${r.kualitas === 'sangat_lancar' ? 'b-ok' : 'b-blue'}`}>
+                                {r.kualitas ? QUAL_LABEL[r.kualitas] : '—'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </>
+            )}
+          </div>
         </main>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>
   );
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\InfoController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\MitraController;
 use App\Http\Controllers\ProgressReportController;
+use App\Http\Controllers\AdminDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,7 +75,16 @@ Route::middleware('auth')->group(function () {
         Route::get('children/{studentId}/reports',      [ProgressReportController::class, 'parentChildReports']);
     });
 
-    // Admin routes
+    // Admin dashboard routes
+    Route::prefix('admin/dashboard')->group(function () {
+        Route::get('stats',            [AdminDashboardController::class, 'stats']);
+        Route::get('chart',            [AdminDashboardController::class, 'chart']);
+        Route::get('upcoming-agenda',  [AdminDashboardController::class, 'upcomingAgenda']);
+        Route::get('pending-students', [AdminDashboardController::class, 'pendingStudents']);
+        Route::get('top-reports',      [AdminDashboardController::class, 'topReports']);
+    });
+
+    // Admin progress routes
     Route::prefix('admin/progress')->group(function () {
         Route::get   ('options',                      [ProgressReportController::class, 'adminOptions']);
         Route::get   ('students',                     [ProgressReportController::class, 'adminStudents']);

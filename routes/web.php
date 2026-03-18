@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SettingsController; // <-- Tambahan untuk Settings
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\Parents\EnrollmentController;
 use App\Http\Controllers\Parents\AnakController;
 use Illuminate\Foundation\Application;
@@ -55,7 +56,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->group(function () {
-        Route::get('/dashboard', fn() => Inertia::render('admin/Dashboard'))->name('admin.dashboard');
+        Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('admin.dashboard');;
     });
 
 Route::middleware(['auth', 'role:teacher'])
