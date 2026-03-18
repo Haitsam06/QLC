@@ -72,6 +72,8 @@ Route::middleware(['auth', 'role:parents'])
     ->group(function () {
         Route::get('/dashboard', fn() => Inertia::render('parents/Dashboard'))->name('dashboard');
 
+        Route::get('/laporan', fn() => Inertia::render('parents/LaporanParents'))->name('laporan');
+
         // Halaman anak
         Route::get('/anak', [AnakController::class, 'index'])->name('anak');
 

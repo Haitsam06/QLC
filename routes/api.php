@@ -68,6 +68,12 @@ Route::middleware('auth')->group(function () {
         Route::delete('reports/{id}',                 [ProgressReportController::class, 'teacherDestroy']);
     });
 
+    // Parent routes
+    Route::prefix('parent')->group(function () {
+        Route::get('children',                          [ProgressReportController::class, 'parentChildren']);
+        Route::get('children/{studentId}/reports',      [ProgressReportController::class, 'parentChildReports']);
+    });
+
     // Admin routes
     Route::prefix('admin/progress')->group(function () {
         Route::get   ('options',                      [ProgressReportController::class, 'adminOptions']);

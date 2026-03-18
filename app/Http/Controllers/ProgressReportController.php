@@ -16,6 +16,7 @@ class ProgressReportController extends Controller
     private $students;
     private $teachers;
     private $programs;
+    private $parents;
 
     public function __construct()
     {
@@ -25,6 +26,7 @@ class ProgressReportController extends Controller
         $this->students = $db->selectCollection('students');
         $this->teachers = $db->selectCollection('teachers');
         $this->programs = $db->selectCollection('programs');
+        $this->parents  = $db->selectCollection('parents');
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -225,6 +227,115 @@ class ProgressReportController extends Controller
 
         $this->reports->deleteOne(['_id' => $oid]);
         return response()->json(['message' => 'Laporan berhasil dihapus.']);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+     | PARENT ROUTES
+     | Prefix: /api/parent
+     ═══════════════════════════════════════════════════════════ */
+
+    /* ─────────────────────────────────────────────────────────
+     | GET /api/parent/children
+     | Daftar SEMUA anak milik orang tua (active/pending/inactive)
+     | Field 'enrollment_status' disertakan agar frontend bisa
+     | menampilkan badge & mengunci laporan jika bukan 'active'
+     ───────────────────────────────────────────────────────── */
+    public function parentChildren(): JsonResponse
+    {
+        $userId = (string) Auth::id();
+
+        $parent = $this->parents->findOne(['user_id' => $userId]);
+        if (!$parent) {
+            return response()->json(['message' => 'Profil wali murid tidak ditemukan.'], 404);
+        }
+
+        $parentId = (string) $parent['user_id'];
+
+        // Ambil SEMUA anak tanpa filter status
+        $cursor      = $this->students->find(
+            ['parent_id' => $parentId],
+            ['sort' => ['nama' => 1]]
+        );
+
+        $studentList = [];
+        foreach ($cursor as $doc) {
+            $studentList[] = $doc;
+        }
+
+        $programMap = $this->buildProgramMap($studentList);
+
+        $data = [];
+        foreach ($studentList as $doc) {
+            $data[] = [
+                'id'                => (string) $doc['_id'],
+                'nama'              => $doc['nama'] ?? '',
+                'program_name'      => $programMap[$doc['program_id'] ?? ''] ?? '—',
+                'enrollment_status' => $doc['enrollment_status'] ?? 'pending',
+            ];
+        }
+
+        return response()->json($data);
+    }
+
+    /* ─────────────────────────────────────────────────────────
+     | GET /api/parent/children/{studentId}/reports
+     | Riwayat progress report satu anak
+     | Validasi: pastikan siswa ini benar milik parent yang login
+     ───────────────────────────────────────────────────────── */
+    public function parentChildReports(string $studentId): JsonResponse
+    {
+        $userId = (string) Auth::id();
+
+        // Verifikasi kepemilikan: siswa harus milik parent ini
+        $parent = $this->parents->findOne(['user_id' => $userId]);
+        if (!$parent) {
+            return response()->json(['message' => 'Profil wali murid tidak ditemukan.'], 404);
+        }
+
+        try {
+            $student = $this->students->findOne(['_id' => new ObjectId($studentId)]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'ID tidak valid.'], 400);
+        }
+
+        if (!$student) {
+            return response()->json(['message' => 'Siswa tidak ditemukan.'], 404);
+        }
+
+        // Pastikan siswa ini benar milik parent yang login
+        if ((string) $student['parent_id'] !== (string) $parent['user_id']) {
+            return response()->json(['message' => 'Akses ditolak.'], 403);
+        }
+
+        // Blokir akses laporan jika siswa bukan active
+        $status = $student['enrollment_status'] ?? 'pending';
+        if ($status !== 'active') {
+            return response()->json([
+                'message' => $status === 'pending'
+                    ? 'Pendaftaran anak Anda sedang dalam proses verifikasi. Laporan belum tersedia.'
+                    : 'Akun anak Anda tidak aktif. Hubungi admin untuk informasi lebih lanjut.',
+                'locked'  => true,
+                'status'  => $status,
+            ], 403);
+        }
+
+        // Ambil semua laporan siswa ini, diurutkan terbaru dulu
+        $cursor     = $this->reports->find(
+            ['student_id' => $studentId],
+            ['sort' => ['date' => -1]]
+        );
+
+        // Build teacher name map
+        $teacherMap = $this->buildTeacherMap();
+
+        $data = [];
+        foreach ($cursor as $r) {
+            $report                 = $this->formatReport($r);
+            $report['teacher_name'] = $teacherMap[$report['teacher_id']] ?? 'Admin';
+            $data[] = $report;
+        }
+
+        return response()->json($data);
     }
 
     /* ═══════════════════════════════════════════════════════════
