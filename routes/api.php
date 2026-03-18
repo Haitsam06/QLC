@@ -7,7 +7,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\InfoController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\MitraController;
-use App\Http\Controllers\Teachers\ProgressReportController;
+use App\Http\Controllers\ProgressReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,17 +32,14 @@ Route::apiResource('students', StudentController::class)
 
 // ── Info ──────────────────────────────────────────────────────────────────
 Route::prefix('info')->group(function () {
-    // Profile (single record)
     Route::get ('profile', [InfoController::class, 'profileShow']);
     Route::post('profile', [InfoController::class, 'profileUpsert']);
 
-    // Programs
     Route::get   ('programs',      [InfoController::class, 'programIndex']);
     Route::post  ('programs',      [InfoController::class, 'programStore']);
     Route::post  ('programs/{id}', [InfoController::class, 'programUpdate']);
     Route::delete('programs/{id}', [InfoController::class, 'programDestroy']);
 
-    // Gallery
     Route::get   ('gallery',      [InfoController::class, 'galleryIndex']);
     Route::post  ('gallery',      [InfoController::class, 'galleryStore']);
     Route::post  ('gallery/{id}', [InfoController::class, 'galleryUpdate']);
@@ -58,11 +55,27 @@ Route::apiResource('agenda', AgendaController::class)
 Route::apiResource('partners', MitraController::class)
     ->parameters(['partners' => 'id']);
 
-// ── Progress Reports (Teacher) ────────────────────────────────────────────
-// Middleware 'auth' (session-based, Laravel Breeze).
-Route::middleware('auth')->prefix('teacher')->group(function () {
-    Route::get ('students',                     [ProgressReportController::class, 'students']);
-    Route::get ('students/{studentId}/reports', [ProgressReportController::class, 'studentReports']);
-    Route::post('reports',                      [ProgressReportController::class, 'store']);
-    Route::get ('reports/{id}',                 [ProgressReportController::class, 'show']);
+// ── Progress Reports ──────────────────────────────────────────────────────
+Route::middleware('auth')->group(function () {
+
+    // Teacher routes
+    Route::prefix('teacher')->group(function () {
+        Route::get   ('students',                     [ProgressReportController::class, 'teacherStudents']);
+        Route::get   ('students/{studentId}/reports', [ProgressReportController::class, 'teacherStudentReports']);
+        Route::post  ('reports',                      [ProgressReportController::class, 'teacherStore']);
+        Route::get   ('reports/{id}',                 [ProgressReportController::class, 'teacherShow']);
+        Route::put   ('reports/{id}',                 [ProgressReportController::class, 'teacherUpdate']);
+        Route::delete('reports/{id}',                 [ProgressReportController::class, 'teacherDestroy']);
+    });
+
+    // Admin routes
+    Route::prefix('admin/progress')->group(function () {
+        Route::get   ('options',                      [ProgressReportController::class, 'adminOptions']);
+        Route::get   ('students',                     [ProgressReportController::class, 'adminStudents']);
+        Route::get   ('students/{studentId}/reports', [ProgressReportController::class, 'adminStudentReports']);
+        Route::get   ('reports',                      [ProgressReportController::class, 'adminReports']);
+        Route::post  ('reports',                      [ProgressReportController::class, 'adminStore']);
+        Route::put   ('reports/{id}',                 [ProgressReportController::class, 'adminUpdate']);
+        Route::delete('reports/{id}',                 [ProgressReportController::class, 'adminDestroy']);
+    });
 });

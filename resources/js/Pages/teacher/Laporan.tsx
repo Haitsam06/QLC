@@ -5,7 +5,8 @@ import {
     X, Save, FileText, User, Calendar,
     CheckCircle2, AlertCircle, ChevronRight,
     Clock, TrendingUp, Award, Eye, ArrowLeft,
-    Target, Star, BarChart2, Loader2, AlertTriangle
+    Target, Star, BarChart2, Loader2, AlertTriangle,
+    Pencil, Trash2
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -97,15 +98,18 @@ function Toast({
    DETAIL PANEL — slide-in dari kanan
 ═══════════════════════════════════════════════════════════ */
 function DetailPanel({
-    student, onClose, onAddReport,
+    student, onClose, onAddReport, onReportChanged,
 }: {
     student: Student;
     onClose: () => void;
     onAddReport: () => void;
+    onReportChanged: (updatedReport?: ProgressReport) => void;
 }) {
-    const [reports, setReports] = useState<ProgressReport[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error,   setError]   = useState<string | null>(null);
+    const [reports,    setReports]    = useState<ProgressReport[]>([]);
+    const [loading,    setLoading]    = useState(true);
+    const [error,      setError]      = useState<string | null>(null);
+    const [editReport, setEditReport] = useState<ProgressReport | null>(null);
+    const [delReport,  setDelReport]  = useState<ProgressReport | null>(null);
 
     const loadReports = () => {
         setLoading(true);
@@ -116,17 +120,28 @@ function DetailPanel({
             .finally(() => setLoading(false));
     };
 
-    // Lazy load saat panel dibuka
     useEffect(() => { loadReports(); }, [student.id]);
 
-    // Expose refresh ke parent (dipakai setelah simpan report baru)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (DetailPanel as any)._refresh = loadReports;
-
     const totalHadir  = reports.filter(r => r.attendance === 'hadir').length;
-    const totalSangat = reports.filter(r => r.kualitas   === 'sangat_lancar').length;
+    const totalSangat = reports.filter(r => r.kualitas === 'sangat_lancar').length;
+
+    // Setelah edit berhasil — update list lokal & beritahu parent
+    const handleEditSaved = (updated: ProgressReport) => {
+        setReports(prev => prev.map(r => r.id === updated.id ? updated : r));
+        setEditReport(null);
+        onReportChanged(updated);
+    };
+
+    // Setelah delete berhasil — update list lokal & beritahu parent
+    const handleDeleted = (deletedId: string) => {
+        const remaining = reports.filter(r => r.id !== deletedId);
+        setReports(remaining);
+        setDelReport(null);
+        onReportChanged(remaining[0]); // lastReport jadi yg terbaru setelah hapus
+    };
 
     return (
+        <>
         <div className="fixed inset-0 z-[90] flex justify-end">
             <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onClose} />
 
@@ -197,9 +212,9 @@ function DetailPanel({
 
                         return (
                             <div key={report.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:border-green-200 transition-colors">
-                                {/* Row 1 */}
+                                {/* Row 1: badge + tanggal + aksi */}
                                 <div className="flex items-start justify-between gap-2 mb-2">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         {report.report_type && (
                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold">
                                                 <BookOpen size={10} />
@@ -208,9 +223,26 @@ function DetailPanel({
                                         )}
                                         <AttendanceBadge status={report.attendance} />
                                     </div>
-                                    <span className="text-[11px] text-gray-400 font-medium shrink-0 flex items-center gap-1">
-                                        <Calendar size={11} /> {formatDate(report.date)}
-                                    </span>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <span className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+                                            <Calendar size={11} /> {formatDate(report.date)}
+                                        </span>
+                                        {/* Tombol edit & hapus — hanya muncul jika laporan milik guru ini */}
+                                        <button
+                                            onClick={() => setEditReport(report)}
+                                            className="ml-1 p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                            title="Edit laporan"
+                                        >
+                                            <Pencil size={13} />
+                                        </button>
+                                        <button
+                                            onClick={() => setDelReport(report)}
+                                            className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                            title="Hapus laporan"
+                                        >
+                                            <Trash2 size={13} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Target & Capaian */}
@@ -247,6 +279,281 @@ function DetailPanel({
                             </div>
                         );
                     })}
+                </div>
+            </div>
+        </div>
+
+        {/* Edit Modal — render di atas detail panel */}
+        {editReport && (
+            <EditModal
+                report={editReport}
+                onClose={() => setEditReport(null)}
+                onSaved={handleEditSaved}
+            />
+        )}
+
+        {/* Delete Confirm — render di atas detail panel */}
+        {delReport && (
+            <DeleteConfirmModal
+                report={delReport}
+                onClose={() => setDelReport(null)}
+                onDeleted={handleDeleted}
+            />
+        )}
+
+        <style>{`
+            @keyframes slide-in {
+                from { transform: translateX(100%); opacity: 0; }
+                to   { transform: translateX(0);    opacity: 1; }
+            }
+            .animate-slide-in { animation: slide-in 0.25s cubic-bezier(0.22,1,0.36,1) both; }
+        `}</style>
+        </>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL EDIT LAPORAN
+═══════════════════════════════════════════════════════════ */
+function EditModal({
+    report, onClose, onSaved,
+}: {
+    report: ProgressReport;
+    onClose: () => void;
+    onSaved: (updated: ProgressReport) => void;
+}) {
+    const [date,               setDate]              = useState(report.date);
+    const [attendance,         setAttendance]        = useState(report.attendance);
+    const [reportType,         setReportType]        = useState(report.report_type ?? 'hafalan');
+    const [kualitas,           setKualitas]          = useState(report.kualitas ?? 'lancar');
+    const [hafalanTarget,      setHafalanTarget]     = useState(report.hafalan_target ?? '');
+    const [hafalanAchievement, setHafalanAchievement] = useState(report.hafalan_achievement ?? '');
+    const [notes,              setNotes]             = useState(report.teacher_notes ?? '');
+    const [saving,             setSaving]            = useState(false);
+    const [formError,          setFormError]         = useState<string | null>(null);
+
+    const isAbsent = ['izin', 'sakit', 'alpha'].includes(attendance);
+
+    const handleSubmit = async () => {
+        setSaving(true);
+        setFormError(null);
+        try {
+            const res = await axios.put<ProgressReport>(`/api/teacher/reports/${report.id}`, {
+                date,
+                attendance,
+                report_type:         isAbsent ? null : reportType,
+                kualitas:            isAbsent ? null : kualitas,
+                hafalan_target:      isAbsent ? null : (hafalanTarget.trim()      || null),
+                hafalan_achievement: isAbsent ? null : (hafalanAchievement.trim() || null),
+                teacher_notes:       notes.trim() || null,
+            });
+            onSaved(res.data);
+        } catch (err: unknown) {
+            const msg = (err as { response?: { data?: { message?: string } } })
+                ?.response?.data?.message ?? 'Gagal menyimpan perubahan.';
+            setFormError(msg);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative z-10 overflow-hidden flex flex-col max-h-[92vh]">
+
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-base font-bold text-gray-900">Edit Laporan</h2>
+                        <p className="text-[11px] text-gray-500 font-medium mt-0.5">{formatDate(report.date)}</p>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="overflow-y-auto flex-1 bg-gray-50 p-5 space-y-4">
+
+                    {formError && (
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-xs font-semibold">
+                            <AlertTriangle size={14} /> {formError}
+                        </div>
+                    )}
+
+                    {/* Tanggal */}
+                    <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 shadow-sm flex items-center justify-between">
+                        <div className="text-xs font-bold text-gray-500 uppercase">Tanggal</div>
+                        <input
+                            type="date"
+                            value={date}
+                            onChange={e => setDate(e.target.value)}
+                            className="text-xs font-bold text-gray-700 border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 bg-gray-50"
+                        />
+                    </div>
+
+                    {/* Kehadiran */}
+                    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                        <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Status Kehadiran</h3>
+                        <div className="grid grid-cols-4 gap-2">
+                            {(['hadir', 'izin', 'sakit', 'alpha'] as const).map(s => (
+                                <button key={s} type="button" onClick={() => setAttendance(s)}
+                                    className={`py-2 rounded-lg text-xs font-bold border transition-all ${
+                                        attendance === s
+                                            ? 'border-green-500 bg-green-600 text-white shadow-sm'
+                                            : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'
+                                    }`}>
+                                    {attendanceBadge[s].label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Jenis + Kualitas */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                            <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Jenis Setoran</h3>
+                            <div className="grid grid-cols-3 gap-2">
+                                {([
+                                    { id: 'hafalan', label: 'Hafalan', icon: BookOpen  },
+                                    { id: 'tilawah', label: 'Tilawah', icon: FileText  },
+                                    { id: 'yanbua',  label: "Yanbu'a", icon: BarChart2 },
+                                ] as const).map(t => (
+                                    <button key={t.id} type="button" disabled={isAbsent} onClick={() => setReportType(t.id)}
+                                        className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed
+                                            ${reportType === t.id && !isAbsent ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}>
+                                        <t.icon size={16} />
+                                        <span className="font-bold text-[11px]">{t.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                            <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Kualitas Bacaan</h3>
+                            <div className="flex flex-col gap-2">
+                                {([
+                                    { id: 'sangat_lancar', label: 'Sangat Lancar',   activeColor: 'border-blue-400 bg-blue-50 text-blue-800',       icon: Star         },
+                                    { id: 'lancar',        label: 'Lancar',           activeColor: 'border-emerald-400 bg-emerald-50 text-emerald-800', icon: CheckCircle2 },
+                                    { id: 'mengulang',     label: 'Perlu Mengulang', activeColor: 'border-amber-400 bg-amber-50 text-amber-800',     icon: AlertCircle  },
+                                ] as const).map(k => (
+                                    <button key={k.id} type="button" disabled={isAbsent} onClick={() => setKualitas(k.id)}
+                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed
+                                            ${kualitas === k.id && !isAbsent ? k.activeColor : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}>
+                                        <k.icon size={14} /> {k.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Target & Capaian */}
+                    <div className={`bg-white rounded-xl border border-gray-200 p-4 shadow-sm transition-opacity ${isAbsent ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Capaian Setoran</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 flex items-center gap-1">
+                                    <Target size={10} /> Target
+                                </label>
+                                <input type="text" value={hafalanTarget} onChange={e => setHafalanTarget(e.target.value)}
+                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
+                                    placeholder="Al-Mulk: 1-15" />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 flex items-center gap-1">
+                                    <TrendingUp size={10} /> Capaian Aktual
+                                </label>
+                                <input type="text" value={hafalanAchievement} onChange={e => setHafalanAchievement(e.target.value)}
+                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
+                                    placeholder="Al-Mulk: 1-10" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Catatan */}
+                    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                        <h3 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                            <FileText size={13} className="text-green-600" /> Catatan Asatidz
+                        </h3>
+                        <textarea value={notes} onChange={e => setNotes(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-green-500 resize-none min-h-[72px] transition-all"
+                            placeholder="Catatan tajwid, perkembangan, atau hal yang perlu diperhatikan..." />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-5 py-3.5 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
+                    <button onClick={onClose} disabled={saving}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50">
+                        Batal
+                    </button>
+                    <button onClick={handleSubmit} disabled={saving}
+                        className="px-5 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                        {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                        {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL KONFIRMASI HAPUS
+═══════════════════════════════════════════════════════════ */
+function DeleteConfirmModal({
+    report, onClose, onDeleted,
+}: {
+    report: ProgressReport;
+    onClose: () => void;
+    onDeleted: (id: string) => void;
+}) {
+    const [deleting,  setDeleting]  = useState(false);
+    const [delError,  setDelError]  = useState<string | null>(null);
+
+    const handleDelete = async () => {
+        setDeleting(true);
+        setDelError(null);
+        try {
+            await axios.delete(`/api/teacher/reports/${report.id}`);
+            onDeleted(report.id);
+        } catch (err: unknown) {
+            const msg = (err as { response?: { data?: { message?: string } } })
+                ?.response?.data?.message ?? 'Gagal menghapus laporan.';
+            setDelError(msg);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative z-10 p-6 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
+                    <Trash2 size={28} />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-2">Hapus Laporan?</h3>
+                <p className="text-xs text-gray-500 mb-1">Laporan tanggal</p>
+                <p className="text-sm font-bold text-gray-800 mb-4">{formatDate(report.date)}</p>
+                <p className="text-xs text-gray-400 mb-5">Data ini akan dihapus permanen dan tidak bisa dikembalikan.</p>
+
+                {delError && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-3 py-2 text-xs font-semibold mb-4">
+                        <AlertTriangle size={13} /> {delError}
+                    </div>
+                )}
+
+                <div className="flex gap-3">
+                    <button onClick={onClose} disabled={deleting}
+                        className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50">
+                        Batal
+                    </button>
+                    <button onClick={handleDelete} disabled={deleting}
+                        className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-60">
+                        {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                        {deleting ? 'Menghapus...' : 'Hapus'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -534,17 +841,28 @@ export default function LaporanProgres() {
         return matchSearch && matchProgram;
     });
 
-    // ── Setelah report disimpan ──────────────────────────
+    // ── Setelah report disimpan (baru) ───────────────────────
     const handleSaved = (newReport: ProgressReport) => {
-        // Update lastReport di tabel
         setStudents(prev =>
             prev.map(s => s.id === newReport.student_id ? { ...s, lastReport: newReport } : s)
         );
-        // Refresh detail panel jika sedang terbuka untuk siswa yang sama
         if (detailStudent?.id === newReport.student_id) {
-            setDetailRefreshKey(k => k + 1); // trigger re-mount DetailPanel
+            setDetailRefreshKey(k => k + 1);
         }
         setToast({ message: 'Laporan berhasil disimpan!', type: 'success' });
+    };
+
+    // ── Setelah report diubah/dihapus dari DetailPanel ──────
+    const handleReportChanged = (updatedReport?: ProgressReport) => {
+        if (!detailStudent) return;
+        // Update lastReport di tabel dengan data terbaru
+        setStudents(prev =>
+            prev.map(s => s.id === detailStudent.id
+                ? { ...s, lastReport: updatedReport ?? undefined }
+                : s
+            )
+        );
+        setToast({ message: updatedReport ? 'Laporan berhasil diubah!' : 'Laporan berhasil dihapus!', type: 'success' });
     };
 
     return (
@@ -750,6 +1068,7 @@ export default function LaporanProgres() {
                     student={detailStudent}
                     onClose={() => setDetailStudent(null)}
                     onAddReport={() => setModalStudent(detailStudent)}
+                    onReportChanged={handleReportChanged}
                 />
             )}
 
@@ -770,14 +1089,6 @@ export default function LaporanProgres() {
                     onClose={() => setToast(null)}
                 />
             )}
-
-            <style>{`
-                @keyframes slide-in {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to   { transform: translateX(0);    opacity: 1; }
-                }
-                .animate-slide-in { animation: slide-in 0.25s cubic-bezier(0.22,1,0.36,1) both; }
-            `}</style>
         </div>
     );
 }

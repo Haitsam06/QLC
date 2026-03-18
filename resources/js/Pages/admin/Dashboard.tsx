@@ -20,6 +20,7 @@ import WaliMuridPage from "./WalimuridPage";
 import SiswaPage from "./SiswaPage";
 import InfoPage from "./InfoPage";
 import AgendaPage from "./AgendaPage";
+import ProgressPage from "./ProgressPage";
 import PengaturanPage from "./PengaturanPage";
 
 /* ═══════════════════════════════════════════════
@@ -722,6 +723,7 @@ export default function CombinedDashboard() {
           active === "siswa"      ? <SiswaPage /> :
           active === "info"       ? <InfoPage /> :
           active === "agenda"     ? <AgendaPage /> :
+          active === "progress_siswa" ? <ProgressPage /> :
           active === "pengaturan" ? <PengaturanPage /> :
           (
             <>
