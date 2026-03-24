@@ -58,6 +58,14 @@ class ParentDashboardController extends Controller
             'program_name' => $children[0]['program_name'],
         ] : null;
 
+        // ── Profil parent (read-only di halaman pengaturan) ───
+        $parentDoc = $this->db->selectCollection('parents')->findOne(['user_id' => $userId]);
+        $profile   = $parentDoc ? [
+            'parent_name' => $parentDoc['parent_name'] ?? '—',
+            'phone'       => $parentDoc['phone']       ?? '—',
+            'address'     => $parentDoc['address']     ?? '—',
+        ] : null;
+
         // ── IDs anak aktif ────────────────────────────────────
         $activeChildIds = array_values(array_map(
             fn($c) => $c['id'],
@@ -112,7 +120,8 @@ class ParentDashboardController extends Controller
             $totalLaporan = $reports->countDocuments($baseFilter);
             $totalHadir   = $reports->countDocuments(array_merge($baseFilter, ['attendance' => 'hadir']));
 
-            $recentCursor = $reports->find($baseFilter, ['sort' => ['date' => -1], 'limit' => 10]);
+            // LIMIT dinaikkan menjadi 20 agar tiap anak memiliki peluang catatannya muncul
+            $recentCursor = $reports->find($baseFilter, ['sort' => ['date' => -1], 'limit' => 20]);
             $i = 1;
             foreach ($recentCursor as $r) {
                 $date = $r['date'] ?? '';
@@ -121,7 +130,7 @@ class ParentDashboardController extends Controller
                 }
                 $recentReports[] = [
                     'id'            => $i++,
-                    'student_id'    => $r['student_id'] ?? '',
+                    'student_id'    => $r['student_id'] ?? '', // <-- PERBAIKAN: Menambahkan student_id
                     'date'          => $date,
                     'report_type'   => $r['report_type'] ?? '',
                     'kualitas'      => $r['kualitas'] ?? '',
@@ -149,6 +158,7 @@ class ParentDashboardController extends Controller
             'bulan'          => $namaBulan,
             'children_stats' => $childrenStats,
             'recent_reports' => $recentReports,
+            'profile'        => $profile,
         ]);
     }
 

@@ -11,6 +11,7 @@ import {
 // ── Sub-pages ────────────────────────────────────────────────
 import AnakPage, { type Child } from "./AnakPage";
 import LaporanPage from "./LaporanPage";
+import PengaturanPage, { type ParentProfile } from "./PengaturanPage";
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -30,6 +31,7 @@ interface DashboardProps {
     teacher_name: string; teacher_notes: string;
   }[];
   first_child: { nama: string; program_name: string | null } | null;
+  profile: ParentProfile | null;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -167,7 +169,7 @@ const navItems = [
   { icon: Settings,        label: 'Pengaturan', id: 'pengaturan' },
 ];
 
-export default function ParentDashboard({ anakList, stats, bulan, children_stats, recent_reports, first_child }: DashboardProps) {
+export default function ParentDashboard({ anakList, stats, bulan, children_stats, recent_reports, first_child, profile }: DashboardProps) {
   const user        = usePage<PageProps>().props.auth.user;
   const displayName = (user as any)?.name || (user as any)?.username || 'Wali Murid';
   const initials    = displayName.split(' ').filter(Boolean).slice(0,2).map((p:string)=>p[0]?.toUpperCase()).join('')||'W';
@@ -261,8 +263,9 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
 
         {/* ════ CONTENT ════ */}
         <div className="page">
-          {activeTab === 'anak'    ? <AnakPage anakList={anakList}/> :
-           activeTab === 'laporan' ? <LaporanPage/> :
+          {activeTab === 'anak'       ? <AnakPage anakList={anakList}/> :
+           activeTab === 'laporan'    ? <LaporanPage/> :
+           activeTab === 'pengaturan' ? <PengaturanPage profile={profile}/> :
           (
             <>
               {/* Header */}
