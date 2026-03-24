@@ -3,8 +3,8 @@
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\Parents\ParentDashboardController;
 use App\Http\Controllers\Parents\EnrollmentController;
-use App\Http\Controllers\Parents\AnakController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -33,22 +33,18 @@ Route::get('/pengurus',       fn() => Inertia::render('Landing/Pengurus'))->name
 Route::get('/galeri',         fn() => Inertia::render('Landing/Galeri'))->name('landing.galeri');
 Route::get('/program-detail', fn() => Inertia::render('Landing/ProgramDetail'))->name('program.detail');
 
-
 // ==========================================
 // ROUTE AUTH, PROFILE & PENGATURAN
 // ==========================================
 Route::middleware('auth')->group(function () {
-    // Profile bawaan framework
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Pengaturan Akun & Password (Rute Baru)
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
 });
-
 
 // ==========================================
 // ROUTE BERDASARKAN ROLE
@@ -56,7 +52,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->group(function () {
-        Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('admin.dashboard');;
+        Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('admin.dashboard');
     });
 
 Route::middleware(['auth', 'role:teacher'])
@@ -67,18 +63,15 @@ Route::middleware(['auth', 'role:teacher'])
         Route::get('/laporan',   fn() => Inertia::render('teacher/Laporan'));
     });
 
+// ── Parents: satu route dashboard, semua tab di-handle React ──
 Route::middleware(['auth', 'role:parents'])
     ->prefix('parents')
     ->name('parents.')
     ->group(function () {
-        Route::get('/dashboard', fn() => Inertia::render('parents/Dashboard'))->name('dashboard');
+        // Satu-satunya page route — konten tab dihandle oleh React SPA
+        Route::get('/dashboard', [ParentDashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('/laporan', fn() => Inertia::render('parents/LaporanParents'))->name('laporan');
-
-        // Halaman anak
-        Route::get('/anak', [AnakController::class, 'index'])->name('anak');
-
-        // Pendaftaran
+        // Pendaftaran (halaman terpisah karena butuh file upload)
         Route::get('/daftar',  [EnrollmentController::class, 'create'])->name('daftar');
         Route::post('/daftar', [EnrollmentController::class, 'store'])->name('daftar.store');
     });
