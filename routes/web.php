@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\Parents\ParentDashboardController;
 use App\Http\Controllers\Parents\EnrollmentController;
+use App\Http\Controllers\Teacher\TeacherDashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -55,12 +56,13 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('admin.dashboard');
     });
 
+// ── Teacher: satu route dashboard, semua tab di-handle React ──
 Route::middleware(['auth', 'role:teacher'])
     ->prefix('teacher')
+    ->name('teacher.')
     ->group(function () {
-        Route::get('/dashboard', fn() => Inertia::render('teacher/Dashboard'))->name('teacher.dashboard');
-        Route::get('/jadwal',    fn() => Inertia::render('teacher/Jadwal'));
-        Route::get('/laporan',   fn() => Inertia::render('teacher/Laporan'));
+        Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
+        // Route jadwal & laporan dihapus — sudah jadi sub-page di dashboard
     });
 
 // ── Parents: satu route dashboard, semua tab di-handle React ──

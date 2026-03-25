@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import TeacherNavbar from '../../Components/TeacherNavbar';
 import {
     Search, Plus, BookOpen,
     X, Save, FileText, User, Calendar,
@@ -61,9 +60,6 @@ function formatDate(dateStr: string) {
     });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   BADGE KEHADIRAN
-═══════════════════════════════════════════════════════════ */
 function AttendanceBadge({ status }: { status: string }) {
     const b = attendanceBadge[status] ?? { label: status, color: 'bg-gray-100 text-gray-600' };
     return (
@@ -73,9 +69,6 @@ function AttendanceBadge({ status }: { status: string }) {
     );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TOAST NOTIFIKASI
-═══════════════════════════════════════════════════════════ */
 function Toast({
     message, type, onClose,
 }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
@@ -94,9 +87,6 @@ function Toast({
     );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DETAIL PANEL — slide-in dari kanan
-═══════════════════════════════════════════════════════════ */
 function DetailPanel({
     student, onClose, onAddReport, onReportChanged,
 }: {
@@ -125,19 +115,17 @@ function DetailPanel({
     const totalHadir  = reports.filter(r => r.attendance === 'hadir').length;
     const totalSangat = reports.filter(r => r.kualitas === 'sangat_lancar').length;
 
-    // Setelah edit berhasil — update list lokal & beritahu parent
     const handleEditSaved = (updated: ProgressReport) => {
         setReports(prev => prev.map(r => r.id === updated.id ? updated : r));
         setEditReport(null);
         onReportChanged(updated);
     };
 
-    // Setelah delete berhasil — update list lokal & beritahu parent
     const handleDeleted = (deletedId: string) => {
         const remaining = reports.filter(r => r.id !== deletedId);
         setReports(remaining);
         setDelReport(null);
-        onReportChanged(remaining[0]); // lastReport jadi yg terbaru setelah hapus
+        onReportChanged(remaining[0]);
     };
 
     return (
@@ -146,8 +134,6 @@ function DetailPanel({
             <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onClose} />
 
             <div className="relative z-10 w-full max-w-md bg-white h-full flex flex-col shadow-2xl animate-slide-in">
-
-                {/* ── Header ── */}
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 bg-white">
                     <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
                         <ArrowLeft size={18} />
@@ -164,7 +150,6 @@ function DetailPanel({
                     </button>
                 </div>
 
-                {/* ── Stats ── */}
                 <div className="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100 bg-gray-50">
                     {[
                         { val: reports.length, label: 'Total Setoran', cls: 'text-gray-900'    },
@@ -178,7 +163,6 @@ function DetailPanel({
                     ))}
                 </div>
 
-                {/* ── List ── */}
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                     {loading && (
                         <div className="flex flex-col items-center justify-center h-40 text-gray-400 gap-2">
@@ -212,7 +196,6 @@ function DetailPanel({
 
                         return (
                             <div key={report.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:border-green-200 transition-colors">
-                                {/* Row 1: badge + tanggal + aksi */}
                                 <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         {report.report_type && (
@@ -227,7 +210,6 @@ function DetailPanel({
                                         <span className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
                                             <Calendar size={11} /> {formatDate(report.date)}
                                         </span>
-                                        {/* Tombol edit & hapus — hanya muncul jika laporan milik guru ini */}
                                         <button
                                             onClick={() => setEditReport(report)}
                                             className="ml-1 p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
@@ -245,7 +227,6 @@ function DetailPanel({
                                     </div>
                                 </div>
 
-                                {/* Target & Capaian */}
                                 {!isAbsent && (
                                     <div className="grid grid-cols-2 gap-2 my-2">
                                         <div className="bg-gray-50 rounded-lg px-3 py-2">
@@ -263,14 +244,12 @@ function DetailPanel({
                                     </div>
                                 )}
 
-                                {/* Kualitas */}
                                 {kq && (
                                     <div className={`flex items-center gap-1.5 text-xs font-bold ${kq.color} mb-1`}>
                                         <KqIcon size={13} /> {kq.label}
                                     </div>
                                 )}
 
-                                {/* Catatan */}
                                 {report.teacher_notes && (
                                     <p className="text-[11px] text-gray-500 leading-relaxed border-t border-gray-100 pt-2 mt-2">
                                         {report.teacher_notes}
@@ -283,7 +262,6 @@ function DetailPanel({
             </div>
         </div>
 
-        {/* Edit Modal — render di atas detail panel */}
         {editReport && (
             <EditModal
                 report={editReport}
@@ -292,7 +270,6 @@ function DetailPanel({
             />
         )}
 
-        {/* Delete Confirm — render di atas detail panel */}
         {delReport && (
             <DeleteConfirmModal
                 report={delReport}
@@ -312,9 +289,6 @@ function DetailPanel({
     );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MODAL EDIT LAPORAN
-═══════════════════════════════════════════════════════════ */
 function EditModal({
     report, onClose, onSaved,
 }: {
@@ -361,8 +335,6 @@ function EditModal({
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative z-10 overflow-hidden flex flex-col max-h-[92vh]">
-
-                {/* Header */}
                 <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
                     <div>
                         <h2 className="text-base font-bold text-gray-900">Edit Laporan</h2>
@@ -373,16 +345,13 @@ function EditModal({
                     </button>
                 </div>
 
-                {/* Body */}
                 <div className="overflow-y-auto flex-1 bg-gray-50 p-5 space-y-4">
-
                     {formError && (
                         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-xs font-semibold">
                             <AlertTriangle size={14} /> {formError}
                         </div>
                     )}
 
-                    {/* Tanggal */}
                     <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 shadow-sm flex items-center justify-between">
                         <div className="text-xs font-bold text-gray-500 uppercase">Tanggal</div>
                         <input
@@ -393,7 +362,6 @@ function EditModal({
                         />
                     </div>
 
-                    {/* Kehadiran */}
                     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                         <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Status Kehadiran</h3>
                         <div className="grid grid-cols-4 gap-2">
@@ -410,7 +378,6 @@ function EditModal({
                         </div>
                     </div>
 
-                    {/* Jenis + Kualitas */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                             <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Jenis Setoran</h3>
@@ -447,7 +414,6 @@ function EditModal({
                         </div>
                     </div>
 
-                    {/* Target & Capaian */}
                     <div className={`bg-white rounded-xl border border-gray-200 p-4 shadow-sm transition-opacity ${isAbsent ? 'opacity-50 pointer-events-none' : ''}`}>
                         <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Capaian Setoran</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -470,7 +436,6 @@ function EditModal({
                         </div>
                     </div>
 
-                    {/* Catatan */}
                     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                         <h3 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-1.5">
                             <FileText size={13} className="text-green-600" /> Catatan Asatidz
@@ -481,7 +446,6 @@ function EditModal({
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="px-5 py-3.5 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
                     <button onClick={onClose} disabled={saving}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50">
@@ -498,9 +462,6 @@ function EditModal({
     );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MODAL KONFIRMASI HAPUS
-═══════════════════════════════════════════════════════════ */
 function DeleteConfirmModal({
     report, onClose, onDeleted,
 }: {
@@ -560,9 +521,6 @@ function DeleteConfirmModal({
     );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MODAL INPUT PROGRESS
-═══════════════════════════════════════════════════════════ */
 function InputModal({
     student, onClose, onSaved,
 }: {
@@ -615,8 +573,6 @@ function InputModal({
             <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
 
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative z-10 overflow-hidden flex flex-col max-h-[92vh]">
-
-                {/* Header */}
                 <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
                     <div>
                         <h2 className="text-base font-bold text-gray-900">Input Setoran</h2>
@@ -627,17 +583,13 @@ function InputModal({
                     </button>
                 </div>
 
-                {/* Body */}
                 <div className="overflow-y-auto flex-1 bg-gray-50 p-5 space-y-4">
-
-                    {/* Error banner */}
                     {formError && (
                         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-xs font-semibold">
                             <AlertTriangle size={14} /> {formError}
                         </div>
                     )}
 
-                    {/* Info Santri */}
                     <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
@@ -659,7 +611,6 @@ function InputModal({
                         </div>
                     </div>
 
-                    {/* Kehadiran */}
                     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                         <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Status Kehadiran</h3>
                         <div className="grid grid-cols-4 gap-2">
@@ -680,10 +631,7 @@ function InputModal({
                         </div>
                     </div>
 
-                    {/* Jenis Setoran + Kualitas */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                        {/* Jenis */}
                         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                             <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Jenis Setoran</h3>
                             <div className="grid grid-cols-3 gap-2">
@@ -710,7 +658,6 @@ function InputModal({
                             </div>
                         </div>
 
-                        {/* Kualitas */}
                         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                             <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Kualitas Bacaan</h3>
                             <div className="flex flex-col gap-2">
@@ -737,7 +684,6 @@ function InputModal({
                         </div>
                     </div>
 
-                    {/* Target & Capaian */}
                     <div className={`bg-white rounded-xl border border-gray-200 p-4 shadow-sm transition-opacity ${isAbsent ? 'opacity-50 pointer-events-none' : ''}`}>
                         <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Capaian Setoran</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -768,7 +714,6 @@ function InputModal({
                         </div>
                     </div>
 
-                    {/* Catatan */}
                     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                         <h3 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-1.5">
                             <FileText size={13} className="text-green-600" /> Catatan Asatidz
@@ -782,7 +727,6 @@ function InputModal({
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="px-5 py-3.5 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
                     <button
                         onClick={onClose}
@@ -805,10 +749,7 @@ function InputModal({
     );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   COMPONENT UTAMA
-═══════════════════════════════════════════════════════════ */
-export default function LaporanProgres() {
+export default function LaporanGuruPage() {
     const [students,      setStudents]      = useState<Student[]>([]);
     const [loadingPage,   setLoadingPage]   = useState(true);
     const [pageError,     setPageError]     = useState<string | null>(null);
@@ -819,12 +760,9 @@ export default function LaporanProgres() {
     const [detailStudent, setDetailStudent] = useState<Student | null>(null);
     const [modalStudent,  setModalStudent]  = useState<Student | null>(null);
 
-    // Ref ke fungsi refresh detail panel
     const [detailRefreshKey, setDetailRefreshKey] = useState(0);
-
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-    // ── Load daftar siswa saat mount ─────────────────────
     useEffect(() => {
         axios.get<Student[]>('/api/teacher/students')
             .then(res => setStudents(res.data))
@@ -832,7 +770,6 @@ export default function LaporanProgres() {
             .finally(() => setLoadingPage(false));
     }, []);
 
-    // ── Filter ───────────────────────────────────────────
     const programs = ['semua', ...Array.from(new Set(students.map(s => s.program)))];
 
     const filtered = students.filter(s => {
@@ -841,7 +778,6 @@ export default function LaporanProgres() {
         return matchSearch && matchProgram;
     });
 
-    // ── Setelah report disimpan (baru) ───────────────────────
     const handleSaved = (newReport: ProgressReport) => {
         setStudents(prev =>
             prev.map(s => s.id === newReport.student_id ? { ...s, lastReport: newReport } : s)
@@ -852,10 +788,8 @@ export default function LaporanProgres() {
         setToast({ message: 'Laporan berhasil disimpan!', type: 'success' });
     };
 
-    // ── Setelah report diubah/dihapus dari DetailPanel ──────
     const handleReportChanged = (updatedReport?: ProgressReport) => {
         if (!detailStudent) return;
-        // Update lastReport di tabel dengan data terbaru
         setStudents(prev =>
             prev.map(s => s.id === detailStudent.id
                 ? { ...s, lastReport: updatedReport ?? undefined }
@@ -866,202 +800,179 @@ export default function LaporanProgres() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-            <TeacherNavbar activePage="laporan" />
-
-            <div className="w-full px-6 lg:px-12 pt-8 pb-12 mx-auto flex flex-col gap-6">
-
-                {/* ── Header ── */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-1">Progress Reports</h1>
-                        <p className="text-sm text-gray-500 font-medium">
-                            Pantau &amp; input progres setoran hafalan, tilawah, dan yanbu'a santri.
-                        </p>
-                    </div>
-                    {/* Summary chips */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl shadow-sm text-xs font-bold text-gray-600">
-                            <User size={13} className="text-green-600" />
-                            {students.length} Santri
-                        </div>
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl shadow-sm text-xs font-bold text-gray-600">
-                            <Award size={13} className="text-blue-600" />
-                            {students.filter(s => s.lastReport?.kualitas === 'sangat_lancar').length} Sangat Lancar Hari Ini
-                        </div>
-                    </div>
+        <div className="w-full flex flex-col gap-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">Progress Reports</h1>
+                    <p className="text-sm text-gray-500 font-medium">
+                        Pantau &amp; input progres setoran hafalan, tilawah, dan yanbu'a santri.
+                    </p>
                 </div>
-
-                {/* ── Error state halaman ── */}
-                {pageError && (
-                    <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm font-medium">
-                        <AlertTriangle size={16} /> {pageError}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl shadow-sm text-xs font-bold text-gray-600">
+                        <User size={13} className="text-green-600" />
+                        {students.length} Santri
                     </div>
-                )}
-
-                {/* ── Toolbar ── */}
-                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row gap-3 justify-between items-center">
-                    <div className="relative w-full sm:max-w-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                            <Search size={15} />
-                        </div>
-                        <input
-                            type="text"
-                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
-                            placeholder="Cari nama santri..."
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex w-full sm:w-auto gap-2">
-                        <select
-                            value={filterProgram}
-                            onChange={e => setFilterProgram(e.target.value)}
-                            className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 focus:outline-none focus:ring-1 focus:ring-green-500"
-                        >
-                            {programs.map(p => (
-                                <option key={p} value={p}>{p === 'semua' ? 'Semua Program' : p}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                {/* ── Tabel ── */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                                    <th className="px-5 py-3">Santri</th>
-                                    <th className="px-5 py-3">Program</th>
-                                    <th className="px-5 py-3">Setoran Terakhir</th>
-                                    <th className="px-5 py-3">Kehadiran</th>
-                                    <th className="px-5 py-3">Kualitas</th>
-                                    <th className="px-5 py-3 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {/* Loading skeleton */}
-                                {loadingPage && Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i}>
-                                        {Array.from({ length: 6 }).map((__, j) => (
-                                            <td key={j} className="px-5 py-4">
-                                                <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: j === 0 ? '80%' : '60%' }} />
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-
-                                {!loadingPage && filtered.length === 0 && (
-                                    <tr>
-                                        <td colSpan={6} className="py-16 text-center text-gray-400 text-sm">
-                                            {students.length === 0 ? 'Belum ada data santri.' : 'Tidak ada santri ditemukan.'}
-                                        </td>
-                                    </tr>
-                                )}
-
-                                {!loadingPage && filtered.map(student => {
-                                    const lr   = student.lastReport;
-                                    const kq   = lr?.kualitas ? kualitasBadge[lr.kualitas] : null;
-                                    const KqIcon = kq?.icon ?? CheckCircle2;
-
-                                    return (
-                                        <tr
-                                            key={student.id}
-                                            className="hover:bg-green-50/40 transition-colors cursor-pointer group"
-                                            onClick={() => setDetailStudent(student)}
-                                        >
-                                            {/* Santri */}
-                                            <td className="px-5 py-3.5">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
-                                                        {student.nama.substring(0, 2).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm font-bold text-gray-900 group-hover:text-green-700 transition-colors">
-                                                            {student.nama}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {/* Program */}
-                                            <td className="px-5 py-3.5">
-                                                <span className="text-xs font-semibold text-gray-600">{student.program}</span>
-                                            </td>
-
-                                            {/* Setoran Terakhir */}
-                                            <td className="px-5 py-3.5">
-                                                {lr ? (
-                                                    <div>
-                                                        <div className="flex items-center gap-1 text-xs font-semibold text-gray-700">
-                                                            <BookOpen size={11} className="text-gray-400" />
-                                                            {lr.hafalan_achievement || lr.hafalan_target || '—'}
-                                                        </div>
-                                                        <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                                                            <Clock size={10} /> {formatDate(lr.date)}
-                                                            {lr.report_type && ` · ${reportTypeLabel[lr.report_type]}`}
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">—</span>
-                                                )}
-                                            </td>
-
-                                            {/* Kehadiran */}
-                                            <td className="px-5 py-3.5">
-                                                {lr ? <AttendanceBadge status={lr.attendance} /> : <span className="text-xs text-gray-400">—</span>}
-                                            </td>
-
-                                            {/* Kualitas */}
-                                            <td className="px-5 py-3.5">
-                                                {kq ? (
-                                                    <div className={`flex items-center gap-1.5 text-xs font-bold ${kq.color}`}>
-                                                        <KqIcon size={13} /> {kq.label}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">—</span>
-                                                )}
-                                            </td>
-
-                                            {/* Aksi */}
-                                            <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button
-                                                        onClick={() => setDetailStudent(student)}
-                                                        className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                        title="Lihat riwayat"
-                                                    >
-                                                        <Eye size={15} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setModalStudent(student)}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm transition-all"
-                                                    >
-                                                        <Plus size={13} /> Input
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Footer tabel */}
-                    <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-medium">
-                            Menampilkan {filtered.length} dari {students.length} santri
-                        </span>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 font-medium">
-                            <ChevronRight size={14} /> Klik baris untuk lihat riwayat lengkap
-                        </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl shadow-sm text-xs font-bold text-gray-600">
+                        <Award size={13} className="text-blue-600" />
+                        {students.filter(s => s.lastReport?.kualitas === 'sangat_lancar').length} Sangat Lancar Hari Ini
                     </div>
                 </div>
             </div>
 
-            {/* ── Detail Panel ── */}
+            {pageError && (
+                <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm font-medium">
+                    <AlertTriangle size={16} /> {pageError}
+                </div>
+            )}
+
+            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row gap-3 justify-between items-center">
+                <div className="relative w-full sm:max-w-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <Search size={15} />
+                    </div>
+                    <input
+                        type="text"
+                        className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
+                        placeholder="Cari nama santri..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <div className="flex w-full sm:w-auto gap-2">
+                    <select
+                        value={filterProgram}
+                        onChange={e => setFilterProgram(e.target.value)}
+                        className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 focus:outline-none focus:ring-1 focus:ring-green-500"
+                    >
+                        {programs.map(p => (
+                            <option key={p} value={p}>{p === 'semua' ? 'Semua Program' : p}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                <th className="px-5 py-3">Santri</th>
+                                <th className="px-5 py-3">Program</th>
+                                <th className="px-5 py-3">Setoran Terakhir</th>
+                                <th className="px-5 py-3">Kehadiran</th>
+                                <th className="px-5 py-3">Kualitas</th>
+                                <th className="px-5 py-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {loadingPage && Array.from({ length: 5 }).map((_, i) => (
+                                <tr key={i}>
+                                    {Array.from({ length: 6 }).map((__, j) => (
+                                        <td key={j} className="px-5 py-4">
+                                            <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: j === 0 ? '80%' : '60%' }} />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+
+                            {!loadingPage && filtered.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="py-16 text-center text-gray-400 text-sm">
+                                        {students.length === 0 ? 'Belum ada data santri.' : 'Tidak ada santri ditemukan.'}
+                                    </td>
+                                </tr>
+                            )}
+
+                            {!loadingPage && filtered.map(student => {
+                                const lr   = student.lastReport;
+                                const kq   = lr?.kualitas ? kualitasBadge[lr.kualitas] : null;
+                                const KqIcon = kq?.icon ?? CheckCircle2;
+
+                                return (
+                                    <tr
+                                        key={student.id}
+                                        className="hover:bg-green-50/40 transition-colors cursor-pointer group"
+                                        onClick={() => setDetailStudent(student)}
+                                    >
+                                        <td className="px-5 py-3.5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                                    {student.nama.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-bold text-gray-900 group-hover:text-green-700 transition-colors">
+                                                        {student.nama}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            <span className="text-xs font-semibold text-gray-600">{student.program}</span>
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            {lr ? (
+                                                <div>
+                                                    <div className="flex items-center gap-1 text-xs font-semibold text-gray-700">
+                                                        <BookOpen size={11} className="text-gray-400" />
+                                                        {lr.hafalan_achievement || lr.hafalan_target || '—'}
+                                                    </div>
+                                                    <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                                                        <Clock size={10} /> {formatDate(lr.date)}
+                                                        {lr.report_type && ` · ${reportTypeLabel[lr.report_type]}`}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            {lr ? <AttendanceBadge status={lr.attendance} /> : <span className="text-xs text-gray-400">—</span>}
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            {kq ? (
+                                                <div className={`flex items-center gap-1.5 text-xs font-bold ${kq.color}`}>
+                                                    <KqIcon size={13} /> {kq.label}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => setDetailStudent(student)}
+                                                    className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                    title="Lihat riwayat"
+                                                >
+                                                    <Eye size={15} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setModalStudent(student)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm transition-all"
+                                                >
+                                                    <Plus size={13} /> Input
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <span className="text-xs text-gray-400 font-medium">
+                        Menampilkan {filtered.length} dari {students.length} santri
+                    </span>
+                    <div className="flex items-center gap-1 text-xs text-gray-400 font-medium">
+                        <ChevronRight size={14} /> Klik baris untuk lihat riwayat lengkap
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Modals ── */}
             {detailStudent && (
                 <DetailPanel
                     key={`${detailStudent.id}-${detailRefreshKey}`}
@@ -1072,7 +983,6 @@ export default function LaporanProgres() {
                 />
             )}
 
-            {/* ── Input Modal ── */}
             {modalStudent && (
                 <InputModal
                     student={modalStudent}
@@ -1081,7 +991,6 @@ export default function LaporanProgres() {
                 />
             )}
 
-            {/* ── Toast ── */}
             {toast && (
                 <Toast
                     message={toast.message}
