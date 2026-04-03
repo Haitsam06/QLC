@@ -84,7 +84,7 @@ Route::middleware(['auth', 'role:mitra'])
         Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'));
         Route::get('/program',   fn() => Inertia::render('mitra/Program'));
         Route::get('/jadwal',    fn() => Inertia::render('mitra/Jadwal'));
-        Route::get('/laporan',   fn() => Inertia::render('mitra/Laporan'));
+        Route::get('/laporan',   fn() => Inertia::render('mitra/LaporanMitra'));
     });
 
 require __DIR__ . '/auth.php';

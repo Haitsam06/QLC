@@ -167,6 +167,64 @@ class MitraReportController extends Controller
     }
 
     /* ─────────────────────────────────────────────────────────
+     | GET /api/mitra/reports
+     | Laporan untuk mitra yang sedang login
+     | Query params: search, page, per_page
+     | Relasi: partners.user_id = users._id
+     ───────────────────────────────────────────────────────── */
+    public function mitraReports(Request $request): JsonResponse
+    {
+        $userId = (string) auth()->id();
+
+        // Cari partner berdasarkan user_id
+        $partner = $this->partners->findOne(['user_id' => $userId]);
+        if (!$partner) {
+            return response()->json(['message' => 'Profil mitra tidak ditemukan.'], 404);
+        }
+
+        $partnerId = (string) $partner['_id'];
+        $search    = trim($request->query('search', ''));
+        $perPage   = (int) $request->query('per_page', 10);
+        $page      = max(1, (int) $request->query('page', 1));
+        $skip      = ($page - 1) * $perPage;
+
+        $filter = ['partner_id' => $partnerId];
+        if ($search !== '') {
+            $filter['title'] = ['$regex' => $search, '$options' => 'i'];
+        }
+
+        $total  = $this->mitraReports->countDocuments($filter);
+        $cursor = $this->mitraReports->find($filter, [
+            'sort'  => ['date' => -1],
+            'skip'  => $skip,
+            'limit' => $perPage,
+        ]);
+
+        // Hitung laporan baru (dalam 7 hari terakhir)
+        $sevenDaysAgo = (new \DateTime('-7 days'))->format('Y-m-d');
+        $newCount = $this->mitraReports->countDocuments([
+            'partner_id' => $partnerId,
+            'date'       => ['$gte' => $sevenDaysAgo],
+        ]);
+
+        $data = [];
+        foreach ($cursor as $r) {
+            $data[] = $this->formatReport($r);
+        }
+
+        return response()->json([
+            'data'      => $data,
+            'new_count' => $newCount,
+            'meta'      => [
+                'total'     => $total,
+                'page'      => $page,
+                'per_page'  => $perPage,
+                'last_page' => (int) ceil($total / max($perPage, 1)),
+            ],
+        ]);
+    }
+
+    /* ─────────────────────────────────────────────────────────
      | HELPER
      ───────────────────────────────────────────────────────── */
     private function formatReport($doc): array

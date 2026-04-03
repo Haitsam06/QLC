@@ -84,6 +84,11 @@ Route::middleware('auth')->group(function () {
         Route::get('top-reports',      [AdminDashboardController::class, 'topReports']);
     });
 
+    // Mitra routes
+    Route::prefix('mitra')->group(function () {
+        Route::get('reports', [\App\Http\Controllers\Admin\MitraReportController::class, 'mitraReports']);
+    });
+
     // Admin mitra report routes
     Route::prefix('admin/mitra')->group(function () {
         Route::get ('{partnerId}/reports',  [\App\Http\Controllers\Admin\MitraReportController::class, 'reports']);

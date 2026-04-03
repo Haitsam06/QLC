@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import {
   Handshake, Plus, Pencil, Trash2, X,
   Loader2, CheckCircle2, Search, ChevronLeft, ChevronRight,
-  Phone, Building2, FileText, Filter, ExternalLink, ChevronDown, Check, AlertCircle
+  Phone, Building2, FileText, Filter, ExternalLink, ChevronDown, Check, AlertCircle,
+  User, Lock, Mail
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════
@@ -413,9 +414,13 @@ interface FormState {
   phone:            string;
   mou_file_url:     string;
   status:           Status;
+  username?:        string;
+  password?:        string;
+  email?:           string;
 }
 const emptyForm = (): FormState => ({
   institution_name:"", contact_person:"", phone:"", mou_file_url:"", status:"Active",
+  username:"", password:"", email:""
 });
 
 /* ═══════════════════════════════════════════════════════════
@@ -444,6 +449,13 @@ function MitraModal({ init, onClose, onSave }: {
     if (!f.phone.trim())            err.phone            = "Nomor telepon wajib diisi.";
     if (f.mou_file_url && !/^https?:\/\/.+/.test(f.mou_file_url))
                                     err.mou_file_url     = "URL tidak valid (harus diawali http/https).";
+    
+    // Validasi akun hanya untuk mode Tambah (Add)
+    if (!isEdit) {
+      if (!f.username?.trim()) err.username = "Username wajib diisi.";
+      if (!f.password?.trim() || f.password.length < 8) err.password = "Password minimal 8 karakter.";
+    }
+
     setE(err);
     return !Object.keys(err).length;
   };
@@ -463,6 +475,58 @@ function MitraModal({ init, onClose, onSave }: {
         </div>
 
         <div className="mp-m-body">
+          {/* ── SEGMEN INFORMASI AKUN (Hanya saat Tambah Mitra) ── */}
+          {!isEdit && (
+            <>
+              <div className="mp-fg">
+                <label className="mp-fl" style={{ color: "#7c3aed" }}>Informasi Akun Mitra</label>
+                <div style={{ height: 1, background: "rgba(124,58,237,0.1)", marginBottom: 4 }} />
+              </div>
+
+              {/* Username */}
+              <div className="mp-fg">
+                <label className="mp-fl">Username</label>
+                <div style={{ position:"relative" }}>
+                  <User size={16} style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"#64748b", pointerEvents:"none" }}/>
+                  <input className={`mp-fi${e.username?" err":""}`} style={{ paddingLeft:38 }}
+                    placeholder="Username untuk login mitra"
+                    value={f.username} onChange={upd("username")}/>
+                </div>
+                {e.username && <span className="mp-fe">{e.username}</span>}
+              </div>
+
+              {/* Password */}
+              <div className="mp-fg">
+                <label className="mp-fl">Password</label>
+                <div style={{ position:"relative" }}>
+                  <Lock size={16} style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"#64748b", pointerEvents:"none" }}/>
+                  <input type="password" className={`mp-fi${e.password?" err":""}`} style={{ paddingLeft:38 }}
+                    placeholder="Minimal 8 karakter"
+                    value={f.password} onChange={upd("password")}/>
+                </div>
+                {e.password && <span className="mp-fe">{e.password}</span>}
+              </div>
+
+              {/* Email (Opsional) */}
+              <div className="mp-fg">
+                <label className="mp-fl">Email <span style={{ fontWeight:500, textTransform:"none", color:"#94a3b8" }}>(opsional)</span></label>
+                <div style={{ position:"relative" }}>
+                  <Mail size={16} style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"#64748b", pointerEvents:"none" }}/>
+                  <input type="email" className={`mp-fi${e.email?" err":""}`} style={{ paddingLeft:38 }}
+                    placeholder="email@institusi.com"
+                    value={f.email} onChange={upd("email")}/>
+                </div>
+                {e.email && <span className="mp-fe">{e.email}</span>}
+              </div>
+
+              <div style={{ height: 8 }} />
+              <div className="mp-fg">
+                <label className="mp-fl" style={{ color: "#7c3aed" }}>Profil Institusi</label>
+                <div style={{ height: 1, background: "rgba(124,58,237,0.1)", marginBottom: 4 }} />
+              </div>
+            </>
+          )}
+
           {/* Nama Institusi */}
           <div className="mp-fg">
             <label className="mp-fl">Nama Institusi</label>
@@ -621,7 +685,7 @@ export default function MitraPage() {
     const res  = await fetch(`${BASE}/partners`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(f) });
     const data = await res.json();
     if (data.success) { showToast("Mitra berhasil ditambahkan."); setAddModal(false); load(1); }
-    else showToast(data.message ?? "Gagal menyimpan.", "err");
+    else showToast(data.message ?? "Gagal menyimpan data mitra. Silakan periksa kembali input Anda.", "err");
   };
 
   const handleEdit = async (f: FormState) => {
