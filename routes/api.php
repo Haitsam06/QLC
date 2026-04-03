@@ -84,6 +84,14 @@ Route::middleware('auth')->group(function () {
         Route::get('top-reports',      [AdminDashboardController::class, 'topReports']);
     });
 
+    // Admin mitra report routes
+    Route::prefix('admin/mitra')->group(function () {
+        Route::get ('{partnerId}/reports',  [\App\Http\Controllers\Admin\MitraReportController::class, 'reports']);
+        Route::post('{partnerId}/reports',  [\App\Http\Controllers\Admin\MitraReportController::class, 'store']);
+        Route::delete('reports/{reportId}',[\App\Http\Controllers\Admin\MitraReportController::class, 'destroy']);
+        Route::get ('list',                [\App\Http\Controllers\Admin\MitraReportController::class, 'partners']);
+    });
+
     // Admin progress routes
     Route::prefix('admin/progress')->group(function () {
         Route::get   ('options',                      [ProgressReportController::class, 'adminOptions']);
