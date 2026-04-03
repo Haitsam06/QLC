@@ -21,8 +21,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        // Pastikan Anda sudah membuat file resources/js/Pages/Auth/Register.tsx
-        return Inertia::render('Auth/Register');
+        return Inertia::render('Auth/Auth', [
+            'initialTab' => 'register',
+        ]);
     }
 
     /**
@@ -33,31 +34,31 @@ class RegisteredUserController extends Controller
         // 1. Validasi input dari user
         $request->validate([
             'parent_name' => 'required|string|max:255',
-            'phone'       => 'required|string|max:20',
-            'address'     => 'required|string',
-            'username'    => 'required|string|max:50|unique:users,username',
-            'email'       => 'nullable|string|email|max:255|unique:users,email',
-            'password'    => ['required', 'confirmed', Rules\Password::defaults()],
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string',
+            'username' => 'required|string|max:50|unique:users,username',
+            'email' => 'nullable|string|email|max:255|unique:users,email',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ], [
             'username.unique' => 'Username ini sudah digunakan.',
-            'email.unique'    => 'Email ini sudah terdaftar.',
+            'email.unique' => 'Email ini sudah terdaftar.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.'
         ]);
 
         // 2. Buat Akun Login (Masuk ke collection: users)
         $user = User::create([
-            'role_id'  => 'RL03', // RL03 adalah ID untuk role "parents" di RolesSeeder
+            'role_id' => 'RL03', // RL03 adalah ID untuk role "parents" di RolesSeeder
             'username' => $request->username,
-            'email'    => $request->email,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
         // 3. Buat Profil Detail Wali Murid (Masuk ke collection: parents)
         Parents::create([
-            'user_id'     => $user->_id, // Mengambil Object ID dari user yang baru saja terbuat
+            'user_id' => $user->_id, // Mengambil Object ID dari user yang baru saja terbuat
             'parent_name' => $request->parent_name,
-            'phone'       => $request->phone,
-            'address'     => $request->address,
+            'phone' => $request->phone,
+            'address' => $request->address,
         ]);
 
         event(new Registered($user));
@@ -66,6 +67,6 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         // 5. Arahkan ke dashboard khusus wali murid
-        return redirect()->route('parents.dashboard'); 
+        return redirect()->route('parents.dashboard');
     }
 }

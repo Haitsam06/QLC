@@ -96,8 +96,8 @@ const Navbar = () => {
 
                     {/* Tombol Daftar Desktop */}
                     <div className="hidden lg:block">
-                        <Link 
-                            href={route('register')} 
+                        <Link
+                            href={route('register')}
                             className="inline-block bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm"
                         >
                             Daftar Sekarang
@@ -130,7 +130,9 @@ const Navbar = () => {
                                 {item}
                             </button>
                         ))}
-                        <button className="mt-2 bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-4 py-3 rounded-xl font-bold text-center shadow-md">Daftar Sekarang</button>
+                        <Link href={route('register')} className="mt-2 bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-4 py-3 rounded-xl font-bold text-center shadow-md block">
+                            Daftar Sekarang
+                        </Link>
                     </div>
                 </div>
             )}
