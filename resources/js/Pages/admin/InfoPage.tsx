@@ -6,7 +6,6 @@ import {
   ChevronLeft, ChevronRight, Upload, Link,
   Phone, Mail, MapPin, Instagram, Facebook,
   Youtube, Clock, Users, Filter, Eye, ChevronDown, Check,
-  Star, Handshake, Award
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════
@@ -32,16 +31,6 @@ interface Program {
   description: string | null;
   target_audience: string | null;
   duration: string | null;
-  image_url: string | null;
-  created_at: string | null;
-}
-interface SpecialProgram {
-  id: string;
-  partner_id: string | null;
-  partner_name?: string; // Didapat dari relasi backend
-  name: string;
-  description: string | null;
-  status: "Active" | "Draft" | "Completed";
   image_url: string | null;
   created_at: string | null;
 }
@@ -187,7 +176,7 @@ const CSS = `
   overflow:hidden; transition:all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .prog-card:hover { box-shadow:0 12px 32px rgba(37,99,235,0.1); transform:translateY(-3px); }
-.prog-card.sprog-card:hover { box-shadow:0 12px 32px rgba(225,29,72,0.1); }
+
 
 .prog-img { width:100%; height:180px; object-fit:cover; display:block; }
 .prog-img-placeholder {
@@ -195,9 +184,7 @@ const CSS = `
   background:linear-gradient(135deg, rgba(37,99,235,0.05), rgba(37,99,235,0.15));
   display:flex; align-items:center; justify-content:center; color:#94a3b8;
 }
-.sprog-img-placeholder {
-  background:linear-gradient(135deg, rgba(225,29,72,0.05), rgba(225,29,72,0.15));
-}
+
 .prog-body { padding:20px; }
 .prog-name { font-size:16px; font-weight:800; color:#1e293b; letter-spacing:-0.2px; }
 .prog-desc {
@@ -212,10 +199,7 @@ const CSS = `
 .prog-tag-audience { background:rgba(37,99,235,0.1); color:#2563eb; }
 .prog-tag-duration { background:rgba(212,160,23,0.12); color:#b45309; }
 
-.sprog-tag-partner { background:rgba(225,29,72,0.1); color:#e11d48; }
-.sprog-tag-status-active { background:rgba(22,163,74,0.1); color:#16a34a; }
-.sprog-tag-status-draft { background:rgba(100,116,139,0.1); color:#64748b; }
-.sprog-tag-status-completed { background:rgba(37,99,235,0.1); color:#2563eb; }
+
 
 .prog-card-foot {
   display:flex; gap:8px; padding:16px 20px;
@@ -230,8 +214,7 @@ const CSS = `
 .prog-edit { color:#2563eb; }
 .prog-del  { color:#dc2626; }
 .prog-edit:hover { background:#2563eb; color:#fff; border-color:#2563eb; transform:scale(1.03); }
-.sprog-edit { color:#e11d48; }
-.sprog-edit:hover { background:#e11d48; color:#fff; border-color:#e11d48; transform:scale(1.03); }
+
 .prog-del:hover  { background:#dc2626; color:#fff; border-color:#dc2626; transform:scale(1.03); }
 
 /* ════════════════════
@@ -541,10 +524,10 @@ const Fg = ({ label, error, children }: { label:string; error?:string; children:
 
 /* ─── File upload preview ─── */
 function FileUpload({ accept, preview, onFile, label, themeClass }: {
-  accept: string; preview: string|null; onFile:(f:File)=>void; label:string; themeClass: "up-prog"|"up-gal"|"up-prof"|"up-sprog";
+  accept: string; preview: string|null; onFile:(f:File)=>void; label:string; themeClass: "up-prog"|"up-gal"|"up-prof";
 }) {
   const ref = useRef<HTMLInputElement>(null);
-  const color = themeClass === 'up-prog' ? '#2563eb' : themeClass === 'up-sprog' ? '#e11d48' : themeClass === 'up-gal' ? '#7c3aed' : '#0f766e';
+  const color = themeClass === 'up-prog' ? '#2563eb' : themeClass === 'up-gal' ? '#7c3aed' : '#0f766e';
   return (
     <div>
       <div className={`i-upload ${themeClass}`} onClick={() => ref.current?.click()}>
@@ -891,243 +874,6 @@ function ProgramModal({ mode, init, onClose, onSave }: {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TAB 3 — SPECIAL PROGRAMS (Rose #e11d48)
-═══════════════════════════════════════════════════════════ */
-function SpecialProgramsTab({ onToast }: { onToast:(msg:string,type:"success"|"error")=>void }) {
-  const [data,    setData]    = useState<SpecialProgram[]>([]);
-  const [meta,    setMeta]    = useState<Meta>({ total:0,page:1,per_page:9,last_page:1 });
-  const [loading, setLoading] = useState(true);
-  const [search,  setSearch]  = useState("");
-  const [status,  setStatus]  = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [modal,   setModal]   = useState<"add"|"edit"|"delete"|null>(null);
-  const [sel,     setSel]     = useState<SpecialProgram|null>(null);
-  const [partners, setPartners] = useState<Option[]>([]);
-  const dSearch = useDebounce(search);
-
-  // Fetch data program khusus & daftar mitra untuk dropdown
-  const load = useCallback(async (page=1) => {
-    setLoading(true);
-    try {
-      const p = new URLSearchParams({ page:String(page), per_page:"9", search:dSearch, status });
-      const j = await (await fetch(`${API}/special-programs?${p}`)).json();
-      if (j.success) { setData(j.data); setMeta(j.meta); }
-    } finally { setLoading(false); }
-  }, [dSearch, status]);
-
-  const loadOptions = async () => {
-    try {
-      // Asumsi ada endpoint untuk memuat opsi mitra
-      const j = await (await fetch(`/api/partners`)).json();
-      if (j.success) {
-        setPartners(j.data.map((p:any) => ({ id: p.id, label: p.institution_name })));
-      }
-    } catch (e) {}
-  }
-
-  useEffect(() => { load(1); }, [load]);
-  useEffect(() => { loadOptions(); }, []);
-
-  const pgs = () => {
-    const { page, last_page } = meta;
-    const s = Math.max(1,page-2), e = Math.min(last_page,page+2);
-    return Array.from({ length:e-s+1 },(_,i)=>s+i);
-  };
-
-  return (
-    <div>
-      <div className="ip-toolbar">
-        <div className="ip-search">
-          <Search size={16} color="#64748b" className="flex-shrink-0"/>
-          <input className="border-0 focus:ring-0 outline-none flex-1" placeholder="Cari program khusus..." value={search} onChange={e=>setSearch(e.target.value)}/>
-          {search && <button onClick={()=>setSearch("")} style={{ color:"#64748b", display:"flex", background:"none", border:"none", cursor:"pointer" }}><X size={14} strokeWidth={2.5}/></button>}
-        </div>
-
-        {/* Custom Dropdown Filter Status */}
-        <div className="ip-sel-wrap">
-          <div className={`ip-sel ${filterOpen ? 'ip-sel--open' : ''}`} onClick={() => setFilterOpen(!filterOpen)} style={{ borderColor: filterOpen ? 'rgba(225,29,72,0.4)' : '' }}>
-            <Filter size={15} color="#64748b" className="flex-shrink-0" />
-            <span className="ip-sel-val">
-              {status === "Active" ? "Status: Aktif" : status === "Draft" ? "Status: Draft" : status === "Completed" ? "Status: Selesai" : "Semua Status"}
-            </span>
-            <ChevronDown size={16} color="#64748b" className={`flex-shrink-0 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
-          </div>
-
-          {filterOpen && (
-            <>
-              <div className="ip-sel-overlay" onClick={() => setFilterOpen(false)} />
-              <div className="ip-sel-menu">
-                <div className={`ip-sel-item ${status === "" ? "active" : ""}`} onClick={() => { setStatus(""); setFilterOpen(false); }}>
-                  <span>Semua Status</span>{status === "" && <Check size={16} />}
-                </div>
-                <div className={`ip-sel-item ${status === "Active" ? "active" : ""}`} onClick={() => { setStatus("Active"); setFilterOpen(false); }}>
-                  <span>Aktif</span>{status === "Active" && <Check size={16} />}
-                </div>
-                <div className={`ip-sel-item ${status === "Draft" ? "active" : ""}`} onClick={() => { setStatus("Draft"); setFilterOpen(false); }}>
-                  <span>Draft</span>{status === "Draft" && <Check size={16} />}
-                </div>
-                <div className={`ip-sel-item ${status === "Completed" ? "active" : ""}`} onClick={() => { setStatus("Completed"); setFilterOpen(false); }}>
-                  <span>Selesai</span>{status === "Completed" && <Check size={16} />}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div style={{ flex:1 }}/>
-        <button className="ip-btn-add" style={{ background:"#e11d48", boxShadow:"0 6px 16px rgba(225,29,72,0.25), inset 0 1px 0 rgba(255,255,255,0.2)" }}
-          onClick={() => { setSel(null); setModal("add"); }}>
-          <Plus size={16}/> Tambah Program Khusus
-        </button>
-      </div>
-
-      {loading
-        ? <div className="ip-empty"><Loader2 size={36} color="#e11d48" style={{ animation:"ispin 1s linear infinite" }}/></div>
-        : data.length === 0
-          ? <div className="ip-empty"><Star size={48} color="#94a3b8" style={{opacity:0.5}}/><div className="ip-empty-lbl">{search||status ? "Tidak ada program khusus yang sesuai." : "Belum ada data program khusus."}</div></div>
-          : <div className="prog-grid">
-              {data.map(p => (
-                <div key={p.id} className="prog-card sprog-card">
-                  {p.image_url
-                    ? <img src={p.image_url} className="prog-img" alt={p.name}/>
-                    : <div className="prog-img-placeholder sprog-img-placeholder"><Star size={44} color="#e11d48" opacity={0.5}/></div>}
-                  <div className="prog-body">
-                    <div className="prog-name">{p.name}</div>
-                    {p.description && <div className="prog-desc">{p.description}</div>}
-                    <div className="prog-tags">
-                      {p.partner_name && <span className="prog-tag sprog-tag-partner"><Handshake size={12}/>{p.partner_name}</span>}
-                      <span className={`prog-tag sprog-tag-status-${p.status.toLowerCase()}`}>
-                        <Award size={12}/> {p.status === "Active" ? "Aktif" : p.status === "Draft" ? "Draft" : "Selesai"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="prog-card-foot">
-                    <button className="prog-act sprog-edit" onClick={() => { setSel(p); setModal("edit"); }}><Pencil size={14}/> Edit</button>
-                    <button className="prog-act prog-del"  onClick={() => { setSel(p); setModal("delete"); }}><Trash2 size={14}/> Hapus</button>
-                  </div>
-                </div>
-              ))}
-            </div>}
-
-      {!loading && meta.total > 0 && (
-        <div className="ip-pag">
-          <span className="ip-pag-info">{(meta.page-1)*meta.per_page+1}–{Math.min(meta.page*meta.per_page,meta.total)} dari {meta.total} program khusus</span>
-          <div className="ip-pag-btns">
-            <button className="ipb" disabled={meta.page===1} onClick={()=>load(meta.page-1)}><ChevronLeft size={14}/></button>
-            {pgs().map(p=><button key={p} className={`ipb ${p===meta.page?"ipb--on-sprog":""}`} onClick={()=>load(p)}>{p}</button>)}
-            <button className="ipb" disabled={meta.page===meta.last_page} onClick={()=>load(meta.page+1)}><ChevronRight size={14}/></button>
-          </div>
-        </div>
-      )}
-
-      {(modal==="add"||modal==="edit") && (
-        <SpecialProgramModal mode={modal} init={sel} partners={partners} onClose={()=>setModal(null)}
-          onSave={async (fd)=>{
-            const url = modal==="edit" ? `${API}/special-programs/${sel!.id}` : `${API}/special-programs`;
-            const j = await (await fetch(url,{method:"POST",body:fd})).json();
-            if (j.success) { onToast(modal==="add"?"Program Khusus ditambahkan.":"Program Khusus diperbarui.","success"); setModal(null); load(meta.page); }
-            else onToast(j.message??"Gagal.","error");
-          }}/>
-      )}
-      {modal==="delete" && sel && (
-        <DeleteModal label={sel.name} onClose={()=>setModal(null)}
-          onConfirm={async()=>{
-            const j = await (await fetch(`${API}/special-programs/${sel.id}`,{method:"DELETE"})).json();
-            if (j.success) { onToast("Program dihapus.","success"); setModal(null); load(data.length===1&&meta.page>1?meta.page-1:meta.page); }
-            else onToast(j.message??"Gagal.","error");
-          }}/>
-      )}
-    </div>
-  );
-}
-
-function SpecialProgramModal({ mode, init, partners, onClose, onSave }: {
-  mode:"add"|"edit"; init:SpecialProgram|null; partners:Option[]; onClose:()=>void; onSave:(fd:FormData)=>Promise<void>;
-}) {
-  const [name, setName]       = useState(init?.name ?? "");
-  const [partnerId, setPartnerId] = useState(init?.partner_id ?? "");
-  const [desc, setDesc]       = useState(init?.description ?? "");
-  const [status, setStatus]   = useState<"Active"|"Draft"|"Completed">(init?.status ?? "Draft");
-  const [imgFile, setImgFile] = useState<File|null>(null);
-  const [preview, setPreview] = useState<string|null>(init?.image_url ?? null);
-  const [busy, setBusy]       = useState(false);
-  const [err, setErr]         = useState<Record<string,string>>({});
-
-  const submit = async () => {
-    const e: Record<string,string> = {};
-    if (!name.trim()) e.name = "Nama program wajib diisi.";
-    if (!partnerId) e.partner = "Mitra kolaborasi wajib dipilih.";
-    if (Object.keys(e).length > 0) { setErr(e); return; }
-
-    setBusy(true);
-    const fd = new FormData();
-    fd.append("name", name);
-    fd.append("partner_id", partnerId);
-    fd.append("description", desc);
-    fd.append("status", status);
-    if (imgFile) fd.append("image", imgFile);
-    if (mode==="edit") fd.append("_method","PUT");
-    try { await onSave(fd); } finally { setBusy(false); }
-  };
-
-  return createPortal(
-    <div className="imbk" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="im">
-        <div className="im-hd">
-          <span className="im-title">{mode==="add"?"Tambah Program Khusus":"Edit Program Khusus"}</span>
-          <button className="im-cls" onClick={onClose}><X size={16}/></button>
-        </div>
-        <div className="im-body">
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-            <Fg label="Nama Program" error={err.name}>
-              <input className={`ifi focus-sprog ${err.name?"ierr":""}`} placeholder="Contoh: Beasiswa Unggulan" value={name} onChange={e=>{setName(e.target.value);setErr(p=>({...p,name:""}));}}/>
-            </Fg>
-            <Fg label="Mitra Kolaborasi" error={err.partner}>
-              <div className="i-sel-wrap-modal">
-                <select className={`isel focus-sprog ${err.partner?"ierr":""}`} value={partnerId} onChange={e=>{setPartnerId(e.target.value);setErr(p=>({...p,partner:""}));}}>
-                  <option value="">— Pilih Mitra —</option>
-                  {partners.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-                </select>
-                <ChevronDown size={16} className="i-sel-ico"/>
-              </div>
-            </Fg>
-          </div>
-          <Fg label="Deskripsi Program">
-            <textarea className="ita focus-sprog" rows={3} placeholder="Penjelasan singkat mengenai program khusus ini..." value={desc} onChange={e=>setDesc(e.target.value)}/>
-          </Fg>
-          
-          <div className="ifg">
-            <label className="ifl">Status Program</label>
-            <div className="i-type-toggle">
-              <button type="button" className={`i-type-btn ${status==="Draft"?"i-status-draft":""}`} onClick={()=>setStatus("Draft")}>
-                Draft
-              </button>
-              <button type="button" className={`i-type-btn ${status==="Active"?"i-status-active":""}`} onClick={()=>setStatus("Active")}>
-                Aktif
-              </button>
-              <button type="button" className={`i-type-btn ${status==="Completed"?"i-status-completed":""}`} onClick={()=>setStatus("Completed")}>
-                Selesai
-              </button>
-            </div>
-          </div>
-
-          <Fg label="Gambar Banner (Opsional)">
-            <FileUpload accept="image/*" preview={preview} label="Pilih gambar banner (Max 3MB)" themeClass="up-sprog"
-              onFile={f=>{setImgFile(f);setPreview(URL.createObjectURL(f));}}/>
-          </Fg>
-        </div>
-        <div className="im-ft">
-          <button className="ibtn-cncl" onClick={onClose}>Batal</button>
-          <button className="ip-btn-save" style={{ background:"#e11d48", boxShadow:"0 4px 14px rgba(225,29,72,0.25)" }} onClick={submit} disabled={busy}>
-            {busy?<><Loader2 size={16} style={{animation:"ispin 1s linear infinite"}}/> Menyimpan...</>:<><CheckCircle2 size={16}/> {mode==="add"?"Tambah Program":"Simpan Perubahan"}</>}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 /* ═══════════════════════════════════════════════════════════
    TAB 4 — GALLERY (Purple)
@@ -1347,12 +1093,11 @@ function GalleryModal({ mode, init, onClose, onSave }: {
 /* ═══════════════════════════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════════════════════════ */
-type TabId = "profile" | "programs" | "special_programs" | "gallery";
+type TabId = "profile" | "programs" | "gallery";
 
 const TABS: { id:TabId; label:string; icon:React.ReactNode; color:string }[] = [
   { id:"profile",  label:"Profil Sekolah", icon:<Building2 size={16}/>, color:"#0f766e" },
   { id:"programs", label:"Program Utama",  icon:<BookOpen  size={16}/>, color:"#2563eb" },
-  { id:"special_programs", label:"Program Khusus", icon:<Star size={16}/>, color:"#e11d48" }, // ── Menambahkan Tab Baru
   { id:"gallery",  label:"Galeri Media",   icon:<Image     size={16}/>, color:"#7c3aed" },
 ];
 
@@ -1391,7 +1136,6 @@ export default function InfoPage() {
         <div className="ip-card">
           {tab === "profile"  && <ProfileTab  onToast={showToast}/>}
           {tab === "programs" && <ProgramsTab onToast={showToast}/>}
-          {tab === "special_programs" && <SpecialProgramsTab onToast={showToast}/>}
           {tab === "gallery"  && <GalleryTab  onToast={showToast}/>}
         </div>
 
