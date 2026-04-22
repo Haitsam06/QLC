@@ -6,7 +6,7 @@ import type { PageProps } from '@/types';
 // PERHATIAN: Ubah isi 'href' sesuai dengan route URL di web.php Anda
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard', href: '/mitra/dashboard' },
-    { icon: Briefcase, label: 'Program Aktif', id: 'program', href: '/mitra/program' },
+    // { icon: Briefcase, label: 'Program Aktif', id: 'program', href: '/mitra/program' },
     { icon: CalendarDays, label: 'Jadwal', id: 'jadwal', href: '/mitra/jadwal' },
     { icon: FileCheck, label: 'Laporan', id: 'laporan', href: '/mitra/laporan' },
 ];

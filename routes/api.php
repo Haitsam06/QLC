@@ -9,6 +9,8 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\MitraController;
 use App\Http\Controllers\ProgressReportController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\MitraDashboardController;
+use App\Http\Controllers\Admin\MitraReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -86,15 +88,16 @@ Route::middleware('auth')->group(function () {
 
     // Mitra routes
     Route::prefix('mitra')->group(function () {
-        Route::get('reports', [\App\Http\Controllers\Admin\MitraReportController::class, 'mitraReports']);
+        Route::get('dashboard', [MitraDashboardController::class, 'index']);
+        Route::get('reports',   [MitraReportController::class, 'mitraReports']);
     });
 
     // Admin mitra report routes
     Route::prefix('admin/mitra')->group(function () {
-        Route::get ('{partnerId}/reports',  [\App\Http\Controllers\Admin\MitraReportController::class, 'reports']);
-        Route::post('{partnerId}/reports',  [\App\Http\Controllers\Admin\MitraReportController::class, 'store']);
-        Route::delete('reports/{reportId}',[\App\Http\Controllers\Admin\MitraReportController::class, 'destroy']);
-        Route::get ('list',                [\App\Http\Controllers\Admin\MitraReportController::class, 'partners']);
+        Route::get ('{partnerId}/reports',  [MitraReportController::class, 'reports']);
+        Route::post('{partnerId}/reports',  [MitraReportController::class, 'store']);
+        Route::delete('reports/{reportId}', [MitraReportController::class, 'destroy']);
+        Route::get ('list',                 [MitraReportController::class, 'partners']);
     });
 
     // Admin progress routes
