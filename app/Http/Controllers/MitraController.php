@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage; // Tambahkan ini untuk handle file
 use MongoDB\Client;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
@@ -28,6 +29,7 @@ class MitraController extends Controller
     ───────────────────────────────────────────── */
     public function index(Request $request)
     {
+        // (Isi function index TETAP SAMA seperti sebelumnya)
         $page     = max(1, (int) $request->query('page', 1));
         $perPage  = max(1, min(50, (int) $request->query('per_page', 10)));
         $search   = trim($request->query('search', ''));
@@ -73,11 +75,9 @@ class MitraController extends Controller
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/partners/{id}
-    ───────────────────────────────────────────── */
     public function show(string $id)
     {
+        // (Isi function show TETAP SAMA seperti sebelumnya)
         try { $oid = new ObjectId($id); }
         catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
@@ -93,12 +93,6 @@ class MitraController extends Controller
 
     /* ─────────────────────────────────────────────
        POST /api/partners
-       Alur:
-         1. Validasi input
-         2. Cek duplikat username, email, phone
-         3. Insert ke `users`  (role_id = RL04)
-         4. Insert ke `partners` (user_id = id user baru)
-         5. Rollback user jika insert partners gagal
     ───────────────────────────────────────────── */
     public function store(Request $request)
     {
@@ -106,7 +100,7 @@ class MitraController extends Controller
             'institution_name' => 'required|string|max:200',
             'contact_person'   => 'required|string|max:150',
             'phone'            => 'required|string|max:20',
-            'mou_file_url'     => 'nullable|url|max:500',
+            'mou_file'         => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120', // Ubah validasi jadi file, max 5MB
             'status'           => 'required|in:Active,Inactive',
             'username'         => 'required|string|min:4|max:50|alpha_num',
             'password'         => 'required|string|min:8|max:100',
@@ -117,24 +111,25 @@ class MitraController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        // ── Cek duplikat username ──
         if ($this->users->findOne(['username' => $request->username])) {
             return response()->json(['success' => false, 'message' => 'Username sudah digunakan.'], 409);
         }
-
-        // ── Cek duplikat email (jika diisi) ──
         if ($request->email && $this->users->findOne(['email' => $request->email])) {
             return response()->json(['success' => false, 'message' => 'Email sudah digunakan.'], 409);
         }
-
-        // ── Cek duplikat phone ──
         if ($this->partners->findOne(['phone' => $request->phone])) {
             return response()->json(['success' => false, 'message' => 'Nomor telepon sudah terdaftar.'], 409);
         }
 
+        // ── Proses Upload File ──
+        $mouFileUrl = null;
+        if ($request->hasFile('mou_file')) {
+            $path = $request->file('mou_file')->store('mous', 'public'); // Simpan di folder storage/app/public/mous
+            $mouFileUrl = url('storage/' . $path);
+        }
+
         $now = new UTCDateTime();
 
-        // ── 1. Insert ke users ──
         $userDoc = [
             'role_id'    => self::ROLE_MITRA,
             'username'   => $request->username,
@@ -147,14 +142,13 @@ class MitraController extends Controller
         $userResult = $this->users->insertOne($userDoc);
         $userId     = (string) $userResult->getInsertedId();
 
-        // ── 2. Insert ke partners ──
         try {
             $partnerDoc = [
                 'user_id'          => $userId,
                 'institution_name' => $request->institution_name,
                 'contact_person'   => $request->contact_person,
                 'phone'            => $request->phone,
-                'mou_file_url'     => $request->mou_file_url ?? null,
+                'mou_file_url'     => $mouFileUrl, // Simpan URL hasil upload
                 'status'           => $request->status,
                 'created_at'       => $now,
                 'updated_at'       => $now,
@@ -164,9 +158,7 @@ class MitraController extends Controller
             $partnerDoc['_id'] = $result->getInsertedId();
 
         } catch (\Exception $e) {
-            // ── Rollback: hapus user yang sudah dibuat ──
             $this->users->deleteOne(['_id' => new ObjectId($userId)]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan data mitra. Akun telah di-rollback.',
@@ -189,7 +181,7 @@ class MitraController extends Controller
             'institution_name' => 'required|string|max:200',
             'contact_person'   => 'required|string|max:150',
             'phone'            => 'required|string|max:20',
-            'mou_file_url'     => 'nullable|url|max:500',
+            'mou_file'         => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120', // Ubah validasi jadi file
             'status'           => 'required|in:Active,Inactive',
         ]);
 
@@ -202,7 +194,6 @@ class MitraController extends Controller
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
         }
 
-        // Cek duplikat phone (kecuali diri sendiri)
         $exists = $this->partners->findOne([
             'phone' => $request->phone,
             '_id'   => ['$ne' => $oid],
@@ -214,21 +205,36 @@ class MitraController extends Controller
             ], 409);
         }
 
+        $existingPartner = $this->partners->findOne(['_id' => $oid]);
+        if (!$existingPartner) {
+            return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
+        }
+
+        // ── Proses Upload File untuk Update ──
+        $mouFileUrl = $existingPartner['mou_file_url'] ?? null;
+        
+        if ($request->hasFile('mou_file')) {
+            // Opsional: Hapus file lama jika ada
+            if ($mouFileUrl) {
+                $oldPath = str_replace(url('storage/') . '/', '', $mouFileUrl);
+                Storage::disk('public')->delete($oldPath);
+            }
+            
+            $path = $request->file('mou_file')->store('mous', 'public');
+            $mouFileUrl = url('storage/' . $path);
+        }
+
         $result = $this->partners->updateOne(
             ['_id' => $oid],
             ['$set' => [
                 'institution_name' => $request->institution_name,
                 'contact_person'   => $request->contact_person,
                 'phone'            => $request->phone,
-                'mou_file_url'     => $request->mou_file_url ?? null,
+                'mou_file_url'     => $mouFileUrl, // Update dengan URL baru atau tetap yang lama
                 'status'           => $request->status,
                 'updated_at'       => new UTCDateTime(),
             ]]
         );
-
-        if ($result->getMatchedCount() === 0) {
-            return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
-        }
 
         $updated = $this->partners->findOne(['_id' => $oid]);
 
@@ -239,12 +245,9 @@ class MitraController extends Controller
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       DELETE /api/partners/{id}
-       Hapus partners + user yang terhubung
-    ───────────────────────────────────────────── */
     public function destroy(string $id)
     {
+        // (Isi function destroy TETAP SAMA, namun opsional kamu bisa tambahkan logika hapus file dari Storage jika mitra dihapus)
         try { $oid = new ObjectId($id); }
         catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
@@ -256,29 +259,25 @@ class MitraController extends Controller
             return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
         }
 
-        // Hapus partner
-        $this->partners->deleteOne(['_id' => $oid]);
-
-        // Hapus user yang terhubung
-        if (!empty($partner['user_id'])) {
-            try {
-                $this->users->deleteOne(['_id' => new ObjectId($partner['user_id'])]);
-            } catch (\Exception $e) {
-                $this->users->deleteOne(['_id' => $partner['user_id']]);
-            }
+        // Hapus file MOU fisik saat data mitra dihapus (Opsional tapi direkomendasikan)
+        if (isset($partner['mou_file_url'])) {
+             $oldPath = str_replace(url('storage/') . '/', '', $partner['mou_file_url']);
+             Storage::disk('public')->delete($oldPath);
         }
 
-        return response()->json([
-            'success' => true, 
-            'message' => 'Mitra dan akun pengguna berhasil dihapus.'
-        ]);
+        $this->partners->deleteOne(['_id' => $oid]);
+
+        if (!empty($partner['user_id'])) {
+            try { $this->users->deleteOne(['_id' => new ObjectId($partner['user_id'])]); } 
+            catch (\Exception $e) { $this->users->deleteOne(['_id' => $partner['user_id']]); }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Mitra dan akun pengguna berhasil dihapus.']);
     }
 
-    /* ─────────────────────────────────────────────
-       Helper
-    ───────────────────────────────────────────── */
     private function format($doc): array
     {
+        // (Isi function format TETAP SAMA)
         return [
             'id'               => (string) $doc['_id'],
             'user_id'          => $doc['user_id'] ?? null,

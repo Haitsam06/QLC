@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Handshake, Plus, Pencil, Trash2, X,
   Loader2, CheckCircle2, Search, ChevronLeft, ChevronRight,
   Phone, Building2, FileText, Filter, ExternalLink, ChevronDown, Check, AlertCircle,
-  User, Lock, Mail
+  User, Lock, Mail, Upload, FileBadge, Download, File
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════
@@ -373,6 +373,24 @@ table.mp-tbl tbody tr:last-child td { border-bottom:none; }
 .mp-toast--ok  { border-left:4px solid #16a34a; }
 .mp-toast--err { border-left:4px solid #dc2626; }
 
+/* Upload zone (Tema Ungu untuk Mitra) */
+.mp-upload-zone {
+  border:2px dashed #cbd5e1; border-radius:14px; padding:28px 20px;
+  text-align:center; cursor:pointer; transition:all 0.2s; background:rgba(248,250,252,0.8);
+  margin-top: 4px;
+}
+.mp-upload-zone:hover, .mp-upload-zone--over { border-color:#7c3aed; background:rgba(124,58,237,0.04); }
+.mp-upload-zone--has-file { border-color:#16a34a; background:rgba(22,163,74,0.04); border-style:solid; }
+
+/* File chip untuk mode edit */
+.mp-file-chip {
+  display:inline-flex; align-items:center; gap:8px; padding:8px 14px; margin-top: 8px;
+  background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.2);
+  border-radius:10px; font-size:12.5px; font-weight:600; color:#5b21b6; text-decoration:none;
+  transition:all 0.2s; width: fit-content;
+}
+.mp-file-chip:hover { background:rgba(124,58,237,0.14); transform:translateY(-1px); }
+
 @media (max-width:640px) {
   .mp-bar { flex-direction:column; align-items:stretch; }
   .mp-search { max-width:100%; }
@@ -385,6 +403,10 @@ table.mp-tbl tbody tr:last-child td { border-bottom:none; }
 ═══════════════════════════════════════════════════════════ */
 function initials(name: string) {
   return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()??"").join("");
+}
+function formatBytes(b: number) {
+  if (b === 0) return '0 B';
+  return b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(1) + ' MB';
 }
 function useDebounce<T>(val: T, ms = 400): T {
   const [v, setV] = useState(val);
@@ -412,14 +434,15 @@ interface FormState {
   institution_name: string;
   contact_person:   string;
   phone:            string;
-  mou_file_url:     string;
+  mou_file:         File | null;
+  mou_file_url:     string | null;
   status:           Status;
   username?:        string;
   password?:        string;
   email?:           string;
 }
 const emptyForm = (): FormState => ({
-  institution_name:"", contact_person:"", phone:"", mou_file_url:"", status:"Active",
+  institution_name:"", contact_person:"", phone:"", mou_file:null, mou_file_url:null, status:"Active",
   username:"", password:"", email:""
 });
 
@@ -436,19 +459,44 @@ function MitraModal({ init, onClose, onSave }: {
   const [busy, setBusy] = useState(false);
   const isEdit = Boolean(init.id);
 
+  // State dan Ref untuk fitur Upload
+  const [dragOver, setDragOver] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const upd = (k: keyof FormState) =>
     (ev: React.ChangeEvent<HTMLInputElement>) => {
       setF(p => ({ ...p, [k]: ev.target.value }));
       setE(p => ({ ...p, [k]: "" }));
     };
 
+  // Handler validasi dan set file
+  const handleFile = (file: File) => {
+    const ok = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/png"
+    ];
+    if (!ok.includes(file.type)) {
+      setE(p => ({ ...p, mou_file: "Format file tidak didukung (Gunakan PDF, DOC/DOCX, JPG, atau PNG)." }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setE(p => ({ ...p, mou_file: "Ukuran file maksimal 5MB." }));
+      return;
+    }
+    setF(p => ({ ...p, mou_file: file }));
+    setE(p => ({ ...p, mou_file: "" })); // Hapus pesan error jika file valid
+  };
+
   const validate = () => {
     const err: typeof e = {};
     if (!f.institution_name.trim()) err.institution_name = "Nama institusi wajib diisi.";
     if (!f.contact_person.trim())   err.contact_person   = "Nama kontak wajib diisi.";
     if (!f.phone.trim())            err.phone            = "Nomor telepon wajib diisi.";
-    if (f.mou_file_url && !/^https?:\/\/.+/.test(f.mou_file_url))
-                                    err.mou_file_url     = "URL tidak valid (harus diawali http/https).";
+    
+    // Validasi URL sudah dihapus dari sini karena kita menggunakan File Upload
     
     // Validasi akun hanya untuk mode Tambah (Add)
     if (!isEdit) {
@@ -557,16 +605,59 @@ function MitraModal({ init, onClose, onSave }: {
             {e.phone && <span className="mp-fe">{e.phone}</span>}
           </div>
 
-          {/* MOU File URL */}
+          {/* MOU File Upload (Drag & Drop) */}
           <div className="mp-fg">
-            <label className="mp-fl">URL File MOU <span style={{ fontWeight:500, textTransform:"none", color:"#94a3b8" }}>(opsional)</span></label>
-            <div style={{ position:"relative" }}>
-              <FileText size={16} style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"#64748b", pointerEvents:"none" }}/>
-              <input className={`mp-fi${e.mou_file_url?" err":""}`} style={{ paddingLeft:38 }}
-                placeholder="https://drive.google.com/..."
-                value={f.mou_file_url} onChange={upd("mou_file_url")}/>
+            <label className="mp-fl">File MOU <span style={{ fontWeight:500, textTransform:"none", color:"#94a3b8" }}>(opsional)</span></label>
+            
+            <div
+              className={`mp-upload-zone ${dragOver ? "mp-upload-zone--over" : ""} ${f.mou_file ? "mp-upload-zone--has-file" : ""}`}
+              onClick={() => fileRef.current?.click()}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => {
+                e.preventDefault(); setDragOver(false);
+                const file = e.dataTransfer.files[0];
+                if (file) handleFile(file);
+              }}>
+              
+              {f.mou_file ? (
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+                  <FileBadge size={32} color="#16a34a"/>
+                  <div style={{ fontWeight:700, color:"#1e293b", fontSize:14 }}>{f.mou_file.name}</div>
+                  <div style={{ fontSize:12, color:"#64748b" }}>{formatBytes(f.mou_file.size)}</div>
+                  <div style={{ fontSize:12, color:"#16a34a", fontWeight:600 }}>✓ File siap diupload</div>
+                </div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+                  <Upload size={32} color="#94a3b8"/>
+                  <div style={{ fontWeight:600, color:"#475569", fontSize:14 }}>Klik atau drag & drop file di sini</div>
+                  <div style={{ fontSize:12, color:"#94a3b8" }}>PDF, DOC, DOCX, JPG, PNG — max 5MB</div>
+                </div>
+              )}
             </div>
-            {e.mou_file_url && <span className="mp-fe">{e.mou_file_url}</span>}
+            
+            {/* Hidden Input File */}
+            <input 
+              ref={fileRef} 
+              type="file" 
+              accept=".pdf,.doc,.docx,.jpg,.png" 
+              style={{ display:"none" }}
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleFile(file);
+              }}
+            />
+            {/* Error Message for File */}
+            {e.mou_file && <span className="mp-fe">{e.mou_file}</span>}
+
+            {/* Tampilkan link jika sedang mode edit dan file MOU lama sudah ada */}
+            {isEdit && f.mou_file_url && !f.mou_file && (
+              <a href={f.mou_file_url} target="_blank" rel="noopener noreferrer" className="mp-file-chip">
+                <File size={14}/>
+                Lihat Dokumen MOU Saat Ini
+                <Download size={13}/>
+              </a>
+            )}
           </div>
 
           {/* Status */}
@@ -682,14 +773,33 @@ export default function MitraPage() {
 
   /* CRUD handlers */
   const handleAdd = async (f: FormState) => {
-    const res  = await fetch(`${BASE}/partners`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(f) });
+    const formData = new FormData();
+    Object.entries(f).forEach(([key, value]) => {
+      // Kita tidak mengirimkan 'mou_file_url' ke backend saat proses upload
+      if (value !== null && value !== undefined && key !== 'mou_file_url') {
+        formData.append(key, value as string | Blob);
+      }
+    });
+
+    // Perhatikan Header 'Content-Type' dihilangkan agar browser men-generate boundary multipart otomatis
+    const res  = await fetch(`${BASE}/partners`, { method:"POST", body: formData });
     const data = await res.json();
     if (data.success) { showToast("Mitra berhasil ditambahkan."); setAddModal(false); load(1); }
     else showToast(data.message ?? "Gagal menyimpan data mitra. Silakan periksa kembali input Anda.", "err");
   };
 
   const handleEdit = async (f: FormState) => {
-    const res  = await fetch(`${BASE}/partners/${editModal!.id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(f) });
+    const formData = new FormData();
+    Object.entries(f).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && key !== 'mou_file_url') {
+        formData.append(key, value as string | Blob);
+      }
+    });
+    // PENTING UNTUK LARAVEL: Kita menggunakan POST, tapi menyisipkan _method PUT
+    // karena PHP tidak bisa membaca file dari form-data dengan method PUT murni.
+    formData.append('_method', 'PUT');
+
+    const res  = await fetch(`${BASE}/partners/${editModal!.id}`, { method:"POST", body: formData });
     const data = await res.json();
     if (data.success) { showToast("Data mitra diperbarui."); setEditModal(null); load(meta.page); }
     else showToast(data.message ?? "Gagal memperbarui.", "err");
@@ -920,6 +1030,7 @@ export default function MitraPage() {
             institution_name: editModal.institution_name,
             contact_person:   editModal.contact_person,
             phone:            editModal.phone,
+            mou_file:         null, // File baru tidak wajib saat edit, jadi inisialisasi dengan null
             mou_file_url:     editModal.mou_file_url ?? "",
             status:           editModal.status,
           }}
