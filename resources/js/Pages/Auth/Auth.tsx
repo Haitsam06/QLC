@@ -98,7 +98,8 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                 </div>
 
                 <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-10 sm:px-12 relative bg-gray-50 min-h-screen overflow-y-auto">
-                    <div className="w-full max-w-md mx-auto">
+                    {/* BAGIAN YANG DIUBAH: max-w-md menjadi max-w-xl di sini 👇 */}
+                    <div className="w-full max-w-xl mx-auto">
                         <div className="mb-6 flex items-center justify-between">
                             <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-colors group">
                                 <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
