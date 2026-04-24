@@ -1,728 +1,545 @@
-import { useState, useEffect } from "react";
-import { Head, router, usePage } from "@inertiajs/react";
-import type { PageProps } from "@/types";
-import axios from "axios";
+import { useState, useEffect } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import type { PageProps } from '@/types';
+import axios from 'axios';
 import {
-  LayoutDashboard, BookOpen, Users, CalendarDays,
-  Bell, Settings, LogOut, ChevronLeft, ChevronRight,
-  GraduationCap, CheckCircle2, Clock, TrendingUp,
-  Award, Star, Menu, FileText, ShieldUser,
-  Info, Handshake, ArrowUpRight, ArrowRight, UserPlus,
-  Search, Loader2
-} from "lucide-react";
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-} from "recharts";
+    LayoutDashboard,
+    BookOpen,
+    Users,
+    CalendarDays,
+    Bell,
+    Settings,
+    LogOut,
+    ChevronLeft,
+    ChevronRight,
+    GraduationCap,
+    CheckCircle2,
+    Clock,
+    TrendingUp,
+    Award,
+    Star,
+    Menu,
+    FileText,
+    ShieldUser,
+    Info,
+    Handshake,
+    ArrowUpRight,
+    ArrowRight,
+    UserPlus,
+    Search,
+    Loader2,
+} from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-import GuruPage       from "./GuruPage";
-import MitraPage      from "./MitraPage";
-import WaliMuridPage  from "./WalimuridPage";
-import SiswaPage      from "./SiswaPage";
-import InfoPage       from "./InfoPage";
-import AgendaPage     from "./AgendaPage";
-import ProgressPage   from "./ProgressPage";
-import PengaturanPage from "./PengaturanPage";
+import GuruPage from './GuruPage';
+import MitraPage from './MitraPage';
+import WaliMuridPage from './WalimuridPage';
+import SiswaPage from './SiswaPage';
+import InfoPage from './InfoPage';
+import AgendaPage from './AgendaPage';
+import ProgressPage from './ProgressPage';
+import PengaturanPage from './PengaturanPage';
 
 /* ═══════════════════════════════════════════════
    TYPES
 ═══════════════════════════════════════════════ */
 interface DashStats {
-  total_siswa:   number;
-  total_pending: number;
-  total_guru:    number;
-  total_program: number;
-  total_mitra:   number;
+    total_siswa: number;
+    total_pending: number;
+    total_guru: number;
+    total_program: number;
+    total_mitra: number;
 }
 
-interface ChartPoint   { name: string; pendaftar: number; }
-interface AgendaItem   { id: string; title: string; date: string; type: string; }
-interface PendingItem  { id: string; nama: string; prog: string; date: string; }
-interface ReportItem   { id: string; student_id: string; nama: string; capaian: string; report_type: string | null; kualitas: string | null; }
-
-/* ═══════════════════════════════════════════════
-   STYLES
-═══════════════════════════════════════════════ */
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-button { cursor: pointer; font-family: inherit; border: none; background: none; }
-input  { font-family: inherit; outline: none; border: none; background: none; }
-
-:root {
-  --green:       #0f766e;
-  --green-mid:   #14b8a6;
-  --green-light: #ccfbf1;
-  --blue:        #2563eb;
-  --blue-light:  #dbeafe;
-  --gold:        #d4a017;
-  --red:         #dc2626;
-  --bg:          #f1f5f9;
-  --text:        #0f172a;
-  --text2:       #475569;
-  --text3:       #94a3b8;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+interface ChartPoint {
+    name: string;
+    pendaftar: number;
 }
-
-.layout {
-  display: flex; min-height: 100vh; background: var(--bg);
-  position: relative; overflow: hidden;
+interface AgendaItem {
+    id: string;
+    title: string;
+    date: string;
+    type: string;
 }
-
-.bg-decor { position: fixed; border-radius: 50%; filter: blur(80px); z-index: 0; opacity: 0.4; pointer-events: none; }
-.dec-1 { width: 400px; height: 400px; background: var(--green-light); top: -100px; left: -100px; }
-.dec-2 { width: 500px; height: 500px; background: var(--blue-light); bottom: -150px; right: -100px; }
-.dec-3 { width: 300px; height: 300px; background: #fef08a; top: 40%; left: 30%; opacity: 0.2; }
-
-/* ── SIDEBAR ── */
-.sb {
-  width: 220px; background: var(--green); color: #fff;
-  display: flex; flex-direction: column;
-  transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  position: relative; z-index: 20;
-  box-shadow: 4px 0 24px rgba(15,118,110,0.15);
-  margin: 12px 0 12px 12px; border-radius: 20px; overflow: hidden;
-  flex-shrink: 0;
+interface PendingItem {
+    id: string;
+    nama: string;
+    prog: string;
+    date: string;
 }
-.sb--col { width: 64px; }
-.sb-hd {
-  height: 64px; display: flex; align-items: center; padding: 0 18px; gap: 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  white-space: nowrap; overflow: hidden;
+interface ReportItem {
+    id: string;
+    student_id: string;
+    nama: string;
+    capaian: string;
+    report_type: string | null;
+    kualitas: string | null;
 }
-.sb-logo {
-  width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
-  background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.2);
-}
-.sb-brand { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; }
-.sb-sub   { font-size: 9.5px; font-weight: 500; color: var(--green-light); opacity: 0.8; }
-.sb-nav { flex: 1; padding: 16px 10px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; overflow-x: hidden; }
-.sb-item {
-  display: flex; align-items: center; gap: 11px;
-  padding: 9px 10px; border-radius: 12px;
-  color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
-  transition: all 0.2s; white-space: nowrap; cursor: pointer; position: relative;
-}
-.sb-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
-.sb-item--on {
-  color: #fff; background: rgba(255,255,255,0.15);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); font-weight: 700;
-}
-.sb-item--on::before {
-  content: ""; position: absolute; left: 0; top: 10px; bottom: 10px;
-  width: 3px; background: #fff; border-radius: 0 3px 3px 0;
-}
-.sb-ico { flex-shrink: 0; }
-.sb-lbl { transition: opacity 0.2s; }
-.sb--col .sb-lbl { opacity: 0; width: 0; display: none; }
-.sb-badge {
-  margin-left: auto; background: var(--red); color: #fff;
-  font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 99px;
-  box-shadow: 0 2px 8px rgba(220,38,38,0.4);
-}
-.sb--col .sb-badge {
-  position: absolute; top: 6px; right: 6px; padding: 0; width: 7px; height: 7px; font-size: 0;
-}
-.sb-ft { padding: 12px 10px; border-top: 1px solid rgba(255,255,255,0.1); }
-.sb-tog {
-  position: absolute; top: 28px; right: -10px;
-  width: 20px; height: 20px; border-radius: 50%;
-  background: #fff; border: 1px solid rgba(0,0,0,0.1);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text2); cursor: pointer; z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: 0.2s;
-}
-.sb-tog:hover { color: var(--green); transform: scale(1.1); }
-
-/* ── MAIN ── */
-.main {
-  flex: 1; display: flex; flex-direction: column;
-  transition: all 0.3s; z-index: 10; height: 100vh; overflow-y: auto; scroll-behavior: smooth;
-  min-width: 0;
-}
-.main--open { max-width: calc(100vw - 232px); }
-.main--col  { max-width: calc(100vw - 76px); }
-/* ── TOPBAR — floating pills ── */
-.top {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 20px; position: sticky; top: 0; z-index: 50;
-  background: transparent; pointer-events: none;
-}
-.top > * { pointer-events: auto; }
-
-/* Search pill */
-.top-search {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
-  padding: 0 16px; height: 40px; border-radius: 99px; width: 260px;
-  border: 1px solid rgba(255,255,255,0.95);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
-  transition: 0.25s cubic-bezier(0.25,1,0.5,1);
-}
-.top-search:focus-within {
-  background: rgba(255,255,255,0.88); width: 310px;
-  border-color: rgba(15,118,110,0.35);
-  box-shadow: 0 6px 24px rgba(15,118,110,0.1), inset 0 1px 0 rgba(255,255,255,1);
-}
-.top-search input { flex: 1; font-size: 13px; color: var(--text); background: transparent; }
-.top-search input::placeholder { color: var(--text3); }
-
-/* Notif pill — square-ish rounded */
-.top-acts { display: flex; align-items: center; gap: 8px; }
-
-.top-notif-pill {
-  display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 14px;
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border: 1px solid rgba(255,255,255,0.95);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
-  color: var(--text2); position: relative; cursor: pointer; transition: 0.2s;
-}
-.top-notif-pill:hover {
-  background: rgba(255,255,255,0.88); color: var(--green);
-  box-shadow: 0 6px 20px rgba(15,118,110,0.1), inset 0 1px 0 rgba(255,255,255,1);
-  transform: translateY(-1px);
-}
-.top-dot {
-  position: absolute; top: 8px; right: 8px;
-  width: 7px; height: 7px; background: var(--red); border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,0.9);
-  box-shadow: 0 0 0 2px rgba(220,38,38,0.15);
-}
-
-/* Profile pill */
-.top-prof {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
-  padding: 5px 14px 5px 5px; border-radius: 99px;
-  border: 1px solid rgba(255,255,255,0.95);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
-  cursor: pointer; transition: 0.2s;
-}
-.top-prof:hover {
-  background: rgba(255,255,255,0.88);
-  box-shadow: 0 6px 20px rgba(15,118,110,0.1), inset 0 1px 0 rgba(255,255,255,1);
-  transform: translateY(-1px);
-}
-.top-av {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--green), var(--blue));
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 800;
-  box-shadow: 0 2px 8px rgba(15,118,110,0.35);
-}
-.top-pname { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.2; }
-.top-prole { font-size: 10px; color: var(--text3); font-weight: 600; }
-
-/* mobile menu btn — juga pill */
-.top-menu-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 14px;
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border: 1px solid rgba(255,255,255,0.95);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
-  color: var(--text2); cursor: pointer; transition: 0.2s;
-}
-.top-menu-btn:hover { background: rgba(255,255,255,0.88); color: var(--green); }
-.content { padding: 4px 24px 40px; flex: 1; display: flex; flex-direction: column; gap: 20px; animation: fi .4s ease; }
-@keyframes fi { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
-
-/* ── GLASS CARD ── */
-.glass-card {
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: saturate(200%) blur(32px); -webkit-backdrop-filter: saturate(200%) blur(32px);
-  border-radius: 20px; border: 1px solid rgba(255,255,255,0.9);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,1);
-  padding: 20px; overflow: hidden; position: relative;
-}
-
-/* Banner */
-.dash-banner {
-  background: linear-gradient(135deg, var(--green), #0d5c56, var(--blue));
-  border-radius: 20px; padding: 24px 32px; color: #fff;
-  display: flex; justify-content: space-between; align-items: center;
-  box-shadow: 0 8px 24px rgba(15,118,110,0.2); position: relative; overflow: hidden;
-}
-.dash-banner::after {
-  content: ""; position: absolute; right: -40px; top: -80px;
-  width: 240px; height: 240px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
-}
-.db-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.5px; position:relative; z-index:2; }
-.db-sub { font-size: 13px; opacity: 0.82; font-weight: 500; position:relative; z-index:2; }
-.db-date {
-  background: rgba(255,255,255,0.18); backdrop-filter: blur(10px);
-  padding: 7px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 700;
-  display: flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,0.25);
-  position:relative; z-index:2; white-space: nowrap;
-}
-
-/* Stats */
-.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.stat-box { display: flex; align-items: center; gap: 14px; padding: 16px 18px; transition: transform 0.2s; cursor: pointer; }
-.stat-box:hover { transform: translateY(-2px); }
-.st-icon-wrap { width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.st-info { flex: 1; min-width: 0; }
-.st-val { font-size: 22px; font-weight: 900; color: var(--text); line-height: 1.1; }
-.st-lbl { font-size: 11px; color: var(--text3); font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-val-skel { height: 26px; width: 48px; background: #e2e8f0; border-radius: 6px; animation: pulse 1.5s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-
-/* Grid */
-.dash-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; }
-.dash-grid-bot { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.sec-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.sec-ttl { font-size: 14.5px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 7px; }
-.sec-btn { font-size: 11.5px; font-weight: 700; color: var(--green); display: flex; align-items: center; gap: 4px; transition: 0.2s; white-space: nowrap; }
-.sec-btn:hover { color: var(--green-mid); transform: translateX(2px); }
-
-/* List items */
-.list-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 12px; background: rgba(255,255,255,0.6);
-  border: 1px solid rgba(0,0,0,0.04); border-radius: 14px; margin-bottom: 8px; transition: 0.2s;
-}
-.list-item:hover { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.04); transform: scale(1.005); }
-.list-item:last-child { margin-bottom: 0; }
-.li-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.li-av {
-  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-  background: rgba(15,118,110,0.1); color: var(--green);
-  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;
-}
-.li-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.li-sub { font-size: 11.5px; color: var(--text3); font-weight: 500; display:flex; align-items:center; gap:4px; }
-.li-r { text-align: right; flex-shrink: 0; margin-left: 8px; }
-.li-badge { padding: 3px 8px; border-radius: 7px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; }
-.b-warn { background: rgba(245,158,11,0.1); color: #d97706; }
-.b-ok   { background: rgba(22,163,74,0.1); color: #16a34a; }
-.b-blue { background: rgba(37,99,235,0.1); color: #2563eb; }
-
-/* Empty/loading state inside cards */
-.card-empty { text-align:center; padding:24px 20px; color:var(--text3); font-size:13px; font-weight:600; }
-
-@media (max-width: 1280px) {
-  .dash-grid { grid-template-columns: 3fr 2fr; }
-}
-@media (max-width: 1024px) {
-  .dash-grid, .dash-grid-bot { grid-template-columns: 1fr; }
-  .dash-stats { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* Desktop: sembunyikan hamburger, tampilkan search & nama profil */
-.top-menu-btn  { display: none; }
-.top-search    { display: flex; }
-.top-pname-wrap { display: block; }
-
-@media (max-width: 768px) {
-  /* Sidebar: tersembunyi, muncul saat .sb--open-mob */
-  .sb {
-    position: fixed; top: 0; left: 0;
-    height: 100vh; margin: 0; border-radius: 0; z-index: 100;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  }
-  .sb--open-mob { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.2); }
-
-  /* Hamburger tampil di mobile */
-  .top-menu-btn { display: flex; }
-
-  /* Search & nama profil hilang di mobile */
-  .top-search    { display: none; }
-  .top-pname-wrap { display: none; }
-
-  .main { max-width: 100vw; }
-  .top  { padding: 12px 16px; }
-  .content { padding: 4px 16px 32px; gap: 14px; }
-  .dash-stats { grid-template-columns: 1fr 1fr; }
-  .dash-banner { flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
-  .dash-grid, .dash-grid-bot { grid-template-columns: 1fr; }
-}
-`;
 
 /* ═══════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════ */
 const QUAL_LABEL: Record<string, string> = {
-  sangat_lancar: 'Sangat Lancar',
-  lancar:        'Lancar',
-  mengulang:     'Mengulang',
+    sangat_lancar: 'Sangat Lancar',
+    lancar: 'Lancar',
+    mengulang: 'Mengulang',
 };
 
 /* ═══════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════ */
 export default function DashboardAdmin() {
-  const { auth } = usePage().props as PageProps;
-  const user      = auth?.user;
-  const adminName = (user as any)?.name || (user as any)?.username || "Admin QLC";
-  const initial   = adminName.substring(0, 2).toUpperCase();
+    const { auth } = usePage().props as PageProps;
+    const user = auth?.user;
+    const adminName = (user as any)?.name || (user as any)?.username || 'Admin QLC';
+    const initial = adminName.substring(0, 2).toUpperCase();
 
-  const [col,     setCol]     = useState(false);
-  const [mobOpen, setMobOpen] = useState(false);
+    const [col, setCol] = useState(false);
+    const [mobOpen, setMobOpen] = useState(false);
 
-  const urlParams  = new URLSearchParams(window.location.search);
-  const [active, setActive] = useState(urlParams.get('tab') || "dashboard");
+    const urlParams = new URLSearchParams(window.location.search);
+    const [active, setActive] = useState(urlParams.get('tab') || 'dashboard');
 
-  useEffect(() => {
-    if (active !== "dashboard") window.history.pushState(null, '', `?tab=${active}`);
-    else window.history.pushState(null, '', window.location.pathname);
-  }, [active]);
+    useEffect(() => {
+        if (active !== 'dashboard') window.history.pushState(null, '', `?tab=${active}`);
+        else window.history.pushState(null, '', window.location.pathname);
+    }, [active]);
 
-  // ── Dashboard Data ──────────────────────────────────────
-  const [stats,    setStats]    = useState<DashStats | null>(null);
-  const [chart,    setChart]    = useState<ChartPoint[]>([]);
-  const [agendas,  setAgendas]  = useState<AgendaItem[]>([]);
-  const [pending,  setPending]  = useState<PendingItem[]>([]);
-  const [topRep,   setTopRep]   = useState<ReportItem[]>([]);
-  const [loading,  setLoading]  = useState(true);
+    // ── Dashboard Data ──────────────────────────────────────
+    const [stats, setStats] = useState<DashStats | null>(null);
+    const [chart, setChart] = useState<ChartPoint[]>([]);
+    const [agendas, setAgendas] = useState<AgendaItem[]>([]);
+    const [pending, setPending] = useState<PendingItem[]>([]);
+    const [topRep, setTopRep] = useState<ReportItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  // Fetch semua data dashboard sekaligus saat tab = dashboard
-  useEffect(() => {
-    if (active !== "dashboard") return;
+    // Fetch semua data dashboard sekaligus saat tab = dashboard
+    useEffect(() => {
+        if (active !== 'dashboard') return;
 
-    setLoading(true);
-    Promise.all([
-      axios.get<DashStats>('/api/admin/dashboard/stats'),
-      axios.get<ChartPoint[]>('/api/admin/dashboard/chart'),
-      axios.get<AgendaItem[]>('/api/admin/dashboard/upcoming-agenda'),
-      axios.get<PendingItem[]>('/api/admin/dashboard/pending-students'),
-      axios.get<ReportItem[]>('/api/admin/dashboard/top-reports'),
-    ]).then(([s, c, a, p, r]) => {
-      setStats(s.data);
-      setChart(c.data);
-      setAgendas(a.data);
-      setPending(p.data);
-      setTopRep(r.data);
-    }).catch(console.error)
-      .finally(() => setLoading(false));
-  }, [active]);
+        setLoading(true);
+        Promise.all([
+            axios.get<DashStats>('/api/admin/dashboard/stats'),
+            axios.get<ChartPoint[]>('/api/admin/dashboard/chart'),
+            axios.get<AgendaItem[]>('/api/admin/dashboard/upcoming-agenda'),
+            axios.get<PendingItem[]>('/api/admin/dashboard/pending-students'),
+            axios.get<ReportItem[]>('/api/admin/dashboard/top-reports'),
+        ])
+            .then(([s, c, a, p, r]) => {
+                setStats(s.data);
+                setChart(c.data);
+                setAgendas(a.data);
+                setPending(p.data);
+                setTopRep(r.data);
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [active]);
 
-  const NAV = [
-    { id: "dashboard",  l: "Beranda",         i: LayoutDashboard, badge: 0 },
-    { id: "agenda",     l: "Agenda QLC",      i: CalendarDays,    badge: 0 },
-    { id: "guru",       l: "Manajemen Guru",  i: GraduationCap,   badge: 0 },
-    { id: "mitra",      l: "Data Mitra",      i: Handshake,       badge: 0 },
-    { id: "wali_murid", l: "Wali Murid",      i: ShieldUser,      badge: 0 },
-    { id: "siswa",      l: "Data Siswa",      i: Users,           badge: stats?.total_pending ?? 0 },
-    { id: "progress",   l: "Laporan Progress", i: BookOpen,        badge: 0 },
-    { id: "info",       l: "Info Sekolah",    i: Info,            badge: 0 },
-    { id: "pengaturan", l: "Pengaturan",      i: Settings,        badge: 0 },
-  ];
+    const NAV = [
+        { id: 'dashboard', l: 'Beranda', i: LayoutDashboard, badge: 0 },
+        { id: 'agenda', l: 'Agenda QLC', i: CalendarDays, badge: 0 },
+        { id: 'guru', l: 'Manajemen Guru', i: GraduationCap, badge: 0 },
+        { id: 'mitra', l: 'Data Mitra', i: Handshake, badge: 0 },
+        { id: 'wali_murid', l: 'Wali Murid', i: ShieldUser, badge: 0 },
+        { id: 'siswa', l: 'Data Siswa', i: Users, badge: stats?.total_pending ?? 0 },
+        { id: 'progress', l: 'Laporan Progress', i: BookOpen, badge: 0 },
+        { id: 'info', l: 'Info Sekolah', i: Info, badge: 0 },
+        { id: 'pengaturan', l: 'Pengaturan', i: Settings, badge: 0 },
+    ];
 
-  const handleLogout = () => router.post(route("logout"));
-  const today = new Date().toLocaleDateString("id-ID", {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  });
+    const handleLogout = () => router.post(route('logout'));
+    const today = new Date().toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
 
-  return (
-    <>
-      <Head title="Admin Dashboard | QLC" />
-      <style>{CSS}</style>
+    return (
+        <>
+            <Head title="Admin Dashboard | QLC" />
 
-      <div className="layout">
-        <div className="bg-decor dec-1" />
-        <div className="bg-decor dec-2" />
-        <div className="bg-decor dec-3" />
-
-        {/* ════ SIDEBAR ════ */}
-        <aside className={`sb ${col ? "sb--col" : ""} ${mobOpen ? "sb--open-mob" : ""}`}>
-          <div className="sb-hd">
-            <div className="sb-logo"><BookOpen size={20} color="#fff" /></div>
-            <div className="sb-lbl">
-              <div className="sb-brand">EduConnect</div>
-              <div className="sb-sub">Admin Portal</div>
-            </div>
-          </div>
-
-          <button className="sb-tog hidden md:flex" onClick={() => setCol(!col)}>
-            {col ? <ChevronRight size={14}/> : <ChevronLeft size={14}/>}
-          </button>
-
-          <div className="sb-nav">
-            {NAV.map(n => (
-              <div key={n.id}
-                className={`sb-item ${active === n.id ? "sb-item--on" : ""}`}
-                onClick={() => { setActive(n.id); setMobOpen(false); }}>
-                <n.i size={18} className="sb-ico" />
-                <span className="sb-lbl">{n.l}</span>
-                {n.badge > 0 && <span className="sb-badge">{n.badge}</span>}
-              </div>
-            ))}
-          </div>
-
-          <div className="sb-ft">
-            <div className="sb-item" onClick={handleLogout} style={{ color: "#fca5a5" }}>
-              <LogOut size={18} className="sb-ico" />
-              <span className="sb-lbl">Keluar</span>
-            </div>
-          </div>
-        </aside>
-
-        {mobOpen && (
-          <div
-            style={{ position:'fixed', inset:0, zIndex:40, background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)' }}
-            onClick={() => setMobOpen(false)}
-          />
-        )}
-
-        {/* ════ MAIN ════ */}
-        <main className={`main ${col ? "main--col" : "main--open"}`}>
-
-          {/* Topbar — floating pills */}
-          <header className="top">
-            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-              <button className="top-menu-btn" onClick={() => setMobOpen(true)}>
-                <Menu size={17}/>
-              </button>
-              <div className="top-search">
-                <Search size={14} color="#94a3b8" />
-                <input placeholder="Cari siswa, guru, atau program..." />
-              </div>
-            </div>
-
-            <div className="top-acts">
-              {/* Notifikasi — pill sendiri */}
-              <button className="top-notif-pill">
-                <Bell size={17} />
-                <span className="top-dot"/>
-              </button>
-
-              {/* Profile — pill sendiri */}
-              <div className="top-prof" onClick={() => setActive("pengaturan")}>
-                <div className="top-av">{initial}</div>
-                <div className="top-pname-wrap">
-                  <div className="top-pname">{adminName}</div>
-                  <div className="top-prole">Administrator</div>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          {/* ════ CONTENT ════ */}
-          <div className="content">
-            {active === "guru"       ? <GuruPage /> :
-             active === "mitra"      ? <MitraPage /> :
-             active === "wali_murid" ? <WaliMuridPage /> :
-             active === "siswa"      ? <SiswaPage /> :
-             active === "info"       ? <InfoPage /> :
-             active === "agenda"     ? <AgendaPage /> :
-             active === "progress"   ? <ProgressPage /> :
-             active === "pengaturan" ? <PengaturanPage /> :
-            (
-              /* ════ BERANDA ════ */
-              <>
-                {/* Banner */}
-                <div className="dash-banner">
-                  <div>
-                    <div className="db-title">Selamat Datang, {adminName.split(' ')[0]} 👋</div>
-                    <div className="db-sub">Berikut adalah ringkasan operasional QLC hari ini.</div>
-                  </div>
-                  <div className="db-date"><CalendarDays size={16}/> {today}</div>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="dash-stats">
-                  {[
-                    {
-                      val: stats?.total_siswa,
-                      lbl: 'Total Siswa',
-                      icon: <Users size={22} strokeWidth={2}/>,
-                      bg: 'rgba(15,118,110,0.1)', color: 'var(--green)',
-                      tab: 'siswa',
-                    },
-                    {
-                      val: stats?.total_guru,
-                      lbl: 'Pengajar Aktif',
-                      icon: <GraduationCap size={22} strokeWidth={2}/>,
-                      bg: 'rgba(37,99,235,0.1)', color: 'var(--blue)',
-                      tab: 'guru',
-                    },
-                    {
-                      val: stats?.total_program,
-                      lbl: 'Program Studi',
-                      icon: <BookOpen size={22} strokeWidth={2}/>,
-                      bg: 'rgba(124,58,237,0.1)', color: '#7c3aed',
-                      tab: 'info',
-                    },
-                    {
-                      val: stats?.total_mitra,
-                      lbl: 'Mitra Aktif',
-                      icon: <Handshake size={22} strokeWidth={2}/>,
-                      bg: 'rgba(212,160,23,0.1)', color: 'var(--gold)',
-                      tab: 'mitra',
-                    },
-                  ].map(({ val, lbl, icon, bg, color, tab }) => (
-                    <div key={lbl} className="glass-card stat-box" onClick={() => setActive(tab)}>
-                      <div className="st-icon-wrap" style={{ background: bg, color }}>{icon}</div>
-                      <div className="st-info">
-                        {loading
-                          ? <div className="st-val-skel" />
-                          : <div className="st-val">{val ?? 0}</div>
-                        }
-                        <div className="st-lbl">{lbl}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Chart & Agenda */}
-                <div className="dash-grid">
-                  {/* Chart */}
-                  <div className="glass-card">
-                    <div className="sec-hd">
-                      <div className="sec-ttl"><TrendingUp size={18} color="var(--green)"/> Grafik Pendaftaran</div>
-                    </div>
-                    <div style={{ height: 260, width: "100%", marginTop: 10 }}>
-                      {loading ? (
-                        <div style={{ height: '100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                          <Loader2 size={28} style={{ color:'var(--green)', animation:'spin 1s linear infinite' }} />
+            <div className="flex min-h-screen bg-slate-50 relative overflow-hidden font-sans text-slate-900">
+                {/* ════ SIDEBAR ════ */}
+                <aside
+                    className={`flex flex-col bg-teal-700 text-white shrink-0 transition-all duration-300 ease-in-out z-50 md:z-20 fixed md:relative inset-y-0 left-0 md:my-3 md:ml-3 shadow-2xl md:shadow-none md:rounded-2xl overflow-hidden
+                    ${col ? 'md:w-16 w-64' : 'w-64'} 
+                    ${mobOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+                >
+                    <div className="h-16 flex items-center px-4.5 gap-2.5 border-b border-white/10 whitespace-nowrap overflow-hidden">
+                        <div className="w-8 h-8 rounded-lg shrink-0 bg-white/15 flex items-center justify-center">
+                            <BookOpen size={20} color="#fff" />
                         </div>
-                      ) : (
-                        <ResponsiveContainer>
-                          <AreaChart data={chart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <defs>
-                              <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%"  stopColor="var(--green)" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="var(--green)" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
-                            <Tooltip contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }} />
-                            <Area type="monotone" dataKey="pendaftar" stroke="var(--green)" strokeWidth={3} fillOpacity={1} fill="url(#colorReg)" />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      )}
+                        <div className={`transition-opacity duration-200 ${col ? 'opacity-0 md:hidden' : 'opacity-100 block'}`}>
+                            <div className="text-sm font-extrabold tracking-tight leading-tight">EduConnect</div>
+                            <div className="text-[9.5px] font-medium text-teal-50/80">Admin Portal</div>
+                        </div>
                     </div>
-                  </div>
 
-                  {/* Agenda Terdekat */}
-                  <div className="glass-card">
-                    <div className="sec-hd">
-                      <div className="sec-ttl"><CalendarDays size={18} color="var(--blue)"/> Agenda Terdekat</div>
-                      <button className="sec-btn" onClick={() => setActive("agenda")}>Lihat Semua <ArrowRight size={14}/></button>
-                    </div>
-                    {loading ? (
-                      <div className="card-empty"><Loader2 size={20} style={{ animation:'spin 1s linear infinite', display:'inline' }}/></div>
-                    ) : agendas.length === 0 ? (
-                      <div className="card-empty">Tidak ada agenda mendatang.</div>
-                    ) : (
-                      <div className="flex flex-col">
-                        {agendas.map(a => (
-                          <div key={a.id} className="list-item">
-                            <div className="li-l">
-                              <div className="li-av" style={{
-                                background: a.type === "urgent" ? "rgba(220,38,38,0.1)" : "rgba(37,99,235,0.1)",
-                                color:      a.type === "urgent" ? "var(--red)"          : "var(--blue)",
-                              }}>
-                                {a.date.split(" ")[0]}
-                              </div>
-                              <div>
-                                <div className="li-title">{a.title}</div>
-                                <div className="li-sub"><Clock size={11}/> {a.date}</div>
-                              </div>
+                    <button
+                        className="absolute top-7 -right-2.5 w-5 h-5 rounded-full bg-white border border-slate-200 items-center justify-center text-slate-600 cursor-pointer z-10 shadow-sm transition-colors hover:text-teal-700 hidden md:flex"
+                        onClick={() => setCol(!col)}
+                    >
+                        {col ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                    </button>
+
+                    <div className="flex-1 py-4 px-2.5 flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
+                        {NAV.map((n) => (
+                            <div
+                                key={n.id}
+                                className={`flex items-center gap-3 py-2 px-2.5 rounded-lg text-[13px] transition-colors cursor-pointer whitespace-nowrap relative hover:text-white hover:bg-white/10
+                                ${active === n.id ? 'text-white bg-white/15 font-bold before:content-[""] before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:bg-white before:rounded-r-sm' : 'text-white/70 font-semibold'}`}
+                                onClick={() => {
+                                    setActive(n.id);
+                                    setMobOpen(false);
+                                }}
+                            >
+                                <n.i size={18} className="shrink-0" />
+                                <span className={`transition-opacity duration-200 ${col ? 'opacity-0 md:hidden' : 'opacity-100 block'}`}>{n.l}</span>
+                                {n.badge > 0 && (
+                                    <span
+                                        className={`ml-auto bg-red-600 text-white font-extrabold rounded-full ${col ? 'absolute top-1.5 right-1.5 w-2 h-2 p-0 text-[0px] md:block hidden' : 'px-1.5 py-[1px] text-[10px]'}`}
+                                    >
+                                        {n.badge}
+                                    </span>
+                                )}
                             </div>
-                          </div>
                         ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Bottom: Pending & Top Reports */}
-                <div className="dash-grid-bot">
-                  {/* Perlu Persetujuan */}
-                  <div className="glass-card">
-                    <div className="sec-hd">
-                      <div className="sec-ttl">
-                        <UserPlus size={18} color="var(--gold)"/> Perlu Persetujuan
-                        {stats && stats.total_pending > 0 && (
-                          <span style={{ background:'rgba(245,158,11,0.12)', color:'#d97706', fontSize:11, fontWeight:800, padding:'2px 8px', borderRadius:8, marginLeft:4 }}>
-                            {stats.total_pending}
-                          </span>
-                        )}
-                      </div>
-                      <button className="sec-btn" onClick={() => setActive("siswa")}>Kelola Siswa <ArrowRight size={14}/></button>
                     </div>
-                    {loading ? (
-                      <div className="card-empty"><Loader2 size={20} style={{ animation:'spin 1s linear infinite', display:'inline' }}/></div>
-                    ) : pending.length === 0 ? (
-                      <div className="card-empty" style={{ color:'#16a34a' }}>
-                        <CheckCircle2 size={20} style={{ display:'inline', marginRight:6 }}/>
-                        Semua pendaftaran sudah diproses.
-                      </div>
-                    ) : (
-                      <div className="flex flex-col">
-                        {pending.map(s => (
-                          <div key={s.id} className="list-item">
-                            <div className="li-l">
-                              <div className="li-av">{s.nama.charAt(0)}</div>
-                              <div>
-                                <div className="li-title">{s.nama}</div>
-                                <div className="li-sub"><BookOpen size={11}/> {s.prog}</div>
-                              </div>
-                            </div>
-                            <div className="li-r">
-                              <span className="li-badge b-warn">Menunggu</span>
-                              <div style={{ fontSize:10, color:'var(--text3)', marginTop:4, fontWeight:600 }}>{s.date}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Laporan Terbaik */}
-                  <div className="glass-card">
-                    <div className="sec-hd">
-                      <div className="sec-ttl"><Star size={18} color="#7c3aed"/> Laporan Terbaik Hari Ini</div>
-                      <button className="sec-btn" onClick={() => setActive("progress")}>Semua Laporan <ArrowRight size={14}/></button>
+                    <div className="py-3 px-2.5 border-t border-white/10">
+                        <div
+                            className="flex items-center gap-3 py-2 px-2.5 rounded-lg text-[13px] font-semibold text-red-300 hover:text-red-200 hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
+                            onClick={handleLogout}
+                        >
+                            <LogOut size={18} className="shrink-0" />
+                            <span className={`transition-opacity duration-200 ${col ? 'opacity-0 md:hidden' : 'opacity-100 block'}`}>Keluar</span>
+                        </div>
                     </div>
-                    {loading ? (
-                      <div className="card-empty"><Loader2 size={20} style={{ animation:'spin 1s linear infinite', display:'inline' }}/></div>
-                    ) : topRep.length === 0 ? (
-                      <div className="card-empty">Belum ada laporan hari ini.</div>
-                    ) : (
-                      <div className="flex flex-col">
-                        {topRep.map(r => (
-                          <div key={r.id} className="list-item">
-                            <div className="li-l">
-                              <div className="li-av" style={{ background:'rgba(124,58,237,0.1)', color:'#7c3aed' }}>
-                                {r.nama.charAt(0)}
-                              </div>
-                              <div>
-                                <div className="li-title">{r.nama}</div>
-                                <div className="li-sub">
-                                  <FileText size={11}/>
-                                  {r.report_type ? r.report_type.toUpperCase() : '—'} · {r.capaian}
+                </aside>
+
+                {/* Mobile Overlay */}
+                {mobOpen && <div className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => setMobOpen(false)} />}
+
+                {/* ════ MAIN ════ */}
+                <main className="flex-1 flex flex-col min-w-0 transition-all duration-200 z-10 h-screen overflow-y-auto scroll-smooth">
+                    {/* Topbar */}
+                    <header className="flex items-center justify-between py-3 px-4 md:px-5 sticky top-0 z-40 bg-slate-50 border-b border-slate-200/60 md:border-none">
+                        <div className="flex items-center gap-3">
+                            <button
+                                className="flex md:hidden items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 hover:text-teal-700"
+                                onClick={() => setMobOpen(true)}
+                            >
+                                <Menu size={17} />
+                            </button>
+                            <div className="hidden md:flex items-center gap-2 bg-white px-4 h-10 rounded-full border border-slate-300 w-[260px] focus-within:w-[310px] focus-within:border-teal-700 focus-within:ring-2 focus-within:ring-teal-700/10 transition-all duration-300">
+                                <Search size={14} className="text-slate-400 shrink-0" />
+                                <input
+                                    className="flex-1 text-[13px] text-slate-900 bg-transparent border-0 focus:ring-0 outline-none placeholder:text-slate-400"
+                                    placeholder="Cari siswa, guru, atau program..."
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {/* Notifikasi */}
+                            <button className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-600 relative transition-colors hover:bg-slate-100 hover:text-teal-700">
+                                <Bell size={17} />
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-600 rounded-full border-2 border-white" />
+                            </button>
+
+                            {/* Profile */}
+                            <div
+                                className="flex items-center gap-2 bg-white p-1 pr-3.5 rounded-full border border-slate-300 cursor-pointer transition-colors hover:bg-slate-100"
+                                onClick={() => setActive('pengaturan')}
+                            >
+                                <div className="w-8 h-8 rounded-full bg-teal-700 text-white flex items-center justify-center text-[11px] font-extrabold shrink-0">{initial}</div>
+                                <div className="hidden md:block">
+                                    <div className="text-[12.5px] font-bold text-slate-900 leading-tight truncate max-w-[120px]">{adminName}</div>
+                                    <div className="text-[10px] text-slate-400 font-semibold">Administrator</div>
                                 </div>
-                              </div>
                             </div>
-                            <div className="li-r">
-                              <span className={`li-badge ${r.kualitas === 'sangat_lancar' ? 'b-ok' : 'b-blue'}`}>
-                                {r.kualitas ? QUAL_LABEL[r.kualitas] : '—'}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                        </div>
+                    </header>
 
-              </>
-            )}
-          </div>
-        </main>
-      </div>
+                    {/* ════ CONTENT ════ */}
+                    <div className="p-4 md:px-6 md:pb-10 flex-1 flex flex-col gap-4 md:gap-5 transition-opacity duration-300">
+                        {active === 'guru' ? (
+                            <GuruPage />
+                        ) : active === 'mitra' ? (
+                            <MitraPage />
+                        ) : active === 'wali_murid' ? (
+                            <WaliMuridPage />
+                        ) : active === 'siswa' ? (
+                            <SiswaPage />
+                        ) : active === 'info' ? (
+                            <InfoPage />
+                        ) : active === 'agenda' ? (
+                            <AgendaPage />
+                        ) : active === 'progress' ? (
+                            <ProgressPage />
+                        ) : active === 'pengaturan' ? (
+                            <PengaturanPage />
+                        ) : (
+                            /* ════ BERANDA ════ */
+                            <>
+                                {/* Banner */}
+                                <div className="bg-teal-700 rounded-2xl p-5 md:py-6 md:px-8 text-white flex flex-col md:flex-row md:justify-between items-start md:items-center gap-3 relative overflow-hidden">
+                                    <div className="absolute -right-10 -top-20 w-60 h-60 rounded-full bg-white/10" />
+                                    <div className="relative z-10">
+                                        <div className="text-xl md:text-2xl font-extrabold mb-1 tracking-tight">Selamat Datang, {adminName.split(' ')[0]} 👋</div>
+                                        <div className="text-[13px] text-white/80 font-medium">Berikut adalah ringkasan operasional QLC hari ini.</div>
+                                    </div>
+                                    <div className="bg-black/15 py-1.5 px-3.5 rounded-lg text-[12.5px] font-bold flex items-center gap-2 border border-white/10 relative z-10 whitespace-nowrap">
+                                        <CalendarDays size={16} /> {today}
+                                    </div>
+                                </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </>
-  );
+                                {/* Stats Grid */}
+                                <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
+                                    {[
+                                        {
+                                            val: stats?.total_siswa,
+                                            lbl: 'Total Siswa',
+                                            icon: <Users size={22} strokeWidth={2} />,
+                                            bgClass: 'bg-teal-700/10',
+                                            textClass: 'text-teal-700',
+                                            tab: 'siswa',
+                                        },
+                                        {
+                                            val: stats?.total_guru,
+                                            lbl: 'Pengajar Aktif',
+                                            icon: <GraduationCap size={22} strokeWidth={2} />,
+                                            bgClass: 'bg-blue-600/10',
+                                            textClass: 'text-blue-600',
+                                            tab: 'guru',
+                                        },
+                                        {
+                                            val: stats?.total_program,
+                                            lbl: 'Program Studi',
+                                            icon: <BookOpen size={22} strokeWidth={2} />,
+                                            bgClass: 'bg-purple-600/10',
+                                            textClass: 'text-purple-600',
+                                            tab: 'info',
+                                        },
+                                        {
+                                            val: stats?.total_mitra,
+                                            lbl: 'Mitra Aktif',
+                                            icon: <Handshake size={22} strokeWidth={2} />,
+                                            bgClass: 'bg-amber-500/10',
+                                            textClass: 'text-amber-600',
+                                            tab: 'mitra',
+                                        },
+                                    ].map(({ val, lbl, icon, bgClass, textClass, tab }) => (
+                                        <div
+                                            key={lbl}
+                                            className="bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5 p-4 cursor-pointer transition-colors hover:bg-slate-50"
+                                            onClick={() => setActive(tab)}
+                                        >
+                                            <div className={`w-11 h-11 rounded-xl shrink-0 flex items-center justify-center ${bgClass} ${textClass}`}>{icon}</div>
+                                            <div className="flex-1 min-w-0">
+                                                {loading ? (
+                                                    <div className="h-6 w-12 bg-slate-200 rounded-md animate-pulse" />
+                                                ) : (
+                                                    <div className="text-[22px] font-black text-slate-900 leading-tight">{val ?? 0}</div>
+                                                )}
+                                                <div className="text-[11px] text-slate-400 font-semibold mt-0.5 uppercase tracking-wide truncate">{lbl}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Chart & Agenda */}
+                                <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4">
+                                    {/* Chart */}
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5 relative overflow-hidden">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div className="text-[14.5px] font-extrabold text-slate-900 flex items-center gap-2">
+                                                <TrendingUp size={18} className="text-teal-700" /> Grafik Pendaftaran
+                                            </div>
+                                        </div>
+                                        <div className="h-[260px] w-full mt-2">
+                                            {loading ? (
+                                                <div className="h-full flex items-center justify-center">
+                                                    <Loader2 size={28} className="text-teal-700 animate-spin" />
+                                                </div>
+                                            ) : (
+                                                <ResponsiveContainer>
+                                                    <AreaChart data={chart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                        <defs>
+                                                            <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="#0f766e" stopOpacity={0.3} />
+                                                                <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                                                        <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }} />
+                                                        <Area type="monotone" dataKey="pendaftar" stroke="#0f766e" strokeWidth={3} fillOpacity={1} fill="url(#colorReg)" />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Agenda Terdekat */}
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5 relative overflow-hidden">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div className="text-[14.5px] font-extrabold text-slate-900 flex items-center gap-2">
+                                                <CalendarDays size={18} className="text-blue-600" /> Agenda Terdekat
+                                            </div>
+                                            <button
+                                                className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap"
+                                                onClick={() => setActive('agenda')}
+                                            >
+                                                Lihat Semua <ArrowRight size={14} />
+                                            </button>
+                                        </div>
+                                        {loading ? (
+                                            <div className="text-center py-6 px-5 text-slate-400 text-[13px] font-semibold">
+                                                <Loader2 size={20} className="inline animate-spin" />
+                                            </div>
+                                        ) : agendas.length === 0 ? (
+                                            <div className="text-center py-6 px-5 text-slate-400 text-[13px] font-semibold">Tidak ada agenda mendatang.</div>
+                                        ) : (
+                                            <div className="flex flex-col gap-2">
+                                                {agendas.map((a) => (
+                                                    <div
+                                                        key={a.id}
+                                                        className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100"
+                                                    >
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                            <div
+                                                                className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] ${a.type === 'urgent' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}
+                                                            >
+                                                                {a.date.split(' ')[0]}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div className="text-[13px] font-bold text-slate-900 mb-0.5 truncate">{a.title}</div>
+                                                                <div className="text-[11.5px] text-slate-500 font-medium flex items-center gap-1">
+                                                                    <Clock size={11} /> {a.date}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Bottom: Pending & Top Reports */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    {/* Perlu Persetujuan */}
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5 relative overflow-hidden">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div className="text-[14.5px] font-extrabold text-slate-900 flex items-center gap-2">
+                                                <UserPlus size={18} className="text-yellow-600" /> Perlu Persetujuan
+                                                {stats && stats.total_pending > 0 && (
+                                                    <span className="bg-amber-100 text-amber-600 text-[11px] font-extrabold px-2 py-0.5 rounded-md ml-1">{stats.total_pending}</span>
+                                                )}
+                                            </div>
+                                            <button
+                                                className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap"
+                                                onClick={() => setActive('siswa')}
+                                            >
+                                                Kelola Siswa <ArrowRight size={14} />
+                                            </button>
+                                        </div>
+                                        {loading ? (
+                                            <div className="text-center py-6 px-5 text-slate-400 text-[13px] font-semibold">
+                                                <Loader2 size={20} className="inline animate-spin" />
+                                            </div>
+                                        ) : pending.length === 0 ? (
+                                            <div className="text-center py-6 px-5 text-green-600 text-[13px] font-semibold">
+                                                <CheckCircle2 size={20} className="inline mr-1.5" />
+                                                Semua pendaftaran sudah diproses.
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col gap-2">
+                                                {pending.map((s) => (
+                                                    <div
+                                                        key={s.id}
+                                                        className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100"
+                                                    >
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                            <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] bg-teal-700/10 text-teal-700">
+                                                                {s.nama.charAt(0)}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div className="text-[13px] font-bold text-slate-900 mb-0.5 truncate">{s.nama}</div>
+                                                                <div className="text-[11.5px] text-slate-500 font-medium flex items-center gap-1">
+                                                                    <BookOpen size={11} /> <span className="truncate">{s.prog}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right shrink-0 ml-2">
+                                                            <span className="bg-amber-100 text-amber-600 px-2 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide">Menunggu</span>
+                                                            <div className="text-[10px] text-slate-400 mt-1 font-semibold">{s.date}</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Laporan Terbaik */}
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5 relative overflow-hidden">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div className="text-[14.5px] font-extrabold text-slate-900 flex items-center gap-2">
+                                                <Star size={18} className="text-purple-600" /> Laporan Terbaik Hari Ini
+                                            </div>
+                                            <button
+                                                className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap"
+                                                onClick={() => setActive('progress')}
+                                            >
+                                                Semua Laporan <ArrowRight size={14} />
+                                            </button>
+                                        </div>
+                                        {loading ? (
+                                            <div className="text-center py-6 px-5 text-slate-400 text-[13px] font-semibold">
+                                                <Loader2 size={20} className="inline animate-spin" />
+                                            </div>
+                                        ) : topRep.length === 0 ? (
+                                            <div className="text-center py-6 px-5 text-slate-400 text-[13px] font-semibold">Belum ada laporan hari ini.</div>
+                                        ) : (
+                                            <div className="flex flex-col gap-2">
+                                                {topRep.map((r) => (
+                                                    <div
+                                                        key={r.id}
+                                                        className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100"
+                                                    >
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                            <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] bg-purple-600/10 text-purple-600">
+                                                                {r.nama.charAt(0)}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div className="text-[13px] font-bold text-slate-900 mb-0.5 truncate">{r.nama}</div>
+                                                                <div className="text-[11.5px] text-slate-500 font-medium flex items-center gap-1 truncate">
+                                                                    <FileText size={11} className="shrink-0" />
+                                                                    {r.report_type ? r.report_type.toUpperCase() : '—'} · <span className="truncate">{r.capaian}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right shrink-0 ml-2">
+                                                            <span
+                                                                className={`px-2 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide ${r.kualitas === 'sangat_lancar' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}
+                                                            >
+                                                                {r.kualitas ? QUAL_LABEL[r.kualitas] : '—'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </main>
+            </div>
+        </>
+    );
 }
