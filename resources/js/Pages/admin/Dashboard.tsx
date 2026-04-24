@@ -39,6 +39,7 @@ import InfoPage from './InfoPage';
 import AgendaPage from './AgendaPage';
 import ProgressPage from './ProgressPage';
 import PengaturanPage from './PengaturanPage';
+import NotificationBell from '@/Components/NotificationBell';
 
 /* ═══════════════════════════════════════════════
    TYPES
@@ -244,10 +245,7 @@ export default function DashboardAdmin() {
 
                         <div className="flex items-center gap-2">
                             {/* Notifikasi */}
-                            <button className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-600 relative transition-colors hover:bg-slate-100 hover:text-teal-700">
-                                <Bell size={17} />
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-600 rounded-full border-2 border-white" />
-                            </button>
+                            <NotificationBell onNavigate={(tab) => setActive(tab)} />
 
                             {/* Profile */}
                             <div

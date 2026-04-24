@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\Parents\ParentDashboardController;
@@ -48,6 +49,18 @@ Route::middleware('auth')->group(function () {
 });
 
 // ==========================================
+// ROUTE NOTIFIKASI (semua role yang sudah login)
+// CATATAN: 'read-all' harus didefinisikan SEBELUM '/{id}'
+// ==========================================
+Route::middleware('auth')->prefix('api')->group(function () {
+    Route::get('/notifications',               [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/read-all',    [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+    Route::patch('/notifications/{id}/read',   [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::delete('/notifications',            [NotificationController::class, 'destroyAll'])->name('notifications.destroyAll');
+    Route::delete('/notifications/{id}',       [NotificationController::class, 'destroy'])->name('notifications.destroy');
+});
+
+// ==========================================
 // ROUTE BERDASARKAN ROLE
 // ==========================================
 Route::middleware(['auth', 'role:admin'])
@@ -62,7 +75,6 @@ Route::middleware(['auth', 'role:teacher'])
     ->name('teacher.')
     ->group(function () {
         Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
-        // Route jadwal & laporan dihapus — sudah jadi sub-page di dashboard
     });
 
 // ── Parents: satu route dashboard, semua tab di-handle React ──
@@ -70,7 +82,6 @@ Route::middleware(['auth', 'role:parents'])
     ->prefix('parents')
     ->name('parents.')
     ->group(function () {
-        // Satu-satunya page route — konten tab dihandle oleh React SPA
         Route::get('/dashboard', [ParentDashboardController::class, 'index'])->name('dashboard');
 
         // Pendaftaran (halaman terpisah karena butuh file upload)
@@ -84,7 +95,6 @@ Route::middleware(['auth', 'role:mitra'])
     ->name('mitra.')
     ->group(function () {
         Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'))->name('dashboard');
-        // Route program, jadwal & laporan dihapus — sudah jadi sub-page di dashboard
     });
 
 require __DIR__ . '/auth.php';

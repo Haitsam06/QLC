@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Parents;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -86,14 +87,18 @@ class EnrollmentController extends Controller
         $fileUrl = Storage::url($path);
 
         // Ambil data parent dari collection parents berdasarkan user_id
-        $user      = Auth::user();
-        $userId    = (string) $user->_id;
-        $parentDoc = $this->db->selectCollection('parents')->findOne(['user_id' => $userId]);
+        $user       = Auth::user();
+        $userId     = (string) $user->_id;
+        $parentDoc  = $this->db->selectCollection('parents')->findOne(['user_id' => $userId]);
         $parentName = $parentDoc['parent_name'] ?? $user->username;
 
+        // Ambil nama program
+        $programDoc  = $this->programs->findOne(['_id' => new \MongoDB\BSON\ObjectId($request->program_id)]);
+        $programName = $programDoc['name'] ?? 'Program tidak diketahui';
+
         $this->students->insertOne([
-            'parent_id'         => $userId,             // user._id sebagai foreign key
-            'parent_name'       => $parentName,         // dari collection parents
+            'parent_id'         => $userId,
+            'parent_name'       => $parentName,
             'program_id'        => $request->program_id,
             'nama'              => $request->nama,
             'tempat_lahir'      => $request->tempat_lahir,
@@ -104,6 +109,15 @@ class EnrollmentController extends Controller
             'created_at'        => new UTCDateTime(),
             'updated_at'        => new UTCDateTime(),
         ]);
+
+        // Kirim notifikasi ke semua admin
+        Notification::sendToRole(
+            roleName: 'admin',
+            type:     'pendaftaran',
+            title:    'Pendaftaran Siswa Baru',
+            message:  "{$request->nama} didaftarkan oleh {$parentName} ke program {$programName}. Menunggu persetujuan.",
+            link:     '?tab=siswa',
+        );
 
         return back()->with([
             'success'    => true,
