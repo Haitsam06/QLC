@@ -3,15 +3,18 @@ import { Head, router, usePage } from "@inertiajs/react";
 import type { PageProps } from "@/types";
 import {
   LayoutDashboard, BookOpen, Settings, LogOut,
-  Bell, Users, BookCheck, TrendingUp,
-  CheckCircle2, FileText, GraduationCap,
-  MessageCircle, Calendar, Menu, X
+  Users, BookCheck, TrendingUp, CheckCircle2, 
+  FileText, GraduationCap, MessageCircle, 
+  Calendar, Menu, X
 } from "lucide-react";
 
 // ── Sub-pages ────────────────────────────────────────────────
 import AnakPage, { type Child } from "./AnakPage";
 import LaporanPage from "./LaporanPage";
 import PengaturanPage, { type ParentProfile } from "./PengaturanPage";
+
+// ── Components ───────────────────────────────────────────────
+import NotificationBell from "@/Components/NotificationBell"; // Pastikan path import ini sesuai
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -33,134 +36,6 @@ interface DashboardProps {
   first_child: { nama: string; program_name: string | null } | null;
   profile: ParentProfile | null;
 }
-
-/* ═══════════════════════════════════════════════════════════
-   STYLES
-═══════════════════════════════════════════════════════════ */
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-button{cursor:pointer;font-family:inherit;border:none;background:none;}
-:root{--green:#0f766e;--green-mid:#14b8a6;--green-light:#ccfbf1;--blue:#2563eb;--gold:#d4a017;--red:#dc2626;--orange:#d97706;--sky:#0284c7;--purple:#7c3aed;--bg:#f1f5f9;--card:#ffffff;--text:#0f172a;--text2:#475569;--text3:#94a3b8;font-family:'Plus Jakarta Sans',sans-serif;}
-.root{min-height:100vh;background:var(--bg);}
-.topnav{position:sticky;top:0;z-index:100;height:64px;background:#fff;border-bottom:1px solid rgba(15,118,110,0.08);box-shadow:0 1px 12px rgba(15,118,110,0.06);display:flex;align-items:center;padding:0 28px;}
-.topnav__hamburger{display:none; margin-right:12px; color:var(--text); transition:all 0.2s;}
-.topnav__brand{display:flex;align-items:center;gap:10px;margin-right:36px;flex-shrink:0;}
-.topnav__brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(15,118,110,0.3);}
-.topnav__brand-name{font-weight:800;font-size:15px;color:var(--text);}
-.topnav__brand-sub{font-size:9.5px;color:var(--text3);margin-top:1px;}
-.topnav__nav{display:flex;align-items:center;gap:4px;}
-.topnav__nav-item{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:10px;font-size:13px;font-weight:600;color:var(--text2);transition:all 0.18s;white-space:nowrap;}
-.topnav__nav-item:hover{background:rgba(15,118,110,0.06);color:var(--green);}
-.topnav__nav-item--active{background:var(--green);color:#fff;box-shadow:0 4px 14px rgba(15,118,110,0.3);}
-.topnav__nav-item--active:hover{background:var(--green);color:#fff;}
-.topnav__gap{flex:1;}
-.topnav__actions{display:flex;align-items:center;gap:8px;}
-.topnav__icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(15,118,110,0.06);border:1px solid rgba(15,118,110,0.1);display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all 0.18s;}
-.topnav__icon-btn:hover{background:rgba(15,118,110,0.12);color:var(--green);}
-.topnav__profile{display:flex;align-items:center;gap:8px;padding:5px 5px 5px 10px;border-radius:12px;background:rgba(15,118,110,0.05);border:1px solid rgba(15,118,110,0.1);cursor:pointer;transition:all 0.18s;flex-shrink:0;}
-.topnav__profile:hover{background:rgba(15,118,110,0.1);}
-.av{border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;box-shadow:0 3px 10px rgba(15,118,110,0.28);flex-shrink:0;}
-.av-sm{width:30px;height:30px;font-size:11px;}
-.pname{font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;}
-.prole{font-size:10px;color:var(--text3);}
-
-/* ── Mobile Menu Overlay ── */
-.mobile-nav-overlay{position:fixed;top:64px;left:0;right:0;bottom:0;background:var(--bg);z-index:90;display:flex;flex-direction:column;padding:20px;gap:12px;animation:slideDown 0.2s ease-out; overflow-y:auto;}
-@keyframes slideDown{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
-.mobile-nav-item{display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:16px;font-size:15px;font-weight:700;color:var(--text2);background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.02); transition:all 0.2s;}
-.mobile-nav-item--active{background:var(--green);color:#fff;box-shadow:0 4px 16px rgba(15,118,110,0.25);}
-
-.page{max-width:1100px;margin:0 auto;padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;}
-.ph{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;}
-.ph-title{font-size:26px;font-weight:900;color:var(--text);line-height:1;}
-.ph-sub{font-size:13px;color:var(--text3);margin-top:6px;}
-.btn-primary{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:11px;font-size:12.5px;font-weight:700;background:var(--text);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,0.18);transition:all 0.18s;}
-.btn-primary:hover{box-shadow:0 6px 20px rgba(0,0,0,0.25);transform:translateY(-1px);}
-
-/* ── Child Selector Tabs ── */
-.child-tabs-wrapper{width:100%;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
-.child-tabs-wrapper::-webkit-scrollbar{display:none;}
-.child-tabs{display:inline-flex;background:var(--card);padding:6px;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.04);gap:4px;}
-.child-tab{padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;color:var(--text2);transition:all 0.2s;white-space:nowrap;}
-.child-tab:hover{background:rgba(15,118,110,0.05);color:var(--green);}
-.child-tab--active{background:var(--green);color:#fff;box-shadow:0 4px 12px rgba(15,118,110,0.25);}
-
-.hero{background:linear-gradient(135deg,var(--green) 0%,#0d5c56 50%,var(--blue) 100%);border-radius:22px;padding:28px 32px;display:flex;align-items:center;gap:24px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(15,118,110,0.3);}
-.hero::before{content:"";position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.05);top:-100px;right:-60px;}
-.hero-left{display:flex;align-items:center;gap:20px;position:relative;z-index:1;}
-.hero-emoji{width:68px;height:68px;border-radius:20px;font-size:32px;flex-shrink:0;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;}
-.hero-eyebrow{font-size:10.5px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:.8px;}
-.hero-name{font-size:24px;font-weight:900;color:#fff;line-height:1.2;margin-top:3px;}
-.hero-class{font-size:13px;color:rgba(255,255,255,0.8);margin-top:6px;display:flex;align-items:center;gap:6px;}
-
-.stat-row{display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:16px;}
-.scard{background:var(--card);border-radius:18px;padding:20px 22px;box-shadow:0 1px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:16px;border:1px solid rgba(0,0,0,0.04);}
-.scard-icon{width:52px;height:52px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.scard-val{font-size:28px;font-weight:900;color:var(--text);line-height:1;}
-.scard-lbl{font-size:12px;color:var(--text3);font-weight:600;margin-top:4px;}
-
-.main-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.card{background:var(--card);border-radius:18px;padding:24px;box-shadow:0 1px 8px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04);}
-.card-title{font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;}
-.card-eyebrow{font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
-.att-big{font-size:36px;font-weight:900;color:var(--text);line-height:1;}
-
-.note-list{display:flex;flex-direction:column;gap:12px;}
-.note-item{padding:16px;border-radius:14px;background:var(--bg);border:1px solid rgba(0,0,0,0.04);}
-.note-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
-.note-teacher{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;}
-.note-date{font-size:11px;color:var(--text3);font-weight:600;display:flex;align-items:center;gap:4px;}
-.note-body{background:rgba(37,99,235,0.04);border-left:3px solid var(--blue);padding:12px 14px;border-radius:6px 10px 10px 6px;font-size:13px;color:var(--text2);line-height:1.5;font-weight:500;}
-
-.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
-.b-type{background:rgba(139,92,246,0.1);color:#7c3aed;}.b-qual{background:rgba(244,114,182,0.1);color:#db2777;}
-.dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
-
-/* ── Tablet & Normal Mobile ── */
-@media(max-width:900px){
-  .main-row{grid-template-columns:1fr;}
-}
-@media(max-width:768px){
-  .topnav__hamburger{display:block;}
-  .topnav{padding:0 16px; gap:8px;}
-  .topnav__brand{margin-right:0;}
-  .topnav__brand-name, .topnav__brand-sub, .topnav__nav, .pname, .prole{display:none;}
-  
-  /* Hapus border/background profile di mobile */
-  .topnav__profile{background:transparent; border:none; padding:0; gap:0;}
-  .topnav__profile:hover{background:transparent;}
-  
-  .page{padding:20px 16px; gap:20px;}
-  .ph{flex-direction:column; align-items:flex-start; gap:16px;}
-  .btn-primary{width:100%;}
-  .hero{padding:24px 20px;}
-  .hero-emoji{width:56px; height:56px; font-size:28px;}
-  .hero-name{font-size:20px;}
-  .hero-left{gap:16px;}
-  .card{padding:20px;}
-}
-
-/* ── Tiny Mobile (iPhone SE / Pixel 320px-375px) ── */
-@media(max-width:400px){
-  .stat-row{grid-template-columns:1fr;} /* Pastikan stack penuh */
-  .hero{padding:20px 16px; align-items:flex-start;}
-  .hero-left{flex-direction:column; align-items:flex-start; gap:12px;}
-  .hero-name{font-size:18px;}
-  .hero-emoji{width:48px; height:48px; font-size:24px;}
-  
-  .card{padding:16px;}
-  .card-head{flex-direction:column; align-items:flex-start; gap:8px;}
-  .att-big{font-size:28px;}
-  .scard{padding:16px;}
-  .scard-icon{width:44px; height:44px;}
-  .scard-val{font-size:24px;}
-  
-  .child-tab{padding:8px 14px; font-size:12px;}
-  .note-head{flex-direction:column; gap:8px;}
-}
-`;
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard',  id: 'dashboard'  },
@@ -200,59 +75,86 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
   return (
     <>
       <Head title="Dashboard" />
-      <style>{CSS}</style>
-      <div className="root">
-
+      
+      <div className="min-h-screen bg-slate-50 font-sans">
         {/* ════ TOPNAV ════ */}
-        <nav className="topnav">
+        <nav className="sticky top-0 z-[100] h-16 bg-white border-b border-teal-700/10 shadow-sm flex items-center px-4 md:px-7">
           {/* Tombol Hamburger (Khusus Mobile) */}
           <button 
-            className="topnav__hamburger" 
+            className="block md:hidden mr-3 text-slate-800 transition-all" 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             title="Menu"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          <div className="topnav__brand">
-            <div className="topnav__brand-icon"><BookOpen size={18} color="#fff" strokeWidth={2.5}/></div>
-            <div>
-              <div className="topnav__brand-name">EduConnect</div>
-              <div className="topnav__brand-sub">Parent Portal</div>
+          <div className="flex items-center gap-2.5 md:mr-9 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-700 to-blue-600 flex items-center justify-center shadow-md">
+              <BookOpen size={18} color="#fff" strokeWidth={2.5}/>
+            </div>
+            <div className="hidden md:block">
+              <div className="font-extrabold text-[15px] text-slate-900 leading-tight">EduConnect</div>
+              <div className="text-[9.5px] text-slate-400 mt-[1px]">Parent Portal</div>
             </div>
           </div>
           
           {/* Navigasi Desktop */}
-          <div className="topnav__nav">
+          <div className="hidden md:flex items-center gap-1">
             {navItems.map(({icon:Icon,label,id})=>(
-              <button key={id} className={`topnav__nav-item ${activeTab===id?'topnav__nav-item--active':''}`} onClick={()=>setActive(id)}>
+              <button 
+                key={id} 
+                className={`flex items-center gap-[7px] px-3.5 py-[7px] rounded-xl text-[13px] font-semibold transition-all whitespace-nowrap ${
+                  activeTab === id 
+                    ? 'bg-teal-700 text-white shadow-md' 
+                    : 'text-slate-600 hover:bg-teal-700/5 hover:text-teal-700'
+                }`} 
+                onClick={()=>setActive(id)}
+              >
                 <Icon size={15} strokeWidth={activeTab===id?2.5:1.8}/> {label}
               </button>
             ))}
           </div>
 
-          <div className="topnav__gap"/>
+          <div className="flex-1" />
 
-          <div className="topnav__actions">
-            <button className="topnav__icon-btn"><Bell size={16} strokeWidth={1.8}/></button>
-            <button className="topnav__icon-btn" onClick={handleLogout} title="Keluar"><LogOut size={16} strokeWidth={1.8}/></button>
-            <div className="topnav__profile">
-              <div><div className="pname">{displayName}</div><div className="prole">Wali Murid</div></div>
-              <div className="av av-sm">{initials}</div>
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Integrasi Komponen Notifikasi */}
+            <NotificationBell onNavigate={setActive} />
+            
+            <button 
+              className="w-9 h-9 rounded-xl bg-teal-700/5 border border-teal-700/10 flex items-center justify-center text-slate-600 transition-all hover:bg-teal-700/10 hover:text-teal-700" 
+              onClick={handleLogout} 
+              title="Keluar"
+            >
+              <LogOut size={16} strokeWidth={1.8}/>
+            </button>
+            
+            <div className="flex items-center gap-2 p-0 md:p-1 md:pl-2.5 rounded-xl md:bg-teal-700/5 md:border md:border-teal-700/10 cursor-pointer transition-all hover:md:bg-teal-700/10 shrink-0">
+              <div className="hidden md:block">
+                <div className="text-[12.5px] font-bold text-slate-900 whitespace-nowrap leading-tight">{displayName}</div>
+                <div className="text-[10px] text-slate-400">Wali Murid</div>
+              </div>
+              <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-teal-700 to-blue-600 flex items-center justify-center font-extrabold text-white text-[11px] shadow-sm shrink-0">
+                {initials}
+              </div>
             </div>
           </div>
         </nav>
 
         {/* ════ MOBILE MENU OVERLAY ════ */}
         {isMobileMenuOpen && (
-          <div className="mobile-nav-overlay">
+          <div className="fixed top-16 inset-x-0 bottom-0 bg-slate-50 z-[90] flex flex-col p-5 gap-3 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
             {navItems.map(({ icon: Icon, label, id }) => (
               <button
                 key={id}
-                className={`mobile-nav-item ${activeTab === id ? 'mobile-nav-item--active' : ''}`}
+                className={`flex items-center gap-3 px-5 py-4 rounded-2xl text-[15px] font-bold transition-all border ${
+                  activeTab === id 
+                    ? 'bg-teal-700 text-white shadow-md border-transparent' 
+                    : 'text-slate-600 bg-white shadow-sm border-slate-100'
+                }`}
                 onClick={() => {
                   setActive(id);
-                  setIsMobileMenuOpen(false); // Tutup menu setelah klik
+                  setIsMobileMenuOpen(false);
                 }}
               >
                 <Icon size={18} strokeWidth={activeTab === id ? 2.5 : 2} /> {label}
@@ -262,33 +164,45 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
         )}
 
         {/* ════ CONTENT ════ */}
-        <div className="page">
+        <div className="max-w-[1100px] mx-auto px-4 py-5 md:px-7 md:py-7 lg:pb-10 flex flex-col gap-5">
           {activeTab === 'anak'       ? <AnakPage anakList={anakList}/> :
            activeTab === 'laporan'    ? <LaporanPage/> :
            activeTab === 'pengaturan' ? <PengaturanPage profile={profile}/> :
           (
             <>
               {/* Header */}
-              <div className="ph">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end flex-wrap gap-4 md:gap-3 items-start">
                 <div>
-                  <div className="ph-title">Selamat Datang, {displayName.split(' ')[0]}</div>
-                  <div className="ph-sub">Pantau aktivitas dan perkembangan ananda di satu tempat.</div>
+                  <div className="text-[22px] md:text-[26px] font-black text-slate-900 leading-none">
+                    Selamat Datang, {displayName.split(' ')[0]}
+                  </div>
+                  <div className="text-[13px] text-slate-500 mt-1.5">
+                    Pantau aktivitas dan perkembangan ananda di satu tempat.
+                  </div>
                 </div>
-                <button className="btn-primary" onClick={()=>setActive('laporan')}>
+                <button 
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[12.5px] font-bold bg-slate-900 text-white shadow-md transition-all hover:shadow-lg hover:-translate-y-[1px] w-full md:w-auto" 
+                  onClick={()=>setActive('laporan')}
+                >
                   <TrendingUp size={14}/> Lihat Laporan Lengkap
                 </button>
               </div>
 
               {/* Stats Global */}
-              <div className="stat-row">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                  {icon:Users,        bg:'rgba(37,99,235,0.1)',  c:'var(--blue)',   v:stats.total_anak,    l:'Anak Terdaftar'       },
-                  {icon:FileText,     bg:'rgba(139,92,246,0.1)', c:'var(--purple)', v:stats.total_laporan, l:'Total Laporan'        },
-                  {icon:CheckCircle2, bg:'rgba(22,163,74,0.1)',  c:'#16a34a',       v:stats.total_hadir,   l:'Total Kehadiran'      },
+                  {icon:Users,        bg:'bg-blue-100',   text:'text-blue-600',   v:stats.total_anak,    l:'Anak Terdaftar'       },
+                  {icon:FileText,     bg:'bg-purple-100', text:'text-purple-600', v:stats.total_laporan, l:'Total Laporan'        },
+                  {icon:CheckCircle2, bg:'bg-green-100',  text:'text-green-600',  v:stats.total_hadir,   l:'Total Kehadiran'      },
                 ].map((s,i)=>(
-                  <div key={i} className="scard">
-                    <div className="scard-icon" style={{background:s.bg,color:s.c}}><s.icon size={24}/></div>
-                    <div><div className="scard-val">{s.v}</div><div className="scard-lbl">{s.l}</div></div>
+                  <div key={i} className="bg-white rounded-[18px] p-4 md:p-[20px_22px] shadow-sm flex items-center gap-4 border border-slate-100">
+                    <div className={`w-11 h-11 md:w-[52px] md:h-[52px] rounded-2xl shrink-0 flex items-center justify-center ${s.bg} ${s.text}`}>
+                      <s.icon size={24}/>
+                    </div>
+                    <div>
+                      <div className="text-[24px] md:text-[28px] font-black text-slate-900 leading-none">{s.v}</div>
+                      <div className="text-[12px] text-slate-400 font-semibold mt-1">{s.l}</div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -299,17 +213,21 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                 const att  = sel?.attendance;
                 const qual = sel?.quality;
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="flex flex-col gap-5">
                     
                     {/* Filter / Selector Anak */}
                     {activeChildren.length > 1 && (
-                      <div className="child-tabs-wrapper">
-                        <div className="child-tabs">
+                      <div className="w-full overflow-x-auto scrollbar-hide">
+                        <div className="inline-flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 gap-1">
                           {activeChildren.map(c => (
                             <button 
                               key={c.id} 
                               onClick={() => setSelectedChildId(c.id)}
-                              className={`child-tab ${selectedChildId === c.id ? 'child-tab--active' : ''}`}
+                              className={`px-4 py-2 md:px-5 md:py-2.5 rounded-xl text-[12px] md:text-[13px] font-bold transition-all whitespace-nowrap ${
+                                selectedChildId === c.id 
+                                  ? 'bg-teal-700 text-white shadow-md' 
+                                  : 'text-slate-600 hover:bg-teal-700/5 hover:text-teal-700'
+                              }`}
                             >
                               {c.nama}
                             </button>
@@ -319,52 +237,65 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                     )}
 
                     {/* Hero Dinamis (Akses Cepat -> Fokus Pantauan) */}
-                    <div className="hero">
-                      <div className="hero-left">
-                        <div className="hero-emoji">👦</div>
+                    <div className="bg-gradient-to-br from-teal-700 via-[#0d5c56] to-blue-600 rounded-[22px] p-5 md:p-[28px_32px] flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 relative overflow-hidden shadow-lg">
+                      <div className="absolute w-[300px] h-[300px] rounded-full bg-white/5 -top-[100px] -right-[60px]" />
+                      <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-5 relative z-10">
+                        <div className="w-12 h-12 md:w-[68px] md:h-[68px] rounded-[20px] text-[24px] md:text-[32px] shrink-0 bg-white/20 border-2 border-white/30 flex items-center justify-center">
+                          👦
+                        </div>
                         <div>
-                          <div className="hero-eyebrow">Fokus Pantauan Ananda</div>
-                          <div className="hero-name">{activeChild ? activeChild.nama : 'Belum Ada Anak'}</div>
+                          <div className="text-[10.5px] font-semibold text-white/70 uppercase tracking-wide">Fokus Pantauan Ananda</div>
+                          <div className="text-[18px] md:text-[24px] font-black text-white leading-[1.2] mt-1">{activeChild ? activeChild.nama : 'Belum Ada Anak'}</div>
                           {activeChild?.program_name && (
-                            <div className="hero-class"><GraduationCap size={15}/> Program: {activeChild.program_name}</div>
+                            <div className="text-[13px] text-white/80 mt-1.5 flex items-center gap-1.5">
+                              <GraduationCap size={15}/> Program: {activeChild.program_name}
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
 
                     {/* Chart Kehadiran & Kualitas */}
-                    <div className="main-row">
-                      <div className="card">
-                        <div className="card-head">
-                          <div><div className="card-eyebrow">Kehadiran Bulan Ini</div><div className="card-title">Rekap Absensi · {bulan}</div></div>
-                          <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',background:'var(--bg)',padding:'4px 10px',borderRadius:8}}>{att?.total??0} sesi</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white rounded-[18px] p-4 md:p-6 shadow-sm border border-slate-100">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0 mb-5 items-start">
+                          <div>
+                            <div className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1">Kehadiran Bulan Ini</div>
+                            <div className="text-[16px] font-extrabold text-slate-900 mb-1">Rekap Absensi · {bulan}</div>
+                          </div>
+                          <div className="text-[11px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg">
+                            {att?.total??0} sesi
+                          </div>
                         </div>
                         {!att||att.total===0 ? (
-                          <p style={{fontSize:13,color:'var(--text3)',fontStyle:'italic'}}>{activeChildren.length===0?'Tidak ada anak aktif.':'Belum ada data kehadiran bulan ini.'}</p>
+                          <p className="text-[13px] text-slate-400 italic">{activeChildren.length===0?'Tidak ada anak aktif.':'Belum ada data kehadiran bulan ini.'}</p>
                         ) : (
                           <>
-                            <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:20}}>
-                              <div className="att-big">{att.hadir}<span style={{fontSize:18,color:'var(--text3)',fontWeight:600}}>/{att.total}</span></div>
-                              <div style={{fontSize:13,fontWeight:700,color:'#16a34a',background:'rgba(22,163,74,0.1)',padding:'4px 8px',borderRadius:6}}>
+                            <div className="flex items-baseline gap-2 mb-5">
+                              <div className="text-[28px] md:text-[36px] font-black text-slate-900 leading-none">
+                                {att.hadir}
+                                <span className="text-[18px] text-slate-400 font-semibold">/{att.total}</span>
+                              </div>
+                              <div className="text-[13px] font-bold text-green-600 bg-green-100 px-2 py-1 rounded-md">
                                 {Math.round((att.hadir/att.total)*100)}% Hadir
                               </div>
                             </div>
                             {[
-                              {label:'Hadir',val:att.hadir,color:'#16a34a'},
-                              {label:'Izin', val:att.izin, color:'var(--orange)'},
-                              {label:'Sakit',val:att.sakit,color:'var(--sky)'},
-                              {label:'Alpha',val:att.alpha,color:'var(--red)'},
+                              {label:'Hadir',val:att.hadir,colorClass:'bg-green-600', textClass:'text-green-600'},
+                              {label:'Izin', val:att.izin, colorClass:'bg-amber-500', textClass:'text-amber-500'},
+                              {label:'Sakit',val:att.sakit,colorClass:'bg-sky-500', textClass:'text-sky-500'},
+                              {label:'Alpha',val:att.alpha,colorClass:'bg-red-600', textClass:'text-red-600'},
                             ].map(s=>(
-                              <div key={s.label} style={{marginBottom:12}}>
-                                <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-                                  <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                    <span className="dot" style={{background:s.color}}/>
-                                    <span style={{fontSize:13,fontWeight:600,color:'var(--text2)'}}>{s.label}</span>
+                              <div key={s.label} className="mb-3">
+                                <div className="flex justify-between mb-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full inline-block ${s.colorClass}`}/>
+                                    <span className="text-[13px] font-semibold text-slate-600">{s.label}</span>
                                   </div>
-                                  <span style={{fontSize:13,fontWeight:800,color:s.color}}>{s.val} sesi</span>
+                                  <span className={`text-[13px] font-extrabold ${s.textClass}`}>{s.val} sesi</span>
                                 </div>
-                                <div style={{height:8,borderRadius:99,background:'var(--bg)',overflow:'hidden'}}>
-                                  <div style={{height:'100%',borderRadius:99,background:s.color,width:`${(s.val/att.total)*100}%`,transition:'width 0.6s ease-out'}}/>
+                                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                                  <div className={`h-full rounded-full ${s.colorClass} transition-all duration-500 ease-out`} style={{width:`${(s.val/att.total)*100}%`}}/>
                                 </div>
                               </div>
                             ))}
@@ -372,29 +303,36 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                         )}
                       </div>
                       
-                      <div className="card">
-                        <div className="card-head">
-                          <div><div className="card-eyebrow">Distribusi Penilaian</div><div className="card-title">Kualitas Setoran · {bulan}</div></div>
-                          <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',background:'var(--bg)',padding:'4px 10px',borderRadius:8}}>{qual?.total??0} setoran</div>
+                      <div className="bg-white rounded-[18px] p-4 md:p-6 shadow-sm border border-slate-100">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0 mb-5 items-start">
+                          <div>
+                            <div className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1">Distribusi Penilaian</div>
+                            <div className="text-[16px] font-extrabold text-slate-900 mb-1">Kualitas Setoran · {bulan}</div>
+                          </div>
+                          <div className="text-[11px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg">
+                            {qual?.total??0} setoran
+                          </div>
                         </div>
                         {!qual||qual.total===0 ? (
-                          <p style={{fontSize:13,color:'var(--text3)',fontStyle:'italic'}}>{activeChildren.length===0?'Tidak ada anak aktif.':'Belum ada data setoran bulan ini.'}</p>
+                          <p className="text-[13px] text-slate-400 italic">{activeChildren.length===0?'Tidak ada anak aktif.':'Belum ada data setoran bulan ini.'}</p>
                         ) : (
-                          <div style={{display:'flex',flexDirection:'column',gap:16,marginTop:12}}>
+                          <div className="flex flex-col gap-4 mt-3">
                             {[
-                              {label:'Sangat Lancar',  val:qual.sangat_lancar,color:'#16a34a',bg:'rgba(22,163,74,0.1)'},
-                              {label:'Lancar',         val:qual.lancar,       color:'var(--gold)',bg:'rgba(212,160,23,0.1)'},
-                              {label:'Perlu Mengulang',val:qual.mengulang,    color:'var(--red)',bg:'rgba(220,38,38,0.1)'},
+                              {label:'Sangat Lancar',  val:qual.sangat_lancar, barColor:'bg-green-600', bgBox:'bg-green-100', text:'text-green-600'},
+                              {label:'Lancar',         val:qual.lancar,       barColor:'bg-amber-500', bgBox:'bg-amber-100', text:'text-amber-600'},
+                              {label:'Perlu Mengulang',val:qual.mengulang,    barColor:'bg-red-600',   bgBox:'bg-red-100', text:'text-red-600'},
                             ].map(q=>(
-                              <div key={q.label} style={{display:'flex',alignItems:'center',gap:14}}>
-                                <div style={{width:46,height:46,borderRadius:12,background:q.bg,color:q.color,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:18,flexShrink:0}}>{q.val}</div>
-                                <div style={{flex:1}}>
-                                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-                                    <span style={{fontSize:13,fontWeight:700,color:'var(--text)'}}>{q.label}</span>
-                                    <span style={{fontSize:12,fontWeight:800,color:'var(--text3)'}}>{Math.round((q.val/qual.total)*100)}%</span>
+                              <div key={q.label} className="flex items-center gap-3.5">
+                                <div className={`w-11 h-11 md:w-[46px] md:h-[46px] rounded-xl flex items-center justify-center font-black text-[18px] shrink-0 ${q.bgBox} ${q.text}`}>
+                                  {q.val}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex justify-between mb-1.5">
+                                    <span className="text-[13px] font-bold text-slate-900">{q.label}</span>
+                                    <span className="text-[12px] font-extrabold text-slate-400">{Math.round((q.val/qual.total)*100)}%</span>
                                   </div>
-                                  <div style={{height:8,borderRadius:99,background:'var(--bg)',overflow:'hidden'}}>
-                                    <div style={{height:'100%',borderRadius:99,width:`${(q.val/qual.total)*100}%`,background:q.color,transition:'width 0.6s ease-out'}}/>
+                                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                                    <div className={`h-full rounded-full transition-all duration-500 ease-out ${q.barColor}`} style={{width:`${(q.val/qual.total)*100}%`}}/>
                                   </div>
                                 </div>
                               </div>
@@ -412,25 +350,38 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                 const filteredReports = recent_reports.filter(r => r.student_id === selectedChildId);
 
                 return (
-                  <div className="card">
-                    <div className="card-head">
-                      <div><div className="card-eyebrow">Mutabaah Terkini</div><div className="card-title">Catatan Asatidz Terbaru</div></div>
+                  <div className="bg-white rounded-[18px] p-4 md:p-6 shadow-sm border border-slate-100">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0 mb-5 items-start">
+                      <div>
+                        <div className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1">Mutabaah Terkini</div>
+                        <div className="text-[16px] font-extrabold text-slate-900 mb-1">Catatan Asatidz Terbaru</div>
+                      </div>
                     </div>
                     {filteredReports.length === 0
-                      ? <p style={{fontSize:13,color:'var(--text3)',fontStyle:'italic'}}>Belum ada catatan terbaru untuk ananda ini.</p>
+                      ? <p className="text-[13px] text-slate-400 italic">Belum ada catatan terbaru untuk ananda ini.</p>
                       : (
-                        <div className="note-list">
+                        <div className="flex flex-col gap-3">
                           {filteredReports.map(r=>(
-                            <div key={r.id} className="note-item">
-                              <div className="note-head">
-                                <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-                                  <div className="note-teacher"><MessageCircle size={15}/> {r.teacher_name}</div>
-                                  <span className="badge b-type">{r.report_type}</span>
-                                  <span className="badge b-qual">{r.kualitas?.replace('_',' ')}</span>
+                            <div key={r.id} className="p-4 rounded-[14px] bg-slate-50 border border-slate-100">
+                              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
+                                <div className="flex gap-2 items-center flex-wrap">
+                                  <div className="text-[13px] font-bold text-slate-900 flex items-center gap-1.5">
+                                    <MessageCircle size={15}/> {r.teacher_name}
+                                  </div>
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide bg-purple-100 text-purple-600">
+                                    {r.report_type}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide bg-pink-100 text-pink-600">
+                                    {r.kualitas?.replace('_',' ')}
+                                  </span>
                                 </div>
-                                <div className="note-date"><Calendar size={12}/>{new Date(r.date).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</div>
+                                <div className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
+                                  <Calendar size={12}/>{new Date(r.date).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}
+                                </div>
                               </div>
-                              <div className="note-body">{r.teacher_notes}</div>
+                              <div className="bg-blue-600/5 border-l-[3px] border-blue-600 px-3.5 py-3 rounded-r-[10px] rounded-bl-[6px] rounded-tl-[6px] text-[13px] text-slate-600 leading-relaxed font-medium mt-3">
+                                {r.teacher_notes}
+                              </div>
                             </div>
                           ))}
                         </div>

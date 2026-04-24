@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -34,10 +36,6 @@ class ProgressReportController extends Controller
      | Prefix: /api/teacher
      ═══════════════════════════════════════════════════════════ */
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/teacher/students
-     | Daftar semua siswa aktif + lastReport masing-masing
-     ───────────────────────────────────────────────────────── */
     public function teacherStudents(): JsonResponse
     {
         $teacher = $this->resolveTeacher();
@@ -75,10 +73,6 @@ class ProgressReportController extends Controller
         return response()->json($data);
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/teacher/students/{studentId}/reports
-     | Riwayat report satu siswa (lazy load detail panel guru)
-     ───────────────────────────────────────────────────────── */
     public function teacherStudentReports(string $studentId): JsonResponse
     {
         $cursor = $this->reports->find(
@@ -94,10 +88,6 @@ class ProgressReportController extends Controller
         return response()->json($data);
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | POST /api/teacher/reports
-     | Guru simpan progress report baru
-     ───────────────────────────────────────────────────────── */
     public function teacherStore(Request $request): JsonResponse
     {
         $teacher = $this->resolveTeacher();
@@ -134,12 +124,12 @@ class ProgressReportController extends Controller
         $result     = $this->reports->insertOne($doc);
         $doc['_id'] = $result->getInsertedId();
 
+        // ── Notifikasi ke wali murid ─────────────────────────
+        $this->notifyParent($student, $teacher, $validated, $isAbsent);
+
         return response()->json($this->formatReport($doc), 201);
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/teacher/reports/{id}
-     ───────────────────────────────────────────────────────── */
     public function teacherShow(string $id): JsonResponse
     {
         try {
@@ -155,10 +145,6 @@ class ProgressReportController extends Controller
         return response()->json($this->formatReport($report));
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | PUT /api/teacher/reports/{id}
-     | Guru edit laporan — hanya boleh jika teacher_id cocok
-     ───────────────────────────────────────────────────────── */
     public function teacherUpdate(Request $request, string $id): JsonResponse
     {
         $teacher = $this->resolveTeacher();
@@ -171,7 +157,6 @@ class ProgressReportController extends Controller
             return response()->json(['message' => 'ID tidak valid.'], 400);
         }
 
-        // Pastikan laporan ini milik guru yang sedang login
         $existing = $this->reports->findOne(['_id' => $oid]);
         if (!$existing) {
             return response()->json(['message' => 'Laporan tidak ditemukan.'], 404);
@@ -201,10 +186,6 @@ class ProgressReportController extends Controller
         return response()->json($this->formatReport($updated));
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | DELETE /api/teacher/reports/{id}
-     | Guru hapus laporan — hanya boleh jika teacher_id cocok
-     ───────────────────────────────────────────────────────── */
     public function teacherDestroy(string $id): JsonResponse
     {
         $teacher = $this->resolveTeacher();
@@ -234,12 +215,6 @@ class ProgressReportController extends Controller
      | Prefix: /api/parent
      ═══════════════════════════════════════════════════════════ */
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/parent/children
-     | Daftar SEMUA anak milik orang tua (active/pending/inactive)
-     | Field 'enrollment_status' disertakan agar frontend bisa
-     | menampilkan badge & mengunci laporan jika bukan 'active'
-     ───────────────────────────────────────────────────────── */
     public function parentChildren(): JsonResponse
     {
         $userId = (string) Auth::id();
@@ -251,7 +226,6 @@ class ProgressReportController extends Controller
 
         $parentId = (string) $parent['user_id'];
 
-        // Ambil SEMUA anak tanpa filter status
         $cursor      = $this->students->find(
             ['parent_id' => $parentId],
             ['sort' => ['nama' => 1]]
@@ -277,16 +251,10 @@ class ProgressReportController extends Controller
         return response()->json($data);
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/parent/children/{studentId}/reports
-     | Riwayat progress report satu anak
-     | Validasi: pastikan siswa ini benar milik parent yang login
-     ───────────────────────────────────────────────────────── */
     public function parentChildReports(string $studentId): JsonResponse
     {
         $userId = (string) Auth::id();
 
-        // Verifikasi kepemilikan: siswa harus milik parent ini
         $parent = $this->parents->findOne(['user_id' => $userId]);
         if (!$parent) {
             return response()->json(['message' => 'Profil wali murid tidak ditemukan.'], 404);
@@ -302,12 +270,10 @@ class ProgressReportController extends Controller
             return response()->json(['message' => 'Siswa tidak ditemukan.'], 404);
         }
 
-        // Pastikan siswa ini benar milik parent yang login
         if ((string) $student['parent_id'] !== (string) $parent['user_id']) {
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
 
-        // Blokir akses laporan jika siswa bukan active
         $status = $student['enrollment_status'] ?? 'pending';
         if ($status !== 'active') {
             return response()->json([
@@ -319,13 +285,11 @@ class ProgressReportController extends Controller
             ], 403);
         }
 
-        // Ambil semua laporan siswa ini, diurutkan terbaru dulu
         $cursor     = $this->reports->find(
             ['student_id' => $studentId],
             ['sort' => ['date' => -1]]
         );
 
-        // Build teacher name map
         $teacherMap = $this->buildTeacherMap();
 
         $data = [];
@@ -343,10 +307,6 @@ class ProgressReportController extends Controller
      | Prefix: /api/admin/progress
      ═══════════════════════════════════════════════════════════ */
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/admin/progress/options
-     | Dropdown data: siswa, guru, program untuk FormModal
-     ───────────────────────────────────────────────────────── */
     public function adminOptions(): JsonResponse
     {
         $sCursor  = $this->students->find(
@@ -373,11 +333,6 @@ class ProgressReportController extends Controller
         return response()->json(compact('students', 'teachers', 'programs'));
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/admin/progress/students
-     | Tab 1 — Daftar semua siswa aktif + lastReport
-     | Query params: search, program_id
-     ───────────────────────────────────────────────────────── */
     public function adminStudents(Request $request): JsonResponse
     {
         $search    = trim($request->query('search', ''));
@@ -414,10 +369,6 @@ class ProgressReportController extends Controller
         return response()->json($data);
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/admin/progress/students/{studentId}/reports
-     | Detail modal — riwayat lengkap satu siswa + nama guru
-     ───────────────────────────────────────────────────────── */
     public function adminStudentReports(string $studentId): JsonResponse
     {
         $teacherMap = $this->buildTeacherMap();
@@ -437,11 +388,6 @@ class ProgressReportController extends Controller
         return response()->json($data);
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | GET /api/admin/progress/reports
-     | Tab 2 — Semua laporan global, filter + pagination
-     | Query params: search, program_id, page, per_page
-     ───────────────────────────────────────────────────────── */
     public function adminReports(Request $request): JsonResponse
     {
         $search    = trim($request->query('search', ''));
@@ -450,7 +396,6 @@ class ProgressReportController extends Controller
         $page      = max(1, (int) $request->query('page', 1));
         $skip      = ($page - 1) * $perPage;
 
-        // Jika ada filter, cari student_id dulu
         $studentIdFilter = null;
         if ($search !== '' || $programId !== '') {
             $sFilter = ['enrollment_status' => 'active'];
@@ -518,10 +463,6 @@ class ProgressReportController extends Controller
         ]);
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | POST /api/admin/progress/reports
-     | Admin buat laporan baru (bisa pilih siswa & guru bebas)
-     ───────────────────────────────────────────────────────── */
     public function adminStore(Request $request): JsonResponse
     {
         $validated = $this->validateReport($request, withTeacher: true);
@@ -553,13 +494,13 @@ class ProgressReportController extends Controller
         $result     = $this->reports->insertOne($doc);
         $doc['_id'] = $result->getInsertedId();
 
+        // ── Notifikasi ke wali murid ─────────────────────────
+        $teacher = null; // dibuat oleh admin, bukan guru
+        $this->notifyParent($student, $teacher, $validated, $isAbsent, createdByAdmin: true);
+
         return response()->json($this->formatReport($doc), 201);
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | PUT /api/admin/progress/reports/{id}
-     | Admin edit laporan
-     ───────────────────────────────────────────────────────── */
     public function adminUpdate(Request $request, string $id): JsonResponse
     {
         try { $oid = new ObjectId($id); }
@@ -593,9 +534,6 @@ class ProgressReportController extends Controller
         return response()->json($this->formatReport($updated));
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | DELETE /api/admin/progress/reports/{id}
-     ───────────────────────────────────────────────────────── */
     public function adminDestroy(string $id): JsonResponse
     {
         try { $oid = new ObjectId($id); }
@@ -623,7 +561,61 @@ class ProgressReportController extends Controller
         return $teacher ?? null;
     }
 
-    /** Validasi request report — dipakai teacher & admin */
+    /**
+     * Kirim notifikasi ke wali murid saat laporan baru dibuat.
+     * Cari user_id wali murid lewat parent_id di dokumen siswa.
+     */
+    private function notifyParent(
+        $student,
+        $teacher,
+        array $validated,
+        bool $isAbsent,
+        bool $createdByAdmin = false
+    ): void {
+        try {
+            // parent_id di students = _id user (user_id) langsung
+            $parentUserId = (string) ($student['parent_id'] ?? '');
+            if (empty($parentUserId)) return;
+
+            $studentName = $student['nama'] ?? 'Anak Anda';
+            $teacherName = $teacher ? ($teacher['nama_guru'] ?? 'Guru') : 'Admin QLC';
+            $date        = $validated['date'] ?? now()->format('Y-m-d');
+            $attendance  = $validated['attendance'] ?? 'hadir';
+
+            if ($isAbsent) {
+                $attendanceLabel = match ($attendance) {
+                    'izin'  => 'izin',
+                    'sakit' => 'sakit',
+                    'alpha' => 'tidak hadir tanpa keterangan',
+                    default => $attendance,
+                };
+                $title   = "Ketidakhadiran: {$studentName}";
+                $message = "{$studentName} tercatat {$attendanceLabel} pada {$date}.";
+            } else {
+                $kualitasLabel = match ($validated['kualitas'] ?? null) {
+                    'sangat_lancar' => 'Sangat Lancar',
+                    'lancar'        => 'Lancar',
+                    'mengulang'     => 'Mengulang',
+                    default         => '—',
+                };
+                $title   = "Laporan Progress: {$studentName}";
+                $message = "Laporan {$date} oleh {$teacherName}. "
+                        . "Jenis: " . strtoupper($validated['report_type'] ?? '—') . ", "
+                        . "Kualitas: {$kualitasLabel}.";
+            }
+
+            Notification::send(
+                userId:  $parentUserId,
+                type:    'progress',
+                title:   $title,
+                message: $message,
+                link:    '?tab=laporan',
+            );
+        } catch (\Exception $e) {
+            \Log::warning('Gagal mengirim notifikasi ke wali murid: ' . $e->getMessage());
+        }
+    }
+
     private function validateReport(Request $request, bool $withTeacher = false, bool $requireStudent = true): array
     {
         $rules = [
@@ -642,7 +634,6 @@ class ProgressReportController extends Controller
         return $request->validate($rules);
     }
 
-    /** lastReport per siswa — 1 query, group di PHP */
     private function buildLastReportMap(array $studentIds): array
     {
         if (empty($studentIds)) return [];
@@ -662,7 +653,6 @@ class ProgressReportController extends Controller
         return $map;
     }
 
-    /** program_id → program_name dari list siswa */
     private function buildProgramMap(array $studentList): array
     {
         $ids = array_values(array_unique(
@@ -684,7 +674,6 @@ class ProgressReportController extends Controller
         return $map;
     }
 
-    /** student_id → nama siswa */
     private function buildStudentNameMap(array $studentIds): array
     {
         if (empty($studentIds)) return [];
@@ -706,7 +695,6 @@ class ProgressReportController extends Controller
         return $map;
     }
 
-    /** teacher_id → nama_guru (opsional filter by id) */
     private function buildTeacherMap(array $teacherIds = []): array
     {
         $filter = [];
@@ -726,7 +714,6 @@ class ProgressReportController extends Controller
         return $map;
     }
 
-    /** student_id → program_name (join 2 collection) */
     private function buildProgramByStudentMap(array $studentIds): array
     {
         if (empty($studentIds)) return [];
@@ -771,7 +758,6 @@ class ProgressReportController extends Controller
         return $result;
     }
 
-    /** Format satu report document → array JSON-friendly */
     private function formatReport($doc): array
     {
         $date = $doc['date'] ?? null;

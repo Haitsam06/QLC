@@ -22,138 +22,41 @@ interface Props {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   STYLES
-═══════════════════════════════════════════════════════════ */
-const CSS = `
-.pg-wrap { display:flex; flex-direction:column; gap:20px; }
-
-/* Section header */
-.pg-ph { margin-bottom: 4px; }
-.pg-ph-title { font-size:22px; font-weight:900; color:var(--text); }
-.pg-ph-sub   { font-size:12px; color:var(--text3); margin-top:4px; }
-
-/* Cards */
-.pg-card {
-  background:var(--card); border-radius:18px; padding:24px;
-  border:1px solid rgba(0,0,0,0.05); box-shadow:0 1px 8px rgba(0,0,0,0.05);
-}
-.pg-card-title {
-  font-size:14px; font-weight:800; color:var(--text);
-  display:flex; align-items:center; gap:8px; margin-bottom:4px;
-}
-.pg-card-sub { font-size:11.5px; color:var(--text3); margin-bottom:20px; }
-
-/* Profile read-only fields */
-.pg-fields { display:flex; flex-direction:column; gap:14px; }
-.pg-field { display:flex; flex-direction:column; gap:5px; }
-.pg-label { font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; }
-.pg-value-wrap {
-  display:flex; align-items:center; gap:10px;
-  padding:10px 14px; border-radius:11px;
-  background:rgba(0,0,0,0.03); border:1.5px solid rgba(0,0,0,0.07);
-}
-.pg-value { font-size:13.5px; font-weight:600; color:var(--text2); flex:1; }
-.pg-lock  { color:var(--text3); flex-shrink:0; }
-
-/* Lock banner */
-.pg-lock-banner {
-  display:flex; align-items:center; gap:10px;
-  padding:12px 16px; border-radius:12px; margin-top:16px;
-  background:rgba(37,99,235,0.05); border:1px solid rgba(37,99,235,0.15);
-  font-size:12px; color:var(--blue); font-weight:600;
-}
-.pg-contact-btn {
-  margin-left:auto; display:flex; align-items:center; gap:5px;
-  padding:6px 14px; border-radius:8px; font-size:11.5px; font-weight:700;
-  background:var(--blue); color:#fff; border:none; cursor:pointer;
-  font-family:inherit; transition:all 0.18s; flex-shrink:0;
-}
-.pg-contact-btn:hover { background:#1d4ed8; }
-
-/* Form fields */
-.pg-form { display:flex; flex-direction:column; gap:16px; }
-.pg-fg { display:flex; flex-direction:column; gap:6px; }
-.pg-fl { font-size:11.5px; font-weight:700; color:var(--text2); }
-.pg-fi-wrap {
-  display:flex; align-items:center;
-  background:#fff; border:1.5px solid rgba(0,0,0,0.1); border-radius:11px;
-  overflow:hidden; transition:all 0.2s;
-}
-.pg-fi-wrap:focus-within { border-color:var(--green); box-shadow:0 0 0 3px rgba(15,118,110,0.1); }
-.pg-fi-wrap--err { border-color:var(--red)!important; box-shadow:0 0 0 3px rgba(220,38,38,0.08)!important; }
-.pg-fi {
-  flex:1; height:44px; padding:0 14px;
-  font-size:13.5px; font-weight:600; color:var(--text);
-  background:transparent; outline:none; border:none; font-family:inherit;
-}
-.pg-fi-icon { padding:0 12px; color:var(--text3); flex-shrink:0; }
-.pg-fi-btn  { padding:0 12px; color:var(--text3); flex-shrink:0; cursor:pointer; background:none; border:none; transition:color 0.15s; }
-.pg-fi-btn:hover { color:var(--green); }
-.pg-err { font-size:11px; font-weight:600; color:var(--red); display:flex; align-items:center; gap:4px; }
-
-/* Submit button */
-.pg-submit {
-  display:flex; align-items:center; justify-content:center; gap:6px;
-  width:100%; height:46px; border-radius:11px;
-  background:var(--green); color:#fff;
-  font-size:13.5px; font-weight:700; font-family:inherit; border:none; cursor:pointer;
-  box-shadow:0 4px 14px rgba(15,118,110,0.3); transition:all 0.18s;
-}
-.pg-submit:hover { box-shadow:0 6px 20px rgba(15,118,110,0.4); transform:translateY(-1px); }
-.pg-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-
-/* Success toast */
-.pg-toast {
-  display:flex; align-items:center; gap:10px;
-  padding:12px 16px; border-radius:12px; margin-bottom:4px;
-  background:var(--green-light); border:1px solid rgba(15,118,110,0.2);
-  font-size:12.5px; font-weight:600; color:var(--green);
-  animation: pgFadeIn 0.25s ease;
-}
-@keyframes pgFadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-
-/* Divider */
-.pg-divider { height:1px; background:rgba(0,0,0,0.06); margin:4px 0; }
-
-@media(max-width:768px) {
-  .pg-card { padding:18px; }
-}
-`;
-
-/* ═══════════════════════════════════════════════════════════
    FORM: Username
 ═══════════════════════════════════════════════════════════ */
 function UsernameForm() {
     const { auth } = usePage<PageProps>().props as any;
     const user = auth?.user;
 
-    const { data, setData, patch, processing, errors, reset, recentlySuccessful } = useForm({
+    const { data, setData, put, processing, errors, recentlySuccessful } = useForm({
         username: (user?.username as string) ?? '',
         email:    (user?.email    as string) ?? '',
     });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        put(route('settings.profile'), { onSuccess: () => {} });
+        put(route('settings.profile'), { preserveScroll: true });
     };
 
     return (
-        <div className="pg-card">
-            <div className="pg-card-title"><KeyRound size={16} color="var(--green)"/> Kredensial Akun</div>
-            <div className="pg-card-sub">Ubah username dan email yang digunakan untuk masuk ke sistem.</div>
+        <div className="bg-white rounded-[18px] p-5 md:p-6 border border-slate-100 shadow-sm">
+            <div className="text-[14px] font-extrabold text-slate-900 flex items-center gap-2 mb-1"><KeyRound size={16} className="text-teal-600"/> Kredensial Akun</div>
+            <div className="text-[11.5px] text-slate-500 mb-5">Ubah username dan email yang digunakan untuk masuk ke sistem.</div>
 
             {recentlySuccessful && (
-                <div className="pg-toast"><CheckCircle2 size={15}/> Kredensial akun berhasil diperbarui.</div>
+                <div className="flex items-center gap-2.5 p-3 rounded-xl mb-4 bg-green-50 border border-green-100 text-[12.5px] font-bold text-green-700 animate-in fade-in slide-in-from-top-2">
+                    <CheckCircle2 size={15}/> Kredensial akun berhasil diperbarui.
+                </div>
             )}
 
-            <form onSubmit={submit} className="pg-form">
+            <form onSubmit={submit} className="flex flex-col gap-4">
                 {/* Username */}
-                <div className="pg-fg">
-                    <label className="pg-fl">Username</label>
-                    <div className={`pg-fi-wrap ${errors.username ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><User size={15}/></span>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-bold text-slate-700">Username</label>
+                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.username ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
+                        <span className="px-3 text-slate-400 shrink-0"><User size={15}/></span>
                         <input
-                            className="pg-fi"
+                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
                             type="text"
                             value={data.username}
                             onChange={e => setData('username', e.target.value)}
@@ -161,16 +64,16 @@ function UsernameForm() {
                             autoComplete="username"
                         />
                     </div>
-                    {errors.username && <p className="pg-err"><AlertCircle size={12}/>{errors.username}</p>}
+                    {errors.username && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.username}</p>}
                 </div>
 
                 {/* Email (opsional) */}
-                <div className="pg-fg">
-                    <label className="pg-fl">Email <span style={{fontWeight:500,color:'var(--text3)'}}>(opsional)</span></label>
-                    <div className={`pg-fi-wrap ${errors.email ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><span style={{fontSize:13}}>@</span></span>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-bold text-slate-700">Email <span className="font-medium text-slate-400">(opsional)</span></label>
+                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.email ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
+                        <span className="px-3 text-slate-400 shrink-0 text-[14px] font-bold">@</span>
                         <input
-                            className="pg-fi"
+                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
                             type="email"
                             value={data.email}
                             onChange={e => setData('email', e.target.value)}
@@ -178,10 +81,10 @@ function UsernameForm() {
                             autoComplete="email"
                         />
                     </div>
-                    {errors.email && <p className="pg-err"><AlertCircle size={12}/>{errors.email}</p>}
+                    {errors.email && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.email}</p>}
                 </div>
 
-                <button type="submit" className="pg-submit" disabled={processing}>
+                <button type="submit" disabled={processing} className="flex items-center justify-center gap-1.5 w-full h-11 mt-2 rounded-xl bg-teal-700 text-white text-[13.5px] font-bold hover:bg-teal-800 transition-all shadow-md hover:shadow-lg hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-md">
                     <Save size={15}/> {processing ? 'Menyimpan…' : 'Simpan Perubahan'}
                 </button>
             </form>
@@ -197,7 +100,7 @@ function PasswordForm() {
     const [showNew,     setShowNew]     = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const { data, setData, patch, processing, errors, reset, recentlySuccessful } = useForm({
+    const { data, setData, put, processing, errors, reset, recentlySuccessful } = useForm({
         current_password:      '',
         password:              '',
         password_confirmation: '',
@@ -206,83 +109,86 @@ function PasswordForm() {
     const submit = (e: FormEvent) => {
         e.preventDefault();
         put(route('settings.password'), {
+            preserveScroll: true,
             onSuccess: () => reset(),
         });
     };
 
     return (
-        <div className="pg-card">
-            <div className="pg-card-title"><Lock size={16} color="var(--green)"/> Ubah Kata Sandi</div>
-            <div className="pg-card-sub">Gunakan kata sandi yang kuat dan berbeda dari sebelumnya.</div>
+        <div className="bg-white rounded-[18px] p-5 md:p-6 border border-slate-100 shadow-sm">
+            <div className="text-[14px] font-extrabold text-slate-900 flex items-center gap-2 mb-1"><Lock size={16} className="text-teal-600"/> Ubah Kata Sandi</div>
+            <div className="text-[11.5px] text-slate-500 mb-5">Gunakan kata sandi yang kuat dan berbeda dari sebelumnya.</div>
 
             {recentlySuccessful && (
-                <div className="pg-toast"><CheckCircle2 size={15}/> Kata sandi berhasil diperbarui.</div>
+                <div className="flex items-center gap-2.5 p-3 rounded-xl mb-4 bg-green-50 border border-green-100 text-[12.5px] font-bold text-green-700 animate-in fade-in slide-in-from-top-2">
+                    <CheckCircle2 size={15}/> Kata sandi berhasil diperbarui.
+                </div>
             )}
 
-            <form onSubmit={submit} className="pg-form">
+            <form onSubmit={submit} className="flex flex-col gap-4">
                 {/* Password lama */}
-                <div className="pg-fg">
-                    <label className="pg-fl">Kata Sandi Saat Ini</label>
-                    <div className={`pg-fi-wrap ${errors.current_password ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><Lock size={15}/></span>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-bold text-slate-700">Kata Sandi Saat Ini</label>
+                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.current_password ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
+                        <span className="px-3 text-slate-400 shrink-0"><Lock size={15}/></span>
                         <input
-                            className="pg-fi"
+                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
                             type={showCurrent ? 'text' : 'password'}
                             value={data.current_password}
                             onChange={e => setData('current_password', e.target.value)}
                             placeholder="••••••••"
                             autoComplete="current-password"
                         />
-                        <button type="button" className="pg-fi-btn" onClick={() => setShowCurrent(v => !v)}>
+                        <button type="button" className="px-3 text-slate-400 hover:text-teal-600 transition-colors" onClick={() => setShowCurrent(v => !v)}>
                             {showCurrent ? <EyeOff size={15}/> : <Eye size={15}/>}
                         </button>
                     </div>
-                    {errors.current_password && <p className="pg-err"><AlertCircle size={12}/>{errors.current_password}</p>}
+                    {errors.current_password && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.current_password}</p>}
                 </div>
 
-                <div className="pg-divider"/>
+                <div className="h-px bg-slate-100 my-1"/>
 
                 {/* Password baru */}
-                <div className="pg-fg">
-                    <label className="pg-fl">Kata Sandi Baru</label>
-                    <div className={`pg-fi-wrap ${errors.password ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><KeyRound size={15}/></span>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-bold text-slate-700">Kata Sandi Baru</label>
+                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.password ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
+                        <span className="px-3 text-slate-400 shrink-0"><KeyRound size={15}/></span>
                         <input
-                            className="pg-fi"
+                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
                             type={showNew ? 'text' : 'password'}
                             value={data.password}
                             onChange={e => setData('password', e.target.value)}
                             placeholder="Minimal 8 karakter"
                             autoComplete="new-password"
                         />
-                        <button type="button" className="pg-fi-btn" onClick={() => setShowNew(v => !v)}>
+                        <button type="button" className="px-3 text-slate-400 hover:text-teal-600 transition-colors" onClick={() => setShowNew(v => !v)}>
                             {showNew ? <EyeOff size={15}/> : <Eye size={15}/>}
                         </button>
                     </div>
-                    {errors.password && <p className="pg-err"><AlertCircle size={12}/>{errors.password}</p>}
+                    {errors.password && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.password}</p>}
                 </div>
 
                 {/* Konfirmasi password baru */}
-                <div className="pg-fg">
-                    <label className="pg-fl">Konfirmasi Kata Sandi Baru</label>
-                    <div className={`pg-fi-wrap ${errors.password_confirmation ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><KeyRound size={15}/></span>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11.5px] font-bold text-slate-700">Konfirmasi Kata Sandi Baru</label>
+                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.password_confirmation ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
+                        <span className="px-3 text-slate-400 shrink-0"><KeyRound size={15}/></span>
                         <input
-                            className="pg-fi"
+                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
                             type={showConfirm ? 'text' : 'password'}
                             value={data.password_confirmation}
                             onChange={e => setData('password_confirmation', e.target.value)}
                             placeholder="Ulangi kata sandi baru"
                             autoComplete="new-password"
                         />
-                        <button type="button" className="pg-fi-btn" onClick={() => setShowConfirm(v => !v)}>
+                        <button type="button" className="px-3 text-slate-400 hover:text-teal-600 transition-colors" onClick={() => setShowConfirm(v => !v)}>
                             {showConfirm ? <EyeOff size={15}/> : <Eye size={15}/>}
                         </button>
                     </div>
-                    {errors.password_confirmation && <p className="pg-err"><AlertCircle size={12}/>{errors.password_confirmation}</p>}
+                    {errors.password_confirmation && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.password_confirmation}</p>}
                 </div>
 
-                <button type="submit" className="pg-submit" disabled={processing}>
+                <button type="submit" disabled={processing} className="flex items-center justify-center gap-1.5 w-full h-11 mt-2 rounded-xl bg-teal-700 text-white text-[13.5px] font-bold hover:bg-teal-800 transition-all shadow-md hover:shadow-lg hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-md">
                     <Save size={15}/> {processing ? 'Menyimpan…' : 'Perbarui Kata Sandi'}
                 </button>
             </form>
@@ -297,65 +203,55 @@ const ADMIN_WA = '6281234567890'; // ← Ganti nomor WA admin
 
 export default function PengaturanPage({ profile }: Props) {
     return (
-        <>
-            <style>{CSS}</style>
-            <div className="pg-wrap">
-
-                {/* Heading */}
-                <div className="pg-ph">
-                    <div className="pg-ph-title">Pengaturan Akun</div>
-                    <div className="pg-ph-sub">Kelola kredensial login dan lihat informasi profil Anda.</div>
-                </div>
-
-                {/* ── Profil (read-only) ── */}
-                <div className="pg-card">
-                    <div className="pg-card-title"><User size={16} color="var(--blue)"/> Informasi Profil</div>
-                    <div className="pg-card-sub">Data ini terdaftar secara resmi dan tidak dapat diubah sendiri.</div>
-
-                    <div className="pg-fields">
-                        {[
-                            { label: 'Nama Lengkap',    value: profile?.parent_name ?? '—', icon: <User size={14}/>     },
-                            { label: 'Nomor Telepon',   value: profile?.phone       ?? '—', icon: <Phone size={14}/>    },
-                            { label: 'Alamat',          value: profile?.address     ?? '—', icon: <Shield size={14}/>   },
-                        ].map(f => (
-                            <div key={f.label} className="pg-field">
-                                <span className="pg-label">{f.label}</span>
-                                <div className="pg-value-wrap">
-                                    <span className="pg-lock">{f.icon}</span>
-                                    <span className="pg-value">{f.value}</span>
-                                    <Lock size={13} className="pg-lock" style={{opacity:0.4}}/>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Banner hubungi admin */}
-                    <div className="pg-lock-banner">
-                        <AlertCircle size={15} style={{flexShrink:0}}/>
-                        <span>Ingin mengubah data profil? Hubungi administrator sekolah.</span>
-                        <a
-                            href={`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent('Assalamu\'alaikum Admin, saya ingin mengajukan perubahan data profil akun saya.')}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="pg-contact-btn"
-                        >
-                            <MessageCircle size={13}/> Hubungi Admin
-                            <ExternalLink size={11}/>
-                        </a>
-                    </div>
-                </div>
-
-                {/* ── Kredensial ── */}
-                <UsernameForm />
-
-                {/* ── Password ── */}
-                <PasswordForm />
-
+        <div className="flex flex-col gap-5">
+            {/* Heading */}
+            <div>
+                <div className="text-[22px] font-black text-slate-900">Pengaturan Akun</div>
+                <div className="text-[12px] text-slate-500 mt-1">Kelola kredensial login dan lihat informasi profil Anda.</div>
             </div>
-        </>
-    );
-}
 
-function put(arg0: string, arg1: { onSuccess: () => void; }) {
-    throw new Error('Function not implemented.');
+            {/* Profil (read-only) */}
+            <div className="bg-white rounded-[18px] p-5 md:p-6 border border-slate-100 shadow-sm">
+                <div className="text-[14px] font-extrabold text-slate-900 flex items-center gap-2 mb-1"><User size={16} className="text-blue-600"/> Informasi Profil</div>
+                <div className="text-[11.5px] text-slate-500 mb-5">Data ini terdaftar secara resmi dan tidak dapat diubah sendiri.</div>
+
+                <div className="flex flex-col gap-3.5">
+                    {[
+                        { label: 'Nama Lengkap',    value: profile?.parent_name ?? '—', icon: <User size={14}/>     },
+                        { label: 'Nomor Telepon',   value: profile?.phone       ?? '—', icon: <Phone size={14}/>    },
+                        { label: 'Alamat',          value: profile?.address     ?? '—', icon: <Shield size={14}/>   },
+                    ].map(f => (
+                        <div key={f.label} className="flex flex-col gap-1.5">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{f.label}</span>
+                            <div className="flex items-center gap-2.5 p-[10px_14px] rounded-xl bg-slate-50 border border-slate-200">
+                                <span className="text-slate-400 shrink-0">{f.icon}</span>
+                                <span className="text-[13.5px] font-bold text-slate-700 flex-1">{f.value}</span>
+                                <Lock size={13} className="text-slate-300 shrink-0"/>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Banner hubungi admin */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-xl mt-5 bg-blue-50 border border-blue-100 text-[12px] text-blue-700 font-semibold">
+                    <div className="flex items-center gap-2 flex-1">
+                        <AlertCircle size={15} className="shrink-0"/>
+                        <span>Ingin mengubah data profil? Hubungi administrator sekolah.</span>
+                    </div>
+                    <a
+                        href={`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent('Assalamu\'alaikum Admin, saya ingin mengajukan perubahan data profil akun saya.')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-[11.5px] font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors shrink-0 whitespace-nowrap"
+                    >
+                        <MessageCircle size={13}/> Hubungi Admin
+                        <ExternalLink size={11}/>
+                    </a>
+                </div>
+            </div>
+
+            <UsernameForm />
+            <PasswordForm />
+        </div>
+    );
 }
