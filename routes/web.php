@@ -78,13 +78,13 @@ Route::middleware(['auth', 'role:parents'])
         Route::post('/daftar', [EnrollmentController::class, 'store'])->name('daftar.store');
     });
 
+// ── Mitra: satu route dashboard, semua tab di-handle React ──
 Route::middleware(['auth', 'role:mitra'])
     ->prefix('mitra')
+    ->name('mitra.')
     ->group(function () {
-        Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'));
-        Route::get('/program',   fn() => Inertia::render('mitra/Program'));
-        Route::get('/jadwal',    fn() => Inertia::render('mitra/Jadwal'));
-        Route::get('/laporan',   fn() => Inertia::render('mitra/LaporanMitra'));
+        Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'))->name('dashboard');
+        // Route program, jadwal & laporan dihapus — sudah jadi sub-page di dashboard
     });
 
 require __DIR__ . '/auth.php';

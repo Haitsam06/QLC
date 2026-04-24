@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import MitraNavbar from '../../Components/MitraNavbar';
 import { ChevronLeft, ChevronRight, Clock, MapPin, Link as LinkIcon, Calendar, X } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
@@ -142,10 +141,7 @@ export default function JadwalMitra() {
     }, [year, month, agendas]);
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-            <MitraNavbar activePage="jadwal"/>
-
-            <div className="w-full px-6 lg:px-12 pt-8 pb-12 mx-auto">
+        <div className="w-full pb-4 mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">Jadwal & Agenda</h1>
@@ -283,7 +279,6 @@ export default function JadwalMitra() {
                         </div>
                     </div>
                 </div>
-            </div>
 
             {selected && <DetailModal agenda={selected} onClose={() => setSelected(null)}/>}
         </div>

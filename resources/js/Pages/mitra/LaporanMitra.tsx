@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import MitraNavbar from '../../Components/MitraNavbar';
 import axios from 'axios';
 import {
     FileCheck, Download, Search, Filter, FileText,
@@ -117,10 +116,7 @@ export default function LaporanMitra() {
     useEffect(() => { setPage(1); }, [dSearch]);
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-            <MitraNavbar activePage="laporan" />
-
-            <div className="w-full px-6 lg:px-12 pt-8 pb-12 mx-auto flex flex-col gap-6">
+        <div className="w-full pb-4 mx-auto flex flex-col gap-6">
 
                 {/* ── Header & Stats ── */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-2">
@@ -322,7 +318,6 @@ export default function LaporanMitra() {
                         </div>
                     )}
                 </div>
-            </div>
         </div>
     );
 }
