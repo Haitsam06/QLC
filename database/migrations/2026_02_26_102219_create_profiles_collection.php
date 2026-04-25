@@ -9,9 +9,7 @@ return new class extends Migration
     public function up()
     {
         Schema::connection('mongodb')->create('profiles', function (Blueprint $collection) {
-
             $collection->index('name');
-
         });
     }
 
