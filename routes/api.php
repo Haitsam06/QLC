@@ -33,19 +33,33 @@ Route::get('students/options', [StudentController::class, 'options']);
 Route::apiResource('students', StudentController::class)
     ->parameters(['students' => 'id']);
 
-// ── Info ──────────────────────────────────────────────────────────────────
 Route::prefix('info')->group(function () {
+    // Profil
     Route::get ('profile', [InfoController::class, 'profileShow']);
     Route::post('profile', [InfoController::class, 'profileUpsert']);
 
+    // Fondasi
+    Route::get   ('foundations',      [InfoController::class, 'foundationIndex']);
+    Route::post  ('foundations',      [InfoController::class, 'foundationStore']);
+    Route::put   ('foundations/{id}', [InfoController::class, 'foundationUpdate']);
+    Route::delete('foundations/{id}', [InfoController::class, 'foundationDestroy']);
+
+    // Pimpinan Lembaga
+    Route::get   ('leaders',      [InfoController::class, 'leaderIndex']);
+    Route::post  ('leaders',      [InfoController::class, 'leaderStore']);
+    Route::put   ('leaders/{id}', [InfoController::class, 'leaderUpdate']); // Ubah ke PUT
+    Route::delete('leaders/{id}', [InfoController::class, 'leaderDestroy']);
+
+    // Program Layanan
     Route::get   ('programs',      [InfoController::class, 'programIndex']);
     Route::post  ('programs',      [InfoController::class, 'programStore']);
-    Route::post  ('programs/{id}', [InfoController::class, 'programUpdate']);
+    Route::put   ('programs/{id}', [InfoController::class, 'programUpdate']); // Ubah ke PUT
     Route::delete('programs/{id}', [InfoController::class, 'programDestroy']);
 
+    // Galeri
     Route::get   ('gallery',      [InfoController::class, 'galleryIndex']);
     Route::post  ('gallery',      [InfoController::class, 'galleryStore']);
-    Route::post  ('gallery/{id}', [InfoController::class, 'galleryUpdate']);
+    Route::put   ('gallery/{id}', [InfoController::class, 'galleryUpdate']); // Ubah ke PUT
     Route::delete('gallery/{id}', [InfoController::class, 'galleryDestroy']);
 });
 
@@ -110,4 +124,6 @@ Route::middleware('auth')->group(function () {
         Route::put   ('reports/{id}',                 [ProgressReportController::class, 'adminUpdate']);
         Route::delete('reports/{id}',                 [ProgressReportController::class, 'adminDestroy']);
     });
+
+    
 });

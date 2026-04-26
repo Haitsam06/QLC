@@ -9,16 +9,45 @@ use App\Http\Controllers\Parents\EnrollmentController;
 use App\Http\Controllers\Teacher\TeacherDashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Profile;
+use App\Models\Program;
+use App\Models\Gallery;
+use App\Models\Foundation;
+use App\Models\Leader;
 
 // ==========================================
 // ROUTE UTAMA
 // ==========================================
 Route::get('/', function () {
+    $db = DB::connection('mongodb')->getMongoClient()->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+
+    // Ambil semua data dari MongoDB
+    $profile = $db->selectCollection('profiles')->findOne([]) ?: null;
+    $programs = iterator_to_array($db->selectCollection('programs')->find([]));
+    $galleries = iterator_to_array($db->selectCollection('gallery')->find([]));
+    $foundations = iterator_to_array($db->selectCollection('foundations')->find([]));
+    $leaders = iterator_to_array($db->selectCollection('leaders')->find([]));
+
+    // Helper untuk convert ObjectId ke string (agar tidak error di React)
+    $convertId = function ($doc) {
+        if (isset($doc['_id'])) {
+            $doc['id'] = (string) $doc['_id'];
+            unset($doc['_id']);
+        }
+        return $doc;
+    };
+
     return Inertia::render('Welcome', [
         'laravelVersion' => Application::VERSION,
-        'phpVersion'     => PHP_VERSION,
+        'phpVersion' => PHP_VERSION,
+        'profile' => $profile ? $convertId((array) $profile) : null,
+        'programs' => array_map(fn($d) => $convertId((array) $d), $programs),
+        'galleries' => array_map(fn($d) => $convertId((array) $d), $galleries),
+        'foundations' => array_map(fn($d) => $convertId((array) $d), $foundations),
+        'leaders' => array_map(fn($d) => $convertId((array) $d), $leaders),
     ]);
 });
 
@@ -31,8 +60,40 @@ Route::get('/landing/agenda', function (Request $request) {
     ]);
 })->name('landing.agenda');
 
-Route::get('/pengurus',       fn() => Inertia::render('Landing/Pengurus'))->name('landing.pengurus');
-Route::get('/galeri',         fn() => Inertia::render('Landing/Galeri'))->name('landing.galeri');
+Route::get('/pengurus', function () {
+    $db = DB::connection('mongodb')->getMongoClient()->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+    $leaders = iterator_to_array($db->selectCollection('leaders')->find([]));
+
+    $convertId = function ($doc) {
+        if (isset($doc['_id'])) {
+            $doc['id'] = (string) $doc['_id'];
+            unset($doc['_id']);
+        }
+        return $doc;
+    };
+
+    return Inertia::render('Landing/Pengurus', [
+        'leaders' => array_map(fn($d) => $convertId((array) $d), $leaders),
+    ]);
+})->name('landing.pengurus');
+Route::get('/galeri', function () {
+    $db = DB::connection('mongodb')->getMongoClient()->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+
+    // Ambil data galeri dan urutkan dari yang terbaru
+    $galleries = iterator_to_array($db->selectCollection('gallery')->find([], ['sort' => ['uploaded_at' => -1]]));
+
+    $convertId = function ($doc) {
+        if (isset($doc['_id'])) {
+            $doc['id'] = (string) $doc['_id'];
+            unset($doc['_id']);
+        }
+        return $doc;
+    };
+
+    return Inertia::render('Landing/Galeri', [
+        'galleries' => array_map(fn($d) => $convertId((array) $d), $galleries),
+    ]);
+})->name('landing.galeri');
 Route::get('/program-detail', fn() => Inertia::render('Landing/ProgramDetail'))->name('program.detail');
 
 // ==========================================
@@ -53,11 +114,11 @@ Route::middleware('auth')->group(function () {
 // CATATAN: 'read-all' harus didefinisikan SEBELUM '/{id}'
 // ==========================================
 Route::middleware('auth')->prefix('api')->group(function () {
-    Route::get('/notifications',               [NotificationController::class, 'index'])->name('notifications.index');
-    Route::patch('/notifications/read-all',    [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
-    Route::patch('/notifications/{id}/read',   [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::delete('/notifications',            [NotificationController::class, 'destroyAll'])->name('notifications.destroyAll');
-    Route::delete('/notifications/{id}',       [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::delete('/notifications', [NotificationController::class, 'destroyAll'])->name('notifications.destroyAll');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 });
 
 // ==========================================
@@ -85,7 +146,7 @@ Route::middleware(['auth', 'role:parents'])
         Route::get('/dashboard', [ParentDashboardController::class, 'index'])->name('dashboard');
 
         // Pendaftaran (halaman terpisah karena butuh file upload)
-        Route::get('/daftar',  [EnrollmentController::class, 'create'])->name('daftar');
+        Route::get('/daftar', [EnrollmentController::class, 'create'])->name('daftar');
         Route::post('/daftar', [EnrollmentController::class, 'store'])->name('daftar.store');
     });
 
