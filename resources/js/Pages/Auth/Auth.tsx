@@ -10,25 +10,18 @@ interface Props {
 }
 
 export default function Auth({ status, canResetPassword = true, initialTab = 'login' }: Props) {
-    // State untuk mengontrol tab aktif (Login atau Register)
     const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
-
-    // State untuk mengontrol tahapan form Register (1: Isi Data, 2: Input OTP)
     const [registerStep, setRegisterStep] = useState<1 | 2>(1);
     const [registerStatusMessage, setRegisterStatusMessage] = useState('');
-
-    // State UI
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    // Form Instance untuk Login
     const loginForm = useForm({
         username: '',
         password: '',
         remember: false,
     });
 
-    // Form Instance untuk Register (ditambah field 'otp')
     const registerForm = useForm({
         parent_name: '',
         phone: '',
@@ -40,7 +33,6 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
         otp: '',
     });
 
-    // Handler Submit Login
     const handleLoginSubmit = (e: FormEvent) => {
         e.preventDefault();
         loginForm.post(route('login'), {
@@ -48,7 +40,6 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
         });
     };
 
-    // Handler Tahap 1: Kirim OTP Pendaftaran
     const handleSendRegisterOtp = async (e: FormEvent) => {
         e.preventDefault();
         registerForm.clearErrors();
@@ -66,10 +57,9 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
             });
 
             setRegisterStatusMessage(response.data.message);
-            setRegisterStep(2); // Geser ke form OTP
+            setRegisterStep(2);
         } catch (error: any) {
             if (error.response?.data?.errors) {
-                // Menangkap pesan error dari server dan memasukannya ke useForm Inertia
                 const validationErrors = error.response.data.errors;
                 for (const key in validationErrors) {
                     registerForm.setError(key as any, validationErrors[key][0]);
@@ -80,7 +70,6 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
         }
     };
 
-    // Handler Tahap 2: Submit Seluruh Form & OTP ke fungsi store() di Controller
     const handleRegisterSubmit = (e: FormEvent) => {
         e.preventDefault();
         registerForm.post(route('register'), {
@@ -88,7 +77,6 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
         });
     };
 
-    // Helper: Reset tab registrasi jika user pindah ke tab Login
     const switchToLogin = () => {
         setActiveTab('login');
         registerForm.clearErrors();
@@ -102,143 +90,131 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
 
             <style>{`
                 @keyframes fadeIn {
-                    0% { opacity: 0; transform: translateY(10px); }
+                    0% { opacity: 0; transform: translateY(15px); }
                     100% { opacity: 1; transform: translateY(0); }
                 }
-                .anim-fade { animation: fadeIn 0.4s ease-out forwards; }
+                .anim-fade { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                input, textarea { font-size: 16px !important; }
             `}</style>
 
             <div className="min-h-screen w-full flex flex-row font-sans text-gray-800 bg-white">
-                <div className="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-br from-green-800 to-green-900">
-                    <div className="absolute inset-0 overflow-hidden z-0">
-                        <div className="absolute -top-24 w-96 h-96 bg-white bg-opacity-5 rounded-full blur-3xl -left-24" />
-                        <div className="absolute bottom-0 w-3/4 h-3/4 bg-green-500 bg-opacity-20 rounded-full blur-3xl right-0 translate-x-1/3 translate-y-1/3" />
-                        <div
-                            className="absolute inset-0 opacity-5"
-                            style={{
-                                backgroundImage: 'linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)',
-                                backgroundSize: '40px 40px',
-                            }}
-                        />
+                {/* SISI KIRI: BRANDING (Hanya Desktop) */}
+                <div className="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-br from-[#1B6B3A] to-[#0a381d]">
+                    <div className="absolute inset-0 z-0 opacity-20">
+                        <div className="absolute -top-24 w-96 h-96 bg-white rounded-full blur-3xl -left-24" />
+                        <div className="absolute bottom-0 w-3/4 h-3/4 bg-green-400 rounded-full blur-3xl right-0 translate-x-1/3 translate-y-1/3" />
                     </div>
 
                     <div key={`brand-text-${activeTab}`} className="relative z-10 max-w-lg px-12 text-center flex flex-col items-center anim-fade">
-                        <div className="w-20 h-20 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-2xl flex items-center justify-center mb-8 shadow-xl backdrop-blur-sm">
-                            <BookOpen size={40} className="text-white" strokeWidth={2} />
+                        <div className="w-24 h-24 bg-white/10 backdrop-blur-md border border-white/20 rounded-[2.5rem] flex items-center justify-center mb-10 shadow-2xl">
+                            <BookOpen size={48} className="text-white" strokeWidth={2} />
                         </div>
-                        <h1 className="text-4xl font-black text-white mb-4 leading-tight">
+                        <h1 className="text-5xl font-black text-white mb-6 leading-tight">
                             Portal Terpadu <br />
-                            <span className="text-green-300">Pejuang Quran</span>
+                            <span className="text-[#D4A017]">Pejuang Quran</span>
                         </h1>
-                        <p className="text-green-100 text-lg leading-relaxed h-20">
+                        <p className="text-green-50 text-xl leading-relaxed opacity-90">
                             {activeTab === 'login' ? 'Sistem informasi tunggal untuk mengakses layanan akademik, manajemen kemitraan, evaluasi santri, dan laporan institusi QLC.' : 'Mulai perjalanan pendidikan buah hati Anda dengan bergabung ke dalam sistem informasi institusi QLC.'}
                         </p>
-
-                        <div className="mt-10 flex items-center gap-3 text-sm font-semibold text-green-200 bg-white bg-opacity-10 px-6 py-3 rounded-full border border-white border-opacity-10">
-                            <ShieldCheck size={18} />
-                            <span>{activeTab === 'login' ? 'Akses Aman & Terenkripsi' : 'Data Pribadi Terlindungi Aman'}</span>
-                        </div>
                     </div>
                 </div>
 
-                <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-10 sm:px-12 relative bg-gray-50 min-h-screen overflow-y-auto">
+                {/* SISI KANAN: FORM (Optimasi Android/Mobile) */}
+                <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-10 sm:px-12 relative bg-white min-h-screen overflow-y-auto">
                     <div className="w-full max-w-xl mx-auto">
-                        <div className="mb-6 flex items-center justify-between">
-                            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-colors group">
-                                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        <div className="mb-8 flex items-center justify-between">
+                            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#1B6B3A] transition-all group">
+                                <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
                                 Kembali ke Beranda
                             </Link>
 
-                            <div className="flex lg:hidden items-center gap-2">
-                                <div className="w-6 h-6 rounded-md bg-green-600 flex items-center justify-center text-white shadow-sm">
-                                    <BookOpen size={12} strokeWidth={2.5} />
+                            {/* Logo Mobile */}
+                            <div className="flex lg:hidden items-center gap-2 bg-[#1B6B3A]/5 px-4 py-2 rounded-2xl border border-[#1B6B3A]/10">
+                                <div className="w-7 h-7 rounded-xl bg-[#1B6B3A] flex items-center justify-center text-white shadow-md shadow-green-900/20">
+                                    <BookOpen size={14} strokeWidth={2.5} />
                                 </div>
-                                <div className="font-bold text-gray-900 text-xs">QLC</div>
+                                <div className="font-black text-[#1B6B3A] text-xs tracking-widest">QLC</div>
                             </div>
                         </div>
 
-                        {/* TAB MENU */}
-                        <div className="flex bg-gray-200/60 p-1.5 rounded-2xl mb-10 shadow-inner">
+                        {/* TAB MENU - Pill UI */}
+                        <div className="flex bg-gray-100 p-1.5 rounded-[2rem] mb-12 shadow-inner">
                             <button
                                 type="button"
                                 onClick={() => {
                                     setActiveTab('register');
                                     loginForm.clearErrors();
                                 }}
-                                className={`flex-1 text-center py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'register' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}
+                                className={`flex-1 text-center py-3.5 rounded-[1.8rem] text-sm font-bold transition-all active:scale-[0.97] ${activeTab === 'register' ? 'bg-white text-[#1B6B3A] shadow-md' : 'text-gray-400'}`}
                             >
                                 Daftar Wali Murid
                             </button>
-                            <button type="button" onClick={switchToLogin} className={`flex-1 text-center py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'login' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}>
+                            <button type="button" onClick={switchToLogin} className={`flex-1 text-center py-3.5 rounded-[1.8rem] text-sm font-bold transition-all active:scale-[0.97] ${activeTab === 'login' ? 'bg-white text-[#1B6B3A] shadow-md' : 'text-gray-400'}`}>
                                 Masuk
                             </button>
                         </div>
 
                         <div key={`content-${activeTab}`} className="anim-fade">
-                            <div className="mb-8">
-                                <h2 className="text-3xl font-extrabold text-gray-900 mb-2">{activeTab === 'login' ? 'Selamat Datang Kembali' : registerStep === 1 ? 'Buat Akun Baru' : 'Verifikasi Email Anda'}</h2>
-                                <p className="text-gray-500 text-sm font-medium">
+                            <div className="mb-10">
+                                <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3 tracking-tight">{activeTab === 'login' ? 'Selamat Datang Kembali' : registerStep === 1 ? 'Buat Akun Baru' : 'Verifikasi Email Anda'}</h2>
+                                <p className="text-gray-500 font-medium leading-relaxed">
                                     {activeTab === 'login' ? 'Silakan masuk menggunakan kredensial akun QLC Anda.' : registerStep === 1 ? 'Lengkapi data di bawah ini untuk mendaftarkan akun.' : 'Masukkan 6 digit kode OTP yang telah kami kirimkan ke email Anda.'}
                                 </p>
                             </div>
 
-                            {status && activeTab === 'login' && <div className="mb-4 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-xl px-4 py-3">{status}</div>}
+                            {status && activeTab === 'login' && <div className="mb-6 text-sm font-bold text-green-700 bg-green-50 border border-green-200 rounded-3xl px-6 py-4 shadow-sm">{status}</div>}
 
                             {activeTab === 'login' ? (
                                 /* ================= FORM LOGIN ================= */
-                                <form onSubmit={handleLoginSubmit} className="space-y-5">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Username / ID</label>
-                                        <div className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${loginForm.errors.username ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}>
-                                            <div className="flex items-center pl-4 text-gray-400 flex-shrink-0">
-                                                <User size={16} />
+                                <form onSubmit={handleLoginSubmit} className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Username / ID</label>
+                                        <div
+                                            className={`relative flex bg-gray-50 border rounded-[1.5rem] overflow-hidden transition-all ${loginForm.errors.username ? 'border-red-400 ring-4 ring-red-50' : 'border-transparent focus-within:bg-white focus-within:border-[#1B6B3A] focus-within:ring-4 focus-within:ring-[#1B6B3A]/10'}`}
+                                        >
+                                            <div className="flex items-center pl-5 text-gray-400">
+                                                <User size={20} />
                                             </div>
                                             <input
                                                 type="text"
                                                 value={loginForm.data.username}
                                                 onChange={(e) => loginForm.setData('username', e.target.value)}
                                                 placeholder="Masukkan username akun Anda"
-                                                className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
+                                                className="flex-1 px-4 py-4.5 text-sm font-bold text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
                                             />
                                         </div>
-                                        {loginForm.errors.username && (
-                                            <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                <AlertCircle size={12} /> {loginForm.errors.username}
-                                            </p>
-                                        )}
+                                        {loginForm.errors.username && <p className="text-xs font-bold text-red-500 ml-2">{loginForm.errors.username}</p>}
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Kata Sandi</label>
-                                        <div className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${loginForm.errors.password ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}>
-                                            <div className="flex items-center pl-4 text-gray-400 flex-shrink-0">
-                                                <Lock size={16} />
+                                    <div className="space-y-2">
+                                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Kata Sandi</label>
+                                        <div
+                                            className={`relative flex bg-gray-50 border rounded-[1.5rem] overflow-hidden transition-all ${loginForm.errors.password ? 'border-red-400 ring-4 ring-red-50' : 'border-transparent focus-within:bg-white focus-within:border-[#1B6B3A] focus-within:ring-4 focus-within:ring-[#1B6B3A]/10'}`}
+                                        >
+                                            <div className="flex items-center pl-5 text-gray-400">
+                                                <Lock size={20} />
                                             </div>
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
                                                 value={loginForm.data.password}
                                                 onChange={(e) => loginForm.setData('password', e.target.value)}
                                                 placeholder="••••••••"
-                                                className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
+                                                className="flex-1 px-4 py-4.5 text-sm font-bold text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
                                             />
-                                            <button type="button" onClick={() => setShowPassword((v) => !v)} className="pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
-                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            <button type="button" onClick={() => setShowPassword((v) => !v)} className="px-5 text-gray-400 hover:text-[#1B6B3A]">
+                                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                             </button>
                                         </div>
-                                        {loginForm.errors.password && (
-                                            <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                <AlertCircle size={12} /> {loginForm.errors.password}
-                                            </p>
-                                        )}
+                                        {loginForm.errors.password && <p className="text-xs font-bold text-red-500 ml-2">{loginForm.errors.password}</p>}
                                     </div>
 
-                                    <div className="flex items-center justify-between">
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" checked={loginForm.data.remember as boolean} onChange={(e) => loginForm.setData('remember', e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-600" />
-                                            <span className="text-sm font-semibold text-gray-600">Ingat sesi saya</span>
+                                    <div className="flex items-center justify-between px-2">
+                                        <label className="flex items-center gap-3 cursor-pointer group">
+                                            <input type="checkbox" checked={loginForm.data.remember as boolean} onChange={(e) => loginForm.setData('remember', e.target.checked)} className="w-5 h-5 rounded-lg border-gray-200 text-[#1B6B3A] focus:ring-[#1B6B3A]/20 transition-all" />
+                                            <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">Ingat sesi saya</span>
                                         </label>
                                         {canResetPassword && (
-                                            <a href={route('password.request')} className="text-sm font-bold text-green-600 hover:text-green-800 transition-colors">
+                                            <a href={route('password.request')} className="text-sm font-black text-[#1B6B3A]">
                                                 Lupa kata sandi?
                                             </a>
                                         )}
@@ -247,213 +223,101 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                     <button
                                         type="submit"
                                         disabled={loginForm.processing}
-                                        className="w-full py-4 mt-6 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed focus:ring-4 focus:ring-green-600 focus:ring-opacity-20 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/30"
+                                        className="w-full py-5 bg-[#1B6B3A] text-white rounded-[1.8rem] text-lg font-black shadow-xl shadow-green-900/20 hover:bg-[#14522d] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-60"
                                     >
                                         {loginForm.processing ? (
-                                            <>
-                                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                                                </svg>
-                                                Memproses…
-                                            </>
+                                            'Memproses…'
                                         ) : (
                                             <>
-                                                Masuk ke Sistem <ArrowRight size={18} />
+                                                Masuk ke Sistem <ArrowRight size={20} />
                                             </>
                                         )}
                                     </button>
                                 </form>
-                            ) : /* ================= FORM REGISTER ================= */
-                            registerStep === 1 ? (
-                                /* --- STEP 1: FORM DATA PENDAFTARAN --- */
-                                <form onSubmit={handleSendRegisterOtp} className="space-y-5 anim-fade">
+                            ) : registerStep === 1 ? (
+                                /* --- STEP 1: REGISTER --- */
+                                <form onSubmit={handleSendRegisterOtp} className="space-y-5">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Nama Lengkap</label>
-                                            <div
-                                                className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${registerForm.errors.parent_name ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}
-                                            >
-                                                <div className="flex items-center pl-4 text-gray-400">
-                                                    <User size={16} />
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    value={registerForm.data.parent_name}
-                                                    onChange={(e) => registerForm.setData('parent_name', e.target.value)}
-                                                    placeholder="Contoh: Budi Santoso"
-                                                    className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
-                                                />
-                                            </div>
-                                            {registerForm.errors.parent_name && (
-                                                <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                    <AlertCircle size={12} /> {registerForm.errors.parent_name}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Nomor Telepon</label>
-                                            <div
-                                                className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${registerForm.errors.phone ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}
-                                            >
-                                                <div className="flex items-center pl-4 text-gray-400">
-                                                    <Phone size={16} />
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    value={registerForm.data.phone}
-                                                    onChange={(e) => registerForm.setData('phone', e.target.value)}
-                                                    placeholder="08123456789"
-                                                    className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
-                                                />
-                                            </div>
-                                            {registerForm.errors.phone && (
-                                                <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                    <AlertCircle size={12} /> {registerForm.errors.phone}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Alamat Domisili</label>
-                                        <div className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${registerForm.errors.address ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}>
-                                            <div className="flex items-start pt-4 pl-4 text-gray-400">
-                                                <MapPin size={16} />
-                                            </div>
-                                            <textarea
-                                                value={registerForm.data.address}
-                                                onChange={(e) => registerForm.setData('address', e.target.value)}
-                                                placeholder="Alamat lengkap beserta kota"
-                                                rows={2}
-                                                className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0 resize-none"
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
+                                            <input
+                                                type="text"
+                                                value={registerForm.data.parent_name}
+                                                onChange={(e) => registerForm.setData('parent_name', e.target.value)}
+                                                placeholder="Contoh: Budi Santoso"
+                                                className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
                                             />
                                         </div>
-                                        {registerForm.errors.address && (
-                                            <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                <AlertCircle size={12} /> {registerForm.errors.address}
-                                            </p>
-                                        )}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nomor Telepon</label>
+                                            <input
+                                                type="text"
+                                                value={registerForm.data.phone}
+                                                onChange={(e) => registerForm.setData('phone', e.target.value)}
+                                                placeholder="08123456789"
+                                                className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="h-px bg-gray-200/80 w-full my-6"></div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Alamat Domisili</label>
+                                        <textarea
+                                            value={registerForm.data.address}
+                                            onChange={(e) => registerForm.setData('address', e.target.value)}
+                                            placeholder="Alamat lengkap beserta kota"
+                                            rows={2}
+                                            className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold resize-none"
+                                        />
+                                    </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Username</label>
-                                            <div
-                                                className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${registerForm.errors.username ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}
-                                            >
-                                                <div className="flex items-center pl-4 text-gray-400">
-                                                    <User size={16} />
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    value={registerForm.data.username}
-                                                    onChange={(e) => registerForm.setData('username', e.target.value)}
-                                                    placeholder="Username login"
-                                                    className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
-                                                />
-                                            </div>
-                                            {registerForm.errors.username && (
-                                                <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                    <AlertCircle size={12} /> {registerForm.errors.username}
-                                                </p>
-                                            )}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Username</label>
+                                            <input
+                                                type="text"
+                                                value={registerForm.data.username}
+                                                onChange={(e) => registerForm.setData('username', e.target.value)}
+                                                placeholder="Username login"
+                                                className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
+                                            />
                                         </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Email</label>
-                                            <div
-                                                className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${registerForm.errors.email ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}
-                                            >
-                                                <div className="flex items-center pl-4 text-gray-400">
-                                                    <Mail size={16} />
-                                                </div>
-                                                <input
-                                                    type="email"
-                                                    value={registerForm.data.email}
-                                                    onChange={(e) => registerForm.setData('email', e.target.value)}
-                                                    placeholder="wali@email.com"
-                                                    className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
-                                                />
-                                            </div>
-                                            {registerForm.errors.email && (
-                                                <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                    <AlertCircle size={12} /> {registerForm.errors.email}
-                                                </p>
-                                            )}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
+                                            <input
+                                                type="email"
+                                                value={registerForm.data.email}
+                                                onChange={(e) => registerForm.setData('email', e.target.value)}
+                                                placeholder="wali@email.com"
+                                                className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
+                                            />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Kata Sandi</label>
-                                            <div
-                                                className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${registerForm.errors.password ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}
-                                            >
-                                                <div className="flex items-center pl-4 text-gray-400">
-                                                    <Lock size={16} />
-                                                </div>
-                                                <input
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    value={registerForm.data.password}
-                                                    onChange={(e) => registerForm.setData('password', e.target.value)}
-                                                    placeholder="Min. 8 Karakter"
-                                                    className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
-                                                />
-                                                <button type="button" onClick={() => setShowPassword((v) => !v)} className="pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
-                                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                                </button>
-                                            </div>
-                                            {registerForm.errors.password && (
-                                                <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                    <AlertCircle size={12} /> {registerForm.errors.password}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Ulangi Sandi</label>
-                                            <div
-                                                className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${registerForm.errors.password_confirmation ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}
-                                            >
-                                                <div className="flex items-center pl-4 text-gray-400">
-                                                    <Lock size={16} />
-                                                </div>
-                                                <input
-                                                    type={showConfirmPassword ? 'text' : 'password'}
-                                                    value={registerForm.data.password_confirmation}
-                                                    onChange={(e) => registerForm.setData('password_confirmation', e.target.value)}
-                                                    placeholder="Min. 8 Karakter"
-                                                    className="flex-1 pl-3 pr-4 py-3.5 text-sm font-medium text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
-                                                />
-                                                <button type="button" onClick={() => setShowConfirmPassword((v) => !v)} className="pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
-                                                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                                </button>
-                                            </div>
-                                            {registerForm.errors.password_confirmation && (
-                                                <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
-                                                    <AlertCircle size={12} /> {registerForm.errors.password_confirmation}
-                                                </p>
-                                            )}
-                                        </div>
+                                        <input
+                                            type="password"
+                                            value={registerForm.data.password}
+                                            onChange={(e) => registerForm.setData('password', e.target.value)}
+                                            placeholder="Buat Kata Sandi"
+                                            className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
+                                        />
+                                        <input
+                                            type="password"
+                                            value={registerForm.data.password_confirmation}
+                                            onChange={(e) => registerForm.setData('password_confirmation', e.target.value)}
+                                            placeholder="Ulangi Sandi"
+                                            className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
+                                        />
                                     </div>
 
                                     <button
                                         type="submit"
                                         disabled={registerForm.processing}
-                                        className="w-full py-4 mt-6 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-60 focus:ring-4 focus:ring-green-600 focus:ring-opacity-20 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/30"
+                                        className="w-full py-5 bg-[#1B6B3A] text-white rounded-[1.8rem] text-base font-black shadow-xl shadow-[#1B6B3A]/20 hover:bg-[#14522d] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-6"
                                     >
                                         {registerForm.processing ? (
-                                            <>
-                                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                                                </svg>
-                                                Mengecek Data...
-                                            </>
+                                            'Mengecek Data...'
                                         ) : (
                                             <>
                                                 Lanjutkan Verifikasi <ArrowRight size={18} />
@@ -462,59 +326,34 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                     </button>
                                 </form>
                             ) : (
-                                /* --- STEP 2: FORM OTP PENDAFTARAN --- */
-                                <form onSubmit={handleRegisterSubmit} className="space-y-5 anim-fade">
-                                    {registerStatusMessage && (
-                                        <div className="mb-6 text-sm font-bold text-green-700 bg-green-100 border border-green-200 rounded-xl px-4 py-4 flex items-start gap-3">
-                                            <ShieldCheck size={20} className="flex-shrink-0 mt-0.5" />
-                                            <span>{registerStatusMessage}</span>
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2 text-center">Kode OTP (6 Digit)</label>
-                                        <div className={`relative flex bg-white border rounded-xl overflow-hidden transition-all ${registerForm.errors.otp ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100'}`}>
-                                            <div className="flex items-center pl-4 text-gray-400">
-                                                <Key size={16} />
-                                            </div>
-                                            <input
-                                                type="text"
-                                                value={registerForm.data.otp}
-                                                onChange={(e) => registerForm.setData('otp', e.target.value)}
-                                                placeholder="Contoh: 123456"
-                                                maxLength={6}
-                                                className="flex-1 pl-3 pr-4 py-4 text-center text-lg font-bold tracking-widest text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
-                                                autoFocus
-                                            />
-                                        </div>
-                                        {registerForm.errors.otp && (
-                                            <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1 justify-center">
-                                                <AlertCircle size={12} /> {registerForm.errors.otp}
-                                            </p>
-                                        )}
+                                /* --- STEP 2: OTP --- */
+                                <form onSubmit={handleRegisterSubmit} className="space-y-8 text-center">
+                                    <div className="p-8 bg-[#1B6B3A]/5 rounded-[2.5rem] border border-[#1B6B3A]/10">
+                                        <Key size={40} className="mx-auto text-[#1B6B3A] mb-4" />
+                                        <p className="text-sm font-bold text-[#1B6B3A] leading-relaxed px-2">{registerStatusMessage}</p>
                                     </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={registerForm.processing}
-                                        className="w-full py-4 mt-6 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-60 focus:ring-4 focus:ring-green-600 focus:ring-opacity-20 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/30"
-                                    >
-                                        {registerForm.processing ? 'Memproses Pendaftaran...' : 'Selesaikan Pendaftaran'}
+                                    <input
+                                        type="text"
+                                        value={registerForm.data.otp}
+                                        onChange={(e) => registerForm.setData('otp', e.target.value)}
+                                        placeholder="000000"
+                                        maxLength={6}
+                                        className="w-full py-7 bg-gray-50 border-transparent rounded-[2.5rem] focus:bg-white focus:border-[#1B6B3A] focus:ring-8 focus:ring-[#1B6B3A]/5 transition-all text-4xl font-black text-center tracking-[0.5em] text-[#1B6B3A]"
+                                    />
+                                    <button type="submit" disabled={registerForm.processing} className="w-full py-5 bg-[#1B6B3A] text-white rounded-[2.5rem] text-lg font-black shadow-xl shadow-[#1B6B3A]/20 hover:bg-[#14522d] active:scale-[0.98] transition-all">
+                                        Selesaikan Pendaftaran
                                     </button>
-
-                                    <div className="text-center mt-6">
-                                        <button type="button" onClick={() => setRegisterStep(1)} className="text-sm font-bold text-gray-500 hover:text-green-600 transition-colors">
-                                            Kembali edit data diri
-                                        </button>
-                                    </div>
+                                    <button type="button" onClick={() => setRegisterStep(1)} className="text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-widest">
+                                        Edit data diri
+                                    </button>
                                 </form>
                             )}
                         </div>
 
-                        <div className="mt-8 pt-6 border-t border-gray-200/60 text-center">
-                            <p className="text-sm font-medium text-gray-500">Kesulitan mengakses akun Anda?</p>
-                            <a href="mailto:admin@qlc.sch.id" className="text-green-600 font-bold hover:text-green-800 mt-1 inline-block text-sm">
-                                Hubungi Administrator QLC
+                        <div className="mt-16 pt-10 border-t border-gray-100 text-center">
+                            <p className="text-sm font-bold text-gray-400 mb-3">Butuh bantuan akses akun?</p>
+                            <a href="mailto:admin@qlc.sch.id" className="text-[#1B6B3A] font-black hover:opacity-70 transition-opacity flex items-center justify-center gap-2 text-xs uppercase tracking-[0.2em]">
+                                <Mail size={14} /> Hubungi Administrator QLC
                             </a>
                         </div>
                     </div>
