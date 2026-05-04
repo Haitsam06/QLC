@@ -145,7 +145,7 @@ export default function DashboardAdmin() {
         { id: 'wali_murid', l: 'Wali Murid', i: ShieldUser, badge: 0 },
         { id: 'siswa', l: 'Data Siswa', i: Users, badge: stats?.total_pending ?? 0 },
         { id: 'progress', l: 'Laporan Progress', i: BookOpen, badge: 0 },
-        { id: 'info', l: 'Info Sekolah', i: Info, badge: 0 },
+        { id: 'info', l: 'Info Landing Page', i: Info, badge: 0 },
         { id: 'pengaturan', l: 'Pengaturan', i: Settings, badge: 0 },
     ];
 
