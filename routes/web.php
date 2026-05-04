@@ -7,16 +7,12 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\Parents\ParentDashboardController;
 use App\Http\Controllers\Parents\EnrollmentController;
 use App\Http\Controllers\Teacher\TeacherDashboardController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\Profile;
-use App\Models\Program;
-use App\Models\Gallery;
-use App\Models\Foundation;
-use App\Models\Leader;
 
 // ==========================================
 // ROUTE UTAMA
@@ -76,6 +72,7 @@ Route::get('/pengurus', function () {
         'leaders' => array_map(fn($d) => $convertId((array) $d), $leaders),
     ]);
 })->name('landing.pengurus');
+
 Route::get('/galeri', function () {
     $db = DB::connection('mongodb')->getMongoClient()->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
 
@@ -94,10 +91,11 @@ Route::get('/galeri', function () {
         'galleries' => array_map(fn($d) => $convertId((array) $d), $galleries),
     ]);
 })->name('landing.galeri');
+
 Route::get('/program-detail', fn() => Inertia::render('Landing/ProgramDetail'))->name('program.detail');
 
 // ==========================================
-// ROUTE AUTH, PROFILE & PENGATURAN
+// ROUTE PROFILE & PENGATURAN (AUTHENTICATED)
 // ==========================================
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -158,4 +156,13 @@ Route::middleware(['auth', 'role:mitra'])
         Route::get('/dashboard', fn() => Inertia::render('mitra/Dashboard'))->name('dashboard');
     });
 
+// ==========================================
+// ROUTE CUSTOM AUTH (GUEST)
+// ==========================================
+Route::middleware('guest')->group(function () {
+    // API Route untuk mengirim OTP Pendaftaran
+    Route::post('/register/send-otp', [RegisteredUserController::class, 'sendOtp'])->name('register.send-otp');
+});
+
+// Memuat route bawaan auth Laravel Breeze (Login, Register Store, dll)
 require __DIR__ . '/auth.php';
