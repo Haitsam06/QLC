@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, MapPin, Link as LinkIcon, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Link as LinkIcon, X, Calendar as CalendarIcon } from 'lucide-react';
 import Navbar from '../../Components/Navbar';
 
 /* ═══════════════════════════════════════════════════════════
@@ -24,40 +24,40 @@ const DAYS_OF_WEEK = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const getLocalDateString = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 /* ═══════════════════════════════════════════════════════════
-    DETAIL MODAL (Sama seperti sebelumnya)
+    DETAIL MODAL (Versi Ringan)
 ═══════════════════════════════════════════════════════════ */
 function AgendaDetailModal({ agenda, onClose }: { agenda: Agenda; onClose: () => void }) {
     const [y, m, d] = agenda.event_date.split('-');
     const displayDate = `${d} ${MONTH_NAMES[parseInt(m) - 1]} ${y}`;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300">
-                <div className="px-8 pt-8 pb-4 border-b border-gray-50 flex items-start justify-between gap-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transition-all">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between">
                     <div>
-                        <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-[#1B6B3A]/10 text-[#1B6B3A] mb-2 uppercase tracking-wider">{displayDate}</span>
-                        <h3 className="text-xl font-extrabold text-gray-900 leading-tight">{agenda.title}</h3>
+                        <span className="text-[10px] font-bold text-[#1B6B3A] bg-green-50 px-2 py-1 rounded uppercase tracking-wider">{displayDate}</span>
+                        <h3 className="text-lg font-bold text-gray-900 mt-2 leading-tight">{agenda.title}</h3>
                     </div>
-                    <button onClick={onClose} className="w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center shrink-0 transition-colors">
-                        <X size={18} className="text-gray-400" />
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                        <X size={20} className="text-gray-400" />
                     </button>
                 </div>
-                <div className="px-8 py-6 flex flex-col gap-4">
+                <div className="p-6 space-y-4">
                     {agenda.location && (
-                        <div className="flex items-start gap-3 text-sm text-gray-600 bg-gray-50 p-4 rounded-2xl">
-                            <MapPin size={18} className="text-[#D4A017] shrink-0 mt-0.5" />
-                            <span className="font-medium">{agenda.location}</span>
+                        <div className="flex items-start gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                            <MapPin size={16} className="text-[#D4A017] shrink-0 mt-0.5" />
+                            <span>{agenda.location}</span>
                         </div>
                     )}
-                    <p className="text-sm text-gray-600 leading-relaxed px-1">{agenda.description}</p>
+                    <p className="text-sm text-gray-600 leading-relaxed">{agenda.description}</p>
                 </div>
-                <div className="px-8 pb-8 flex flex-col gap-3">
+                <div className="p-6 pt-0 flex flex-col gap-2">
                     {agenda.registration_link && (
-                        <a href={agenda.registration_link} target="_blank" rel="noreferrer" className="w-full py-4 rounded-2xl bg-[#1B6B3A] text-white text-center font-bold text-sm shadow-lg hover:-translate-y-1 transition-all">
+                        <a href={agenda.registration_link} target="_blank" rel="noreferrer" className="w-full py-3 bg-[#1B6B3A] text-white text-center font-bold text-sm rounded-lg hover:bg-[#14522d] transition-colors">
                             Daftar Sekarang
                         </a>
                     )}
-                    <button onClick={onClose} className="w-full py-4 rounded-2xl bg-gray-50 text-gray-500 font-bold text-sm hover:bg-gray-100 transition-all">
+                    <button onClick={onClose} className="w-full py-3 bg-gray-100 text-gray-600 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors">
                         Tutup
                     </button>
                 </div>
@@ -67,7 +67,7 @@ function AgendaDetailModal({ agenda, onClose }: { agenda: Agenda; onClose: () =>
 }
 
 /* ═══════════════════════════════════════════════════════════
-    MAIN COMPONENT
+    MAIN COMPONENT (Optimized)
 ═══════════════════════════════════════════════════════════ */
 export default function AgendaLanding() {
     const today = new Date();
@@ -147,46 +147,48 @@ export default function AgendaLanding() {
     }, [agendas, activeDate]);
 
     return (
-        <div className="font-sans text-gray-800 bg-white min-h-screen">
+        <div className="font-sans text-gray-800 bg-[#f8fafc] min-h-screen">
             <Navbar />
-            <div className="min-h-screen bg-gradient-to-br from-[#e6f4f1] via-[#ffffff] to-[#e9f1ff] py-16 md:py-24 px-4 sm:px-6">
-                <main className="mt-10 max-w-7xl mx-auto">
-                    <div className="text-center mb-10">
-                        <h1 className="text-3xl md:text-6xl font-black text-gray-900 tracking-tight">
-                            Kalender <span className="text-[#1B6B3A]">Agenda QLC</span>
+            <div className="py-20 px-4 sm:px-6 mt-10">
+                <main className="max-w-7xl mx-auto">
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight">
+                            Kalender <span className="text-[#1B6B3A]">Agenda</span>
                         </h1>
                     </div>
 
-                    <div className="bg-white/70 backdrop-blur-2xl border border-white/60 shadow-xl rounded-[2.5rem] overflow-hidden">
-                        {/* Navigasi */}
-                        <div className="p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-gray-100 bg-white/30">
-                            <h2 className="text-3xl font-black text-gray-900">
+                    <div className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden">
+                        {/* Navigasi Sederhana */}
+                        <div className="p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-100">
+                            <h2 className="text-2xl font-bold text-gray-900">
                                 {MONTH_NAMES[month]} <span className="text-[#1B6B3A]">{year}</span>
                             </h2>
-                            <div className="flex items-center gap-3">
-                                <button onClick={prevMonth} className="p-3 bg-white border border-gray-100 rounded-2xl hover:border-[#1B6B3A] transition-all shadow-sm">
-                                    <ChevronLeft size={22} />
-                                </button>
-                                <button onClick={goToday} className="px-6 py-3 text-sm font-bold bg-white border border-gray-100 rounded-2xl hover:border-[#1B6B3A] transition-all shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <button onClick={goToday} className="px-4 py-2 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     Hari Ini
                                 </button>
-                                <button onClick={nextMonth} className="p-3 bg-white border border-gray-100 rounded-2xl hover:border-[#1B6B3A] transition-all shadow-sm">
-                                    <ChevronRight size={22} />
-                                </button>
+                                <div className="flex gap-1">
+                                    <button onClick={prevMonth} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <button onClick={nextMonth} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-12">
-                            {/* LEFT: Grid Kalender (Dengan Teks di Desktop) */}
-                            <div className="lg:col-span-8 p-4 md:p-8 border-r border-gray-100">
-                                <div className="grid grid-cols-7 mb-4">
+                            {/* LEFT: Grid Kalender */}
+                            <div className="lg:col-span-8 p-2 md:p-4 border-r border-gray-100">
+                                <div className="grid grid-cols-7 mb-2">
                                     {DAYS_OF_WEEK.map((d) => (
-                                        <div key={d} className="py-2 text-center text-[10px] md:text-xs font-black text-[#1B6B3A] uppercase tracking-widest">
+                                        <div key={d} className="py-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                             {d}
                                         </div>
                                     ))}
                                 </div>
-                                <div className="grid grid-cols-7 gap-1 md:gap-3">
+                                <div className="grid grid-cols-7 gap-px bg-gray-100 border border-gray-100 rounded-lg overflow-hidden">
                                     {calendarDays.map(({ day, isCurrentMonth, dateStr, isToday, events }) => {
                                         const isActive = activeDate === dateStr;
                                         return (
@@ -194,55 +196,49 @@ export default function AgendaLanding() {
                                                 key={dateStr}
                                                 onClick={() => isCurrentMonth && setActiveDate(dateStr)}
                                                 className={`
-                                                    min-h-[60px] md:min-h-[110px] flex flex-col p-1.5 md:p-3 rounded-xl md:rounded-3xl cursor-pointer transition-all duration-300 relative border
-                                                    ${isCurrentMonth ? 'bg-white/40 hover:shadow-lg' : 'opacity-10 pointer-events-none'}
-                                                    ${isActive ? 'border-[#1B6B3A] bg-white ring-2 ring-[#1B6B3A]/10 scale-[1.02] z-10' : 'border-transparent'}
+                                                    min-h-[70px] md:min-h-[100px] flex flex-col p-2 cursor-pointer transition-colors relative
+                                                    ${isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 opacity-40 pointer-events-none'}
+                                                    ${isActive ? 'ring-2 ring-inset ring-[#1B6B3A]' : ''}
                                                 `}
                                             >
-                                                <span className={`text-xs md:text-lg font-black mb-1 ${isToday ? 'text-[#D4A017]' : 'text-gray-900'}`}>{day}</span>
+                                                <span className={`text-xs md:text-sm font-bold ${isToday ? 'text-[#1B6B3A]' : 'text-gray-900'}`}>{day}</span>
 
-                                                {/* LIST AGENDA (Muncul di Desktop) */}
-                                                <div className="hidden md:flex flex-col gap-1 overflow-hidden">
+                                                <div className="hidden md:flex flex-col gap-1 mt-1 overflow-hidden">
                                                     {events.slice(0, 2).map((ev) => (
-                                                        <div
-                                                            key={ev.id}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelected(ev);
-                                                            }}
-                                                            className="text-[9px] bg-[#1B6B3A] text-white p-1 rounded-md truncate font-bold hover:bg-[#0a381d] transition-colors"
-                                                        >
+                                                        <div key={ev.id} className="text-[8px] bg-[#1B6B3A]/10 text-[#1B6B3A] p-1 rounded border border-[#1B6B3A]/20 truncate font-semibold">
                                                             {ev.title}
                                                         </div>
                                                     ))}
-                                                    {events.length > 2 && <div className="text-[9px] text-gray-400 font-bold">+{events.length - 2} lainnya</div>}
+                                                    {events.length > 2 && <div className="text-[8px] text-gray-400 font-bold">+{events.length - 2}</div>}
                                                 </div>
 
-                                                {/* DOT PENANDA (Muncul di Mobile) */}
-                                                <div className="md:hidden flex justify-center mt-auto">{events.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#D4A017]" />}</div>
+                                                <div className="md:hidden flex justify-center mt-auto">{events.length > 0 && <div className="w-1 h-1 rounded-full bg-[#D4A017]" />}</div>
                                             </div>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* RIGHT: Detail Agenda Samping */}
-                            <div className="lg:col-span-4 bg-gray-50/40 p-6 md:p-8">
-                                <h3 className="font-black text-gray-900 uppercase text-sm mb-6 flex items-center gap-2">
-                                    <CalendarIcon size={18} className="text-[#1B6B3A]" /> Agenda {activeDate === getLocalDateString(today) ? 'Hari Ini' : ''}
-                                </h3>
-                                <div className="space-y-4">
-                                    {activeDateEvents.length > 0 ? (
+                            {/* RIGHT: Detail Agenda List */}
+                            <div className="lg:col-span-4 bg-gray-50/50 p-4 md:p-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <CalendarIcon size={16} className="text-[#1B6B3A]" />
+                                    <span className="text-xs font-bold text-gray-900 uppercase">Agenda {activeDate === getLocalDateString(today) ? 'Hari Ini' : ''}</span>
+                                </div>
+                                <div className="space-y-3">
+                                    {loading ? (
+                                        <div className="py-10 text-center text-xs text-gray-400">Memuat...</div>
+                                    ) : activeDateEvents.length > 0 ? (
                                         activeDateEvents.map((a) => (
-                                            <div key={a.id} onClick={() => setSelected(a)} className="p-5 bg-white border border-gray-100 rounded-2xl hover:border-[#1B6B3A] transition-all cursor-pointer shadow-sm hover:shadow-md">
-                                                <h4 className="font-extrabold text-gray-900 mb-2 leading-tight">{a.title}</h4>
-                                                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                                                    <MapPin size={14} className="text-[#D4A017]" /> {a.location || 'Lokasi TBA'}
+                                            <div key={a.id} onClick={() => setSelected(a)} className="p-4 bg-white border border-gray-200 rounded-xl hover:border-[#1B6B3A] transition-colors cursor-pointer group shadow-sm">
+                                                <h4 className="font-bold text-gray-900 text-sm group-hover:text-[#1B6B3A] transition-colors mb-2 leading-tight">{a.title}</h4>
+                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
+                                                    <MapPin size={12} className="text-[#D4A017]" /> {a.location || 'Lokasi TBA'}
                                                 </div>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="py-16 text-center text-gray-300 font-bold uppercase text-[10px] tracking-widest">Tidak ada agenda</div>
+                                        <div className="py-10 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest">Tidak ada agenda</div>
                                     )}
                                 </div>
                             </div>

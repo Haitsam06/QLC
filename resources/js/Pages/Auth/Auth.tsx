@@ -180,7 +180,7 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                                 value={loginForm.data.username}
                                                 onChange={(e) => loginForm.setData('username', e.target.value)}
                                                 placeholder="Masukkan username akun Anda"
-                                                className="flex-1 px-4 py-4.5 text-sm font-bold text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
+                                                className="flex-1 px-4 py-4 text-sm font-bold text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
                                             />
                                         </div>
                                         {loginForm.errors.username && <p className="text-xs font-bold text-red-500 ml-2">{loginForm.errors.username}</p>}
@@ -199,7 +199,7 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                                 value={loginForm.data.password}
                                                 onChange={(e) => loginForm.setData('password', e.target.value)}
                                                 placeholder="••••••••"
-                                                className="flex-1 px-4 py-4.5 text-sm font-bold text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
+                                                className="flex-1 px-4 py-4 text-sm font-bold text-gray-900 bg-transparent outline-none border-0 focus:ring-0"
                                             />
                                             <button type="button" onClick={() => setShowPassword((v) => !v)} className="px-5 text-gray-400 hover:text-[#1B6B3A]">
                                                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -245,7 +245,7 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                                 value={registerForm.data.parent_name}
                                                 onChange={(e) => registerForm.setData('parent_name', e.target.value)}
                                                 placeholder="Contoh: Budi Santoso"
-                                                className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
+                                                className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -255,7 +255,7 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                                 value={registerForm.data.phone}
                                                 onChange={(e) => registerForm.setData('phone', e.target.value)}
                                                 placeholder="08123456789"
-                                                className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
+                                                className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
                                             />
                                         </div>
                                     </div>
@@ -267,7 +267,7 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                             onChange={(e) => registerForm.setData('address', e.target.value)}
                                             placeholder="Alamat lengkap beserta kota"
                                             rows={2}
-                                            className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold resize-none"
+                                            className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold resize-none"
                                         />
                                     </div>
 
@@ -279,7 +279,7 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                                 value={registerForm.data.username}
                                                 onChange={(e) => registerForm.setData('username', e.target.value)}
                                                 placeholder="Username login"
-                                                className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
+                                                className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -289,7 +289,7 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                                 value={registerForm.data.email}
                                                 onChange={(e) => registerForm.setData('email', e.target.value)}
                                                 placeholder="wali@email.com"
-                                                className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
+                                                className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] focus:ring-4 focus:ring-[#1B6B3A]/10 transition-all text-sm font-bold"
                                             />
                                         </div>
                                     </div>
@@ -300,14 +300,14 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                             value={registerForm.data.password}
                                             onChange={(e) => registerForm.setData('password', e.target.value)}
                                             placeholder="Buat Kata Sandi"
-                                            className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
+                                            className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
                                         />
                                         <input
                                             type="password"
                                             value={registerForm.data.password_confirmation}
                                             onChange={(e) => registerForm.setData('password_confirmation', e.target.value)}
                                             placeholder="Ulangi Sandi"
-                                            className="w-full px-6 py-4.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
+                                            className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
                                         />
                                     </div>
 

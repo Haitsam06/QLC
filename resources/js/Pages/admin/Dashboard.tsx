@@ -169,7 +169,7 @@ export default function DashboardAdmin() {
                     ${mobOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
                 >
                     <div className="h-16 flex items-center px-4.5 gap-2.5 border-b border-white/10 whitespace-nowrap overflow-hidden">
-                        <div className="w-8 h-8 rounded-lg shrink-0 bg-white/15 flex items-center justify-center">
+                        <div className="ml-4 w-8 h-8 rounded-lg shrink-0 bg-white/15 flex items-center justify-center">
                             <BookOpen size={20} color="#fff" />
                         </div>
                         <div className={`transition-opacity duration-200 ${col ? 'opacity-0 md:hidden' : 'opacity-100 block'}`}>
@@ -234,13 +234,6 @@ export default function DashboardAdmin() {
                             >
                                 <Menu size={17} />
                             </button>
-                            <div className="hidden md:flex items-center gap-2 bg-white px-4 h-10 rounded-full border border-slate-300 w-[260px] focus-within:w-[310px] focus-within:border-teal-700 focus-within:ring-2 focus-within:ring-teal-700/10 transition-all duration-300">
-                                <Search size={14} className="text-slate-400 shrink-0" />
-                                <input
-                                    className="flex-1 text-[13px] text-slate-900 bg-transparent border-0 focus:ring-0 outline-none placeholder:text-slate-400"
-                                    placeholder="Cari siswa, guru, atau program..."
-                                />
-                            </div>
                         </div>
 
                         <div className="flex items-center gap-2">

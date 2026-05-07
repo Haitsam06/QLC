@@ -149,14 +149,7 @@ function ProgramFilter({ programs, value, onChange }: { programs: Option[]; valu
     const sel = programs.find((p) => p.id === value);
     return (
         <div className="relative w-full sm:w-auto">
-            <div
-                className={`flex items-center gap-2 h-11 px-4 min-w-[180px] bg-white border rounded-xl cursor-pointer select-none transition-all hover:bg-slate-50 ${open ? 'ring-2 ring-sky-500/15 border-sky-500' : 'border-slate-300'}`}
-                onClick={() => setOpen(!open)}
-            >
-                <GraduationCap size={15} className="text-slate-400 shrink-0" />
-                <span className="flex-1 text-[13.5px] font-bold text-slate-700 truncate">{sel ? sel.label : 'Semua Program'}</span>
-                <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-            </div>
+            
             {open && (
                 <>
                     <div className="fixed inset-0 z-[99]" onClick={() => setOpen(false)} />
@@ -1256,17 +1249,17 @@ export default function ProgressPage() {
                 {/* Tabs */}
                 <div className="flex gap-2 bg-slate-100 border border-slate-200 rounded-[16px] p-1.5 w-fit flex-wrap">
                     <button
-                        className={`flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-[13.5px] font-bold cursor-pointer transition-all border-none focus:outline-none ${tab === 'siswa' ? 'bg-white text-slate-900 shadow-sm' : 'bg-transparent text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+                        className={`mr-2 flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-[13.5px] font-bold cursor-pointer transition-all border-none focus:outline-none ${tab === 'siswa' ? 'bg-white text-slate-900 shadow-sm p-2' : 'bg-transparent text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
                         onClick={() => setTab('siswa')}
                     >
-                        <span className={`w-2 h-2 rounded-full inline-block ${tab === 'siswa' ? 'bg-sky-500' : 'bg-slate-400'}`} />
+                        <span className={`ml-2 w-2 h-2 rounded-full inline-block ${tab === 'siswa' ? 'bg-sky-500' : 'bg-slate-400'}`} />
                         <Users size={16} /> Data Siswa
                     </button>
                     <button
-                        className={`flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-[13.5px] font-bold cursor-pointer transition-all border-none focus:outline-none ${tab === 'mitra' ? 'bg-white text-slate-900 shadow-sm' : 'bg-transparent text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
+                        className={`mr-2 flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-[13.5px] font-bold cursor-pointer transition-all border-none focus:outline-none ${tab === 'mitra' ? 'bg-white text-slate-900 shadow-sm p-2' : 'bg-transparent text-slate-500 hover:bg-slate-200 hover:text-slate-900'}`}
                         onClick={() => setTab('mitra')}
                     >
-                        <span className={`w-2 h-2 rounded-full inline-block ${tab === 'mitra' ? 'bg-amber-500' : 'bg-slate-400'}`} />
+                        <span className={`ml-2 w-2 h-2 rounded-full inline-block ${tab === 'mitra' ? 'bg-amber-500' : 'bg-slate-400'}`} />
                         <Handshake size={16} /> Data Mitra
                     </button>
                 </div>
