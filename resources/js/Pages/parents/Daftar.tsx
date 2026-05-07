@@ -1,11 +1,6 @@
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
-import {
-    BookOpen, ChevronRight, ChevronLeft, CheckCircle2,
-    User, Calendar, Upload, CreditCard, X,
-    AlertCircle, BookCheck, Clock, Users, ArrowLeft,
-    MessageCircle, PartyPopper
-} from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronLeft, CheckCircle2, User, Upload, CreditCard, X, AlertCircle, Clock, ArrowLeft, MessageCircle, Users } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────
 interface Program {
@@ -45,33 +40,43 @@ const BANK_INFO = {
     nominal: 'Sesuai program yang dipilih',
 };
 
+// Step sekarang menjadi 3 langkah
 const STEPS = [
-    { id: 1, label: 'Pilih Program', icon: BookCheck    },
-    { id: 2, label: 'Data Anak',     icon: User         },
-    { id: 3, label: 'Pembayaran',    icon: CreditCard   },
-    { id: 4, label: 'Konfirmasi',    icon: CheckCircle2 },
+    { id: 1, label: 'Data Anak', icon: User },
+    { id: 2, label: 'Pembayaran', icon: CreditCard },
+    { id: 3, label: 'Konfirmasi', icon: CheckCircle2 },
 ];
 
 // ── Component ─────────────────────────────────────────────────
 export default function Daftar({ programs, flash }: Props) {
     const { auth } = usePage().props as { auth: { user: { name: string } } };
 
-    const [step, setStep]               = useState(1);
-    const [submitted, setSubmitted]     = useState(false);
+    const [step, setStep] = useState(1);
+    const [submitted, setSubmitted] = useState(false);
     const [previewFile, setPreviewFile] = useState<string | null>(null);
-    const [fileType, setFileType]       = useState<string>('');
-    const fileInputRef                  = useRef<HTMLInputElement>(null);
+    const [fileType, setFileType] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, processing, errors } = useForm<EnrollForm>({
-        nama:             '',
-        tempat_lahir:     '',
-        tanggal_lahir:    '',
-        usia:             '',
-        program_id:       '',
+        nama: '',
+        tempat_lahir: '',
+        tanggal_lahir: '',
+        usia: '',
+        program_id: '',
         bukti_pembayaran: null,
     });
 
-    const selectedProgram = programs.find(p => p.id === data.program_id);
+    // Otomatis memilih QL - SCHOOL saat halaman dimuat
+    useEffect(() => {
+        if (!data.program_id && programs.length > 0) {
+            const targetProgram = programs.find((p) => p.name.toUpperCase().includes('QL - SCHOOL'));
+            // Gunakan ID hasil pencarian, atau fallback ke ID hardcode
+            const qlSchoolId = targetProgram ? targetProgram.id : '69ecdbca04db090989004f5b';
+            setData('program_id', qlSchoolId);
+        }
+    }, [programs, data.program_id, setData]);
+
+    const selectedProgram = programs.find((p) => p.id === data.program_id);
 
     // Deteksi flash sukses dari Laravel setelah submit
     useEffect(() => {
@@ -79,23 +84,23 @@ export default function Daftar({ programs, flash }: Props) {
             setSubmitted(true);
 
             // Buka WA otomatis
-            const programName = programs.find(p => p.id === flash.program_id)?.name ?? '-';
+            const programName = programs.find((p) => p.id === flash.program_id)?.name ?? '-';
             const pesan = encodeURIComponent(
                 `Assalamu'alaikum Admin QLC 🌟\n\n` +
-                `Saya *${auth.user.name}* ingin mengonfirmasi pendaftaran anak saya:\n\n` +
-                `👤 *Nama Anak:* ${flash.nama}\n` +
-                `📚 *Program:* ${programName}\n\n` +
-                `Bukti pembayaran sudah saya kirimkan melalui sistem.\n\n` +
-                `Mohon konfirmasinya. Terima kasih 🙏`
+                    `Saya *${auth.user.name}* ingin mengonfirmasi pendaftaran anak saya:\n\n` +
+                    `👤 *Nama Anak:* ${flash.nama}\n` +
+                    `📚 *Program:* ${programName}\n\n` +
+                    `Bukti pembayaran sudah saya kirimkan melalui sistem.\n\n` +
+                    `Mohon konfirmasinya. Terima kasih 🙏`
             );
             window.open(`https://wa.me/${ADMIN_WA}?text=${pesan}`, '_blank');
         }
-    }, [flash?.success]);
+    }, [flash, programs, auth.user.name]);
 
+    // Validasi tombol Next disesuaikan dengan urutan step baru
     const canNext = (): boolean => {
-        if (step === 1) return !!data.program_id;
-        if (step === 2) return !!(data.nama && data.tempat_lahir && data.tanggal_lahir && data.usia);
-        if (step === 3) return !!data.bukti_pembayaran;
+        if (step === 1) return !!(data.nama && data.tempat_lahir && data.tanggal_lahir && data.usia && data.program_id);
+        if (step === 2) return !!data.bukti_pembayaran;
         return true;
     };
 
@@ -118,14 +123,9 @@ export default function Daftar({ programs, flash }: Props) {
 
     // ════ TAMPILAN SUKSES ════
     if (submitted) {
-        const programName = programs.find(p => p.id === flash.program_id)?.name ?? '-';
+        const programName = programs.find((p) => p.id === flash?.program_id)?.name ?? '-';
         const pesan = encodeURIComponent(
-            `Assalamu'alaikum Admin QLC 🌟\n\n` +
-            `Saya *${auth.user.name}* ingin mengonfirmasi pendaftaran anak saya:\n\n` +
-            `👤 *Nama Anak:* ${flash.nama}\n` +
-            `📚 *Program:* ${programName}\n\n` +
-            `Bukti pembayaran sudah saya kirimkan melalui sistem.\n\n` +
-            `Mohon konfirmasinya. Terima kasih 🙏`
+            `Assalamu'alaikum Admin QLC 🌟\n\n` + `Saya *${auth.user.name}* ingin mengonfirmasi pendaftaran anak saya:\n\n` + `👤 *Nama Anak:* ${flash?.nama}\n` + `📚 *Program:* ${programName}\n\n` + `Bukti pembayaran sudah saya kirimkan melalui sistem.\n\n` + `Mohon konfirmasinya. Terima kasih 🙏`
         );
 
         return (
@@ -133,7 +133,6 @@ export default function Daftar({ programs, flash }: Props) {
                 <Head title="Pendaftaran Berhasil" />
                 <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 max-w-md w-full p-8 text-center">
-
                         {/* Icon sukses */}
                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
                             <CheckCircle2 size={40} className="text-green-600" />
@@ -141,7 +140,7 @@ export default function Daftar({ programs, flash }: Props) {
 
                         <h1 className="text-2xl font-black text-gray-900 mb-2">Pendaftaran Berhasil!</h1>
                         <p className="text-gray-500 text-sm leading-relaxed mb-6">
-                            Data pendaftaran <strong>{flash.nama}</strong> untuk program <strong>{programName}</strong> sudah kami terima dan sedang diproses.
+                            Data pendaftaran <strong>{flash?.nama}</strong> untuk program <strong>{programName}</strong> sudah kami terima dan sedang diproses.
                         </p>
 
                         {/* Info status */}
@@ -154,19 +153,11 @@ export default function Daftar({ programs, flash }: Props) {
                         </div>
 
                         {/* Tombol WA */}
-                        <a
-                            href={`https://wa.me/${ADMIN_WA}?text=${pesan}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-green-500/20 mb-3"
-                        >
+                        <a href={`https://wa.me/${ADMIN_WA}?text=${pesan}`} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-green-500/20 mb-3">
                             <MessageCircle size={16} /> Konfirmasi via WhatsApp
                         </a>
 
-                        <button
-                            onClick={() => router.visit(route('parents.dashboard'))}
-                            className="w-full py-3 border-2 border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl text-sm font-bold transition-all"
-                        >
+                        <button onClick={() => router.visit(route('parents.dashboard'))} className="w-full py-3 border-2 border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl text-sm font-bold transition-all">
                             Kembali ke Dashboard
                         </button>
                     </div>
@@ -179,14 +170,10 @@ export default function Daftar({ programs, flash }: Props) {
     return (
         <>
             <Head title="Pendaftaran QLC" />
-            <div className="min-h-screen bg-gray-50 font-sans">
-
+            <div className="min-h-screen bg-gray-50 font-sans pb-10">
                 {/* Top bar */}
                 <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                    <button
-                        onClick={() => router.visit(route('parents.dashboard'))}
-                        className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-green-700 transition-colors"
-                    >
+                    <button onClick={() => router.visit(route('parents.dashboard'))} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-green-700 transition-colors">
                         <ArrowLeft size={16} /> Kembali ke Dashboard
                     </button>
                     <div className="flex items-center gap-2">
@@ -198,33 +185,22 @@ export default function Daftar({ programs, flash }: Props) {
                 </div>
 
                 <div className="max-w-2xl mx-auto px-4 py-10">
-
                     {/* Step indicator */}
                     <div className="flex items-center justify-between mb-10 relative">
                         <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 z-0" />
-                        <div
-                            className="absolute top-5 left-0 h-0.5 bg-green-600 z-0 transition-all duration-500"
-                            style={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }}
-                        />
-                        {STEPS.map(s => (
+                        <div className="absolute top-5 left-0 h-0.5 bg-green-600 z-0 transition-all duration-500" style={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }} />
+                        {STEPS.map((s) => (
                             <div key={s.id} className="flex flex-col items-center gap-2 z-10">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                                    step > s.id  ? 'bg-green-600 border-green-600 text-white' :
-                                    step === s.id ? 'bg-white border-green-600 text-green-600' :
-                                                    'bg-white border-gray-300 text-gray-400'
-                                }`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 bg-white ${step > s.id ? 'bg-green-600 border-green-600 text-white' : step === s.id ? 'border-green-600 text-green-600' : 'border-gray-300 text-gray-400'}`}>
                                     {step > s.id ? <CheckCircle2 size={18} /> : <s.icon size={16} strokeWidth={2} />}
                                 </div>
-                                <span className={`text-xs font-bold hidden sm:block ${step >= s.id ? 'text-green-700' : 'text-gray-400'}`}>
-                                    {s.label}
-                                </span>
+                                <span className={`text-xs font-bold hidden sm:block ${step >= s.id ? 'text-green-700' : 'text-gray-400'}`}>{s.label}</span>
                             </div>
                         ))}
                     </div>
 
                     {/* Form card */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-
                         {/* Step header */}
                         <div className="bg-gradient-to-r from-green-800 to-green-700 px-6 py-5">
                             <div className="text-xs font-bold text-green-300 uppercase tracking-wider mb-1">
@@ -235,74 +211,20 @@ export default function Daftar({ programs, flash }: Props) {
 
                         <form onSubmit={handleSubmit}>
                             <div className="p-6 space-y-5">
-
-                                {/* ── STEP 1: Pilih Program ── */}
+                                {/* ── STEP 1: Data Anak ── */}
                                 {step === 1 && (
-                                    <div className="space-y-3">
-                                        <p className="text-sm text-gray-500 font-medium mb-4">
-                                            Pilih program QLC yang ingin Anda daftarkan untuk anak Anda.
-                                        </p>
-                                        {programs.length === 0 ? (
-                                            <div className="text-center py-10 text-gray-400">
-                                                <BookCheck size={40} className="mx-auto mb-3 opacity-40" />
-                                                <p className="font-semibold">Belum ada program tersedia</p>
-                                            </div>
-                                        ) : programs.map(p => (
-                                            <label key={p.id} className={`flex gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                                                data.program_id === p.id
-                                                    ? 'border-green-600 bg-green-50'
-                                                    : 'border-gray-200 hover:border-gray-300 bg-white'
-                                            }`}>
-                                                <input
-                                                    type="radio"
-                                                    name="program_id"
-                                                    value={p.id}
-                                                    checked={data.program_id === p.id}
-                                                    onChange={() => setData('program_id', p.id)}
-                                                    className="mt-1 accent-green-600 flex-shrink-0"
-                                                />
-                                                <div className="flex-1">
-                                                    <div className="font-bold text-gray-900 text-sm">{p.name}</div>
-                                                    {p.description && (
-                                                        <p className="text-xs text-gray-500 mt-1 leading-relaxed">{p.description}</p>
-                                                    )}
-                                                    <div className="flex flex-wrap gap-3 mt-2">
-                                                        {p.target_audience && (
-                                                            <span className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                                                                <Users size={12} /> {p.target_audience}
-                                                            </span>
-                                                        )}
-                                                        {p.duration && (
-                                                            <span className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                                                                <Clock size={12} /> {p.duration}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                {data.program_id === p.id && (
-                                                    <CheckCircle2 size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-                                                )}
-                                            </label>
-                                        ))}
-                                        {errors.program_id && (
-                                            <p className="text-xs text-red-500 font-semibold flex items-center gap-1">
-                                                <AlertCircle size={12} /> {errors.program_id}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* ── STEP 2: Data Anak ── */}
-                                {step === 2 && (
                                     <div className="space-y-4">
                                         <p className="text-sm text-gray-500 font-medium">
-                                            Isi data anak yang akan didaftarkan sesuai dokumen resmi.
+                                            Isi data anak yang akan didaftarkan ke program <strong>{selectedProgram?.name || 'QL - SCHOOL'}</strong>.
                                         </p>
 
+                                        {/* Input Hidden untuk program_id */}
+                                        <input type="hidden" name="program_id" value={data.program_id} />
+
                                         {[
-                                            { key: 'nama',         label: 'Nama Lengkap Anak', type: 'text',   placeholder: 'Masukkan nama lengkap' },
-                                            { key: 'tempat_lahir', label: 'Tempat Lahir',       type: 'text',   placeholder: 'Contoh: Jakarta' },
-                                        ].map(f => (
+                                            { key: 'nama', label: 'Nama Lengkap Anak', type: 'text', placeholder: 'Masukkan nama lengkap' },
+                                            { key: 'tempat_lahir', label: 'Tempat Lahir', type: 'text', placeholder: 'Contoh: Jakarta' },
+                                        ].map((f) => (
                                             <div key={f.key}>
                                                 <label className="block text-sm font-bold text-gray-700 mb-1.5">
                                                     {f.label} <span className="text-red-500">*</span>
@@ -310,7 +232,7 @@ export default function Daftar({ programs, flash }: Props) {
                                                 <input
                                                     type={f.type}
                                                     value={data[f.key] as string}
-                                                    onChange={e => setData(f.key, e.target.value)}
+                                                    onChange={(e) => setData(f.key, e.target.value)}
                                                     placeholder={f.placeholder}
                                                     className={`w-full px-4 py-3 rounded-xl border text-sm font-medium text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all ${errors[f.key] ? 'border-red-400' : 'border-gray-200'}`}
                                                 />
@@ -330,19 +252,21 @@ export default function Daftar({ programs, flash }: Props) {
                                                 <input
                                                     type="date"
                                                     value={data.tanggal_lahir}
-                                                    onChange={e => {
+                                                    onChange={(e) => {
                                                         setData('tanggal_lahir', e.target.value);
                                                         if (e.target.value) {
-                                                            const age = Math.floor(
-                                                                (Date.now() - new Date(e.target.value).getTime()) /
-                                                                (1000 * 60 * 60 * 24 * 365.25)
-                                                            );
-                                                            setData('usia', String(age));
+                                                            const age = Math.floor((Date.now() - new Date(e.target.value).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+                                                            setData('usia', String(age >= 0 ? age : 0));
                                                         }
                                                     }}
                                                     className={`w-full px-4 py-3 rounded-xl border text-sm font-medium text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all ${errors.tanggal_lahir ? 'border-red-400' : 'border-gray-200'}`}
                                                 />
-                                                {errors.tanggal_lahir && <p className="mt-1 text-xs text-red-500 font-semibold flex items-center gap-1"><AlertCircle size={11} />{errors.tanggal_lahir}</p>}
+                                                {errors.tanggal_lahir && (
+                                                    <p className="mt-1 text-xs text-red-500 font-semibold flex items-center gap-1">
+                                                        <AlertCircle size={11} />
+                                                        {errors.tanggal_lahir}
+                                                    </p>
+                                                )}
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-700 mb-1.5">
@@ -351,19 +275,25 @@ export default function Daftar({ programs, flash }: Props) {
                                                 <input
                                                     type="number"
                                                     value={data.usia}
-                                                    onChange={e => setData('usia', e.target.value)}
+                                                    onChange={(e) => setData('usia', e.target.value)}
                                                     placeholder="Tahun"
-                                                    min={1} max={30}
+                                                    min={1}
+                                                    max={30}
                                                     className={`w-full px-4 py-3 rounded-xl border text-sm font-medium text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all ${errors.usia ? 'border-red-400' : 'border-gray-200'}`}
                                                 />
-                                                {errors.usia && <p className="mt-1 text-xs text-red-500 font-semibold flex items-center gap-1"><AlertCircle size={11} />{errors.usia}</p>}
+                                                {errors.usia && (
+                                                    <p className="mt-1 text-xs text-red-500 font-semibold flex items-center gap-1">
+                                                        <AlertCircle size={11} />
+                                                        {errors.usia}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* ── STEP 3: Pembayaran ── */}
-                                {step === 3 && (
+                                {/* ── STEP 2: Pembayaran ── */}
+                                {step === 2 && (
                                     <div className="space-y-5">
                                         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                                             <div className="text-sm font-black text-green-800 mb-3 flex items-center gap-2">
@@ -371,11 +301,11 @@ export default function Daftar({ programs, flash }: Props) {
                                             </div>
                                             <div className="space-y-2 text-sm">
                                                 {[
-                                                    { l: 'Bank',        v: BANK_INFO.bank },
-                                                    { l: 'No. Rekening',v: BANK_INFO.norek },
-                                                    { l: 'Atas Nama',   v: BANK_INFO.atas_nama },
-                                                    { l: 'Nominal',     v: BANK_INFO.nominal },
-                                                ].map(r => (
+                                                    { l: 'Bank', v: BANK_INFO.bank },
+                                                    { l: 'No. Rekening', v: BANK_INFO.norek },
+                                                    { l: 'Atas Nama', v: BANK_INFO.atas_nama },
+                                                    { l: 'Nominal', v: BANK_INFO.nominal },
+                                                ].map((r) => (
                                                     <div key={r.l} className="flex justify-between">
                                                         <span className="text-gray-500 font-medium">{r.l}</span>
                                                         <span className="font-bold text-gray-800 font-mono text-right">{r.v}</span>
@@ -392,11 +322,7 @@ export default function Daftar({ programs, flash }: Props) {
 
                                             <div
                                                 onClick={() => fileInputRef.current?.click()}
-                                                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-                                                    data.bukti_pembayaran
-                                                        ? 'border-green-400 bg-green-50'
-                                                        : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
-                                                }`}
+                                                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${data.bukti_pembayaran ? 'border-green-400 bg-green-50' : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'}`}
                                             >
                                                 {data.bukti_pembayaran ? (
                                                     <div className="space-y-2">
@@ -410,7 +336,11 @@ export default function Daftar({ programs, flash }: Props) {
                                                         <p className="text-sm font-bold text-green-700">{(data.bukti_pembayaran as File).name}</p>
                                                         <button
                                                             type="button"
-                                                            onClick={e => { e.stopPropagation(); setData('bukti_pembayaran', null); setPreviewFile(null); }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setData('bukti_pembayaran', null);
+                                                                setPreviewFile(null);
+                                                            }}
                                                             className="text-xs text-red-500 font-semibold flex items-center gap-1 mx-auto hover:text-red-700"
                                                         >
                                                             <X size={12} /> Hapus file
@@ -436,31 +366,27 @@ export default function Daftar({ programs, flash }: Props) {
                                     </div>
                                 )}
 
-                                {/* ── STEP 4: Konfirmasi ── */}
-                                {step === 4 && (
+                                {/* ── STEP 3: Konfirmasi ── */}
+                                {step === 3 && (
                                     <div className="space-y-4">
-                                        <p className="text-sm text-gray-500 font-medium">
-                                            Periksa kembali data sebelum mengirim.
-                                        </p>
+                                        <p className="text-sm text-gray-500 font-medium">Periksa kembali data sebelum mengirim.</p>
                                         <div className="bg-gray-50 rounded-xl border border-gray-200 divide-y divide-gray-200">
                                             {[
-                                                { label: 'Program',       value: selectedProgram?.name ?? '-' },
-                                                { label: 'Nama Anak',     value: data.nama },
-                                                { label: 'Tempat Lahir',  value: data.tempat_lahir },
+                                                { label: 'Program', value: selectedProgram?.name ?? 'QL - SCHOOL' },
+                                                { label: 'Nama Anak', value: data.nama },
+                                                { label: 'Tempat Lahir', value: data.tempat_lahir },
                                                 { label: 'Tanggal Lahir', value: data.tanggal_lahir },
-                                                { label: 'Usia',          value: `${data.usia} tahun` },
-                                                { label: 'Bukti Bayar',   value: data.bukti_pembayaran ? (data.bukti_pembayaran as File).name : '-' },
-                                                { label: 'Pendaftar',     value: auth.user.name },
-                                            ].map(row => (
+                                                { label: 'Usia', value: `${data.usia} tahun` },
+                                                { label: 'Bukti Bayar', value: data.bukti_pembayaran ? (data.bukti_pembayaran as File).name : '-' },
+                                                { label: 'Pendaftar', value: auth.user.name },
+                                            ].map((row) => (
                                                 <div key={row.label} className="flex justify-between items-center px-4 py-3 text-sm">
                                                     <span className="text-gray-500 font-medium">{row.label}</span>
                                                     <span className="font-bold text-gray-800 text-right max-w-[60%] truncate">{row.value}</span>
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-xs text-yellow-800 font-medium leading-relaxed">
-                                            ⚠️ Setelah submit, Anda akan diarahkan ke WhatsApp untuk konfirmasi kepada admin QLC.
-                                        </div>
+                                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-xs text-yellow-800 font-medium leading-relaxed">⚠️ Setelah submit, Anda akan diarahkan ke WhatsApp untuk konfirmasi kepada admin QLC.</div>
                                     </div>
                                 )}
                             </div>
@@ -468,30 +394,24 @@ export default function Daftar({ programs, flash }: Props) {
                             {/* Navigation buttons */}
                             <div className="px-6 pb-6 flex justify-between gap-3">
                                 {step > 1 ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => setStep(s => s - 1)}
-                                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-bold text-gray-600 hover:border-gray-300 transition-all"
-                                    >
+                                    <button type="button" onClick={() => setStep((s) => s - 1)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-bold text-gray-600 hover:border-gray-300 transition-all">
                                         <ChevronLeft size={16} /> Kembali
                                     </button>
-                                ) : <div />}
+                                ) : (
+                                    <div />
+                                )}
 
                                 {step < STEPS.length ? (
                                     <button
                                         type="button"
-                                        onClick={() => setStep(s => s + 1)}
+                                        onClick={() => setStep((s) => s + 1)}
                                         disabled={!canNext()}
                                         className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-green-600/20"
                                     >
                                         Lanjut <ChevronRight size={16} />
                                     </button>
                                 ) : (
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-60 transition-all shadow-md shadow-green-600/20"
-                                    >
+                                    <button type="submit" disabled={processing} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-60 transition-all shadow-md shadow-green-600/20">
                                         {processing ? (
                                             <>
                                                 <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -501,7 +421,9 @@ export default function Daftar({ programs, flash }: Props) {
                                                 Mengirim…
                                             </>
                                         ) : (
-                                            <><CheckCircle2 size={16} /> Kirim & Konfirmasi via WA</>
+                                            <>
+                                                <CheckCircle2 size={16} /> Kirim & Konfirmasi via WA
+                                            </>
                                         )}
                                     </button>
                                 )}

@@ -51,7 +51,7 @@ class InfoController extends Controller
             $logoUrl = Storage::url($path);
         }
 
-        // 2. Handle About Image (Baru)
+        // 2. Handle About Image
         $aboutImageUrl = $existing['about_image'] ?? null;
         if ($request->hasFile('about_image') && $request->file('about_image')->isValid()) {
             if ($aboutImageUrl) {
@@ -72,7 +72,7 @@ class InfoController extends Controller
             'name' => $request->name,
             'hero_title' => $request->hero_title,
             'logo' => $logoUrl,
-            'about_image' => $aboutImageUrl, // Simpan ke payload
+            'about_image' => $aboutImageUrl,
             'tagline' => $request->tagline,
             'history' => $request->history,
             'vision' => $request->vision,
@@ -251,18 +251,55 @@ class InfoController extends Controller
 
     public function programStore(Request $request)
     {
+        // Thumbnail lama
         $imageUrl = null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $path = $request->file('image')->store('info/programs', 'public');
             $imageUrl = Storage::url($path);
         }
 
+        // Hero Image
+        $heroImageUrl = null;
+        if ($request->hasFile('hero_image') && $request->file('hero_image')->isValid()) {
+            $path = $request->file('hero_image')->store('info/programs/hero', 'public');
+            $heroImageUrl = Storage::url($path);
+        }
+
+        // About Image
+        $aboutImageUrl = null;
+        if ($request->hasFile('about_image') && $request->file('about_image')->isValid()) {
+            $path = $request->file('about_image')->store('info/programs/about', 'public');
+            $aboutImageUrl = Storage::url($path);
+        }
+
+        // Gallery Images (Multi Upload)
+        $galleryUrls = [];
+        if ($request->hasFile('gallery_images')) {
+            foreach ($request->file('gallery_images') as $file) {
+                if ($file->isValid()) {
+                    $path = $file->store('info/programs/gallery', 'public');
+                    $galleryUrls[] = Storage::url($path);
+                }
+            }
+        }
+
+        // Advantages (Decode JSON)
+        $advantages = [];
+        if ($request->filled('advantages')) {
+            $decoded = json_decode($request->advantages, true);
+            $advantages = is_array($decoded) ? $decoded : [];
+        }
+
         $doc = [
             'name' => $request->name,
             'description' => $request->description,
             'target_audience' => $request->target_audience,
-            'duration' => $request->duration,
+            // 'duration' telah dihapus
             'image_url' => $imageUrl,
+            'hero_image_url' => $heroImageUrl,
+            'about_image_url' => $aboutImageUrl,
+            'advantages' => $advantages,
+            'gallery' => $galleryUrls,
             'created_at' => new \MongoDB\BSON\UTCDateTime(),
             'updated_at' => new \MongoDB\BSON\UTCDateTime(),
         ];
@@ -279,10 +316,12 @@ class InfoController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false], 400);
         }
+
         $existing = $this->programs->findOne(['_id' => $oid]);
         if (!$existing)
             return response()->json(['success' => false], 404);
 
+        // Update Thumbnail Lama
         $imageUrl = $existing['image_url'] ?? null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             if ($imageUrl) {
@@ -293,6 +332,46 @@ class InfoController extends Controller
             $imageUrl = Storage::url($path);
         }
 
+        // Update Hero Image
+        $heroImageUrl = $existing['hero_image_url'] ?? null;
+        if ($request->hasFile('hero_image') && $request->file('hero_image')->isValid()) {
+            if ($heroImageUrl) {
+                $oldPath = str_replace('/storage/', '', parse_url($heroImageUrl, PHP_URL_PATH));
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $request->file('hero_image')->store('info/programs/hero', 'public');
+            $heroImageUrl = Storage::url($path);
+        }
+
+        // Update About Image
+        $aboutImageUrl = $existing['about_image_url'] ?? null;
+        if ($request->hasFile('about_image') && $request->file('about_image')->isValid()) {
+            if ($aboutImageUrl) {
+                $oldPath = str_replace('/storage/', '', parse_url($aboutImageUrl, PHP_URL_PATH));
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $request->file('about_image')->store('info/programs/about', 'public');
+            $aboutImageUrl = Storage::url($path);
+        }
+
+        // Update Gallery Images
+        $galleryUrls = (isset($existing['gallery']) && is_array($existing['gallery'])) ? iterator_to_array($existing['gallery']) : [];
+        if ($request->hasFile('gallery_images')) {
+            foreach ($request->file('gallery_images') as $file) {
+                if ($file->isValid()) {
+                    $path = $file->store('info/programs/gallery', 'public');
+                    $galleryUrls[] = Storage::url($path);
+                }
+            }
+        }
+
+        // Update Advantages
+        $advantages = (isset($existing['advantages']) && is_array($existing['advantages'])) ? iterator_to_array($existing['advantages']) : [];
+        if ($request->filled('advantages')) {
+            $decoded = json_decode($request->advantages, true);
+            $advantages = is_array($decoded) ? $decoded : [];
+        }
+
         $this->programs->updateOne(
             ['_id' => $oid],
             [
@@ -300,8 +379,12 @@ class InfoController extends Controller
                     'name' => $request->name,
                     'description' => $request->description,
                     'target_audience' => $request->target_audience,
-                    'duration' => $request->duration,
+                    // 'duration' telah dihapus
                     'image_url' => $imageUrl,
+                    'hero_image_url' => $heroImageUrl,
+                    'about_image_url' => $aboutImageUrl,
+                    'advantages' => $advantages,
+                    'gallery' => array_values($galleryUrls),
                     'updated_at' => new \MongoDB\BSON\UTCDateTime(),
                 ]
             ]
@@ -317,10 +400,28 @@ class InfoController extends Controller
             return response()->json(['success' => false], 400);
         }
         $doc = $this->programs->findOne(['_id' => $oid]);
-        if ($doc && !empty($doc['image_url'])) {
-            $path = str_replace('/storage/', '', parse_url($doc['image_url'], PHP_URL_PATH));
-            Storage::disk('public')->delete($path);
+
+        if ($doc) {
+            $filesToDelete = [];
+            if (!empty($doc['image_url']))
+                $filesToDelete[] = $doc['image_url'];
+            if (!empty($doc['hero_image_url']))
+                $filesToDelete[] = $doc['hero_image_url'];
+            if (!empty($doc['about_image_url']))
+                $filesToDelete[] = $doc['about_image_url'];
+
+            if (!empty($doc['gallery']) && is_array($doc['gallery'])) {
+                foreach ($doc['gallery'] as $g) {
+                    $filesToDelete[] = $g;
+                }
+            }
+
+            foreach ($filesToDelete as $fileUrl) {
+                $path = str_replace('/storage/', '', parse_url($fileUrl, PHP_URL_PATH));
+                Storage::disk('public')->delete($path);
+            }
         }
+
         $this->programs->deleteOne(['_id' => $oid]);
         return response()->json(['success' => true]);
     }
@@ -436,6 +537,14 @@ class InfoController extends Controller
     {
         $doc['id'] = (string) $doc['_id'];
         unset($doc['_id']);
+
+        if (isset($doc['advantages']) && is_object($doc['advantages'])) {
+            $doc['advantages'] = iterator_to_array($doc['advantages']);
+        }
+        if (isset($doc['gallery']) && is_object($doc['gallery'])) {
+            $doc['gallery'] = iterator_to_array($doc['gallery']);
+        }
+
         return (array) $doc;
     }
     private function fmtGallery($doc): array

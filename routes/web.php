@@ -92,8 +92,46 @@ Route::get('/galeri', function () {
     ]);
 })->name('landing.galeri');
 
-Route::get('/program-detail', fn() => Inertia::render('Landing/ProgramDetail'))->name('program.detail');
+Route::get('/program-detail/{id}', function ($id) {
+    $db = DB::connection('mongodb')->getMongoClient()->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
 
+    try {
+        // Karena Anda memakai MongoDB, kita harus mengubah string ID menjadi ObjectId
+        $objectId = new \MongoDB\BSON\ObjectId($id);
+
+        // Cari program berdasarkan ID
+        $program = $db->selectCollection('programs')->findOne(['_id' => $objectId]);
+
+        if (!$program) {
+            abort(404, 'Program tidak ditemukan');
+        }
+
+        // Convert ObjectId menjadi string (agar tidak error saat dikirim ke React)
+        $programArray = (array) $program;
+        $programArray['id'] = (string) $programArray['_id'];
+        unset($programArray['_id']);
+
+        // Ambil galeri untuk ditampilkan di bagian bawah detail program (Opsional: ambil 4 foto)
+        $galleries = iterator_to_array($db->selectCollection('gallery')->find([], ['limit' => 4]));
+        $galleriesFormatted = array_map(function ($d) {
+            $doc = (array) $d;
+            if (isset($doc['_id'])) {
+                $doc['id'] = (string) $doc['_id'];
+                unset($doc['_id']);
+            }
+            return $doc;
+        }, $galleries);
+
+        return Inertia::render('Landing/ProgramDetail', [
+            'program' => $programArray,
+            'galleries' => $galleriesFormatted
+        ]);
+
+    } catch (\Exception $e) {
+        // Jika format ID salah (bukan format ObjectId MongoDB)
+        abort(404, 'Halaman tidak ditemukan');
+    }
+})->name('program.detail');
 // ==========================================
 // ROUTE PROFILE & PENGATURAN (AUTHENTICATED)
 // ==========================================

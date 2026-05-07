@@ -297,7 +297,7 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                                 <div className="p-8 flex-1 flex flex-col bg-white">
                                     <h3 className="text-xl font-extrabold text-gray-900 mb-3 group-hover:text-[#1B6B3A] transition-colors">{prog.name}</h3>
                                     <p className="text-gray-600 text-base mb-8 flex-1 leading-relaxed">{prog.description}</p>
-                                    <button onClick={() => router.get('/program-detail')} className="w-full py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-[#1B6B3A] font-bold hover:bg-[#1B6B3A] hover:text-white transition-all shadow-sm text-sm">
+                                    <button onClick={() => router.get(`/program-detail/${prog.id}`)} className="w-full py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-[#1B6B3A] font-bold hover:bg-[#1B6B3A] hover:text-white transition-all shadow-sm text-sm">
                                         Lihat Detail
                                     </button>
                                 </div>
