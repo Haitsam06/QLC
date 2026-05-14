@@ -1,11 +1,8 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
-import {
-    User, Lock, Eye, EyeOff, CheckCircle2,
-    AlertCircle, Phone, MessageCircle,
-    KeyRound, Save, ExternalLink, GraduationCap,
-} from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { User, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Phone, MessageCircle, KeyRound, Save, ExternalLink, GraduationCap, Loader2 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -21,45 +18,27 @@ interface Props {
     profile: TeacherProfile | null;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   STYLES — sama dengan PengaturanPage parents
-═══════════════════════════════════════════════════════════ */
-const CSS = `
-.pg-wrap { display:flex; flex-direction:column; gap:20px; }
-.pg-ph-title { font-size:22px; font-weight:900; color:var(--text); }
-.pg-ph-sub   { font-size:12px; color:var(--text3); margin-top:4px; margin-bottom:0; }
-.pg-card { background:var(--card); border-radius:18px; padding:24px; border:1px solid rgba(0,0,0,0.05); box-shadow:0 1px 8px rgba(0,0,0,0.05); }
-.pg-card-title { font-size:14px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-.pg-card-sub   { font-size:11.5px; color:var(--text3); margin-bottom:20px; }
-.pg-fields { display:flex; flex-direction:column; gap:14px; }
-.pg-field  { display:flex; flex-direction:column; gap:5px; }
-.pg-label  { font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; }
-.pg-value-wrap { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:11px; background:rgba(0,0,0,0.03); border:1.5px solid rgba(0,0,0,0.07); }
-.pg-value { font-size:13.5px; font-weight:600; color:var(--text2); flex:1; }
-.pg-lock  { color:var(--text3); flex-shrink:0; }
-.pg-lock-banner { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; margin-top:16px; background:rgba(37,99,235,0.05); border:1px solid rgba(37,99,235,0.15); font-size:12px; color:var(--blue); font-weight:600; }
-.pg-contact-btn { margin-left:auto; display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:8px; font-size:11.5px; font-weight:700; background:var(--blue); color:#fff; border:none; cursor:pointer; font-family:inherit; transition:all 0.18s; flex-shrink:0; text-decoration:none; }
-.pg-contact-btn:hover { background:#1d4ed8; }
-.pg-form { display:flex; flex-direction:column; gap:16px; }
-.pg-fg   { display:flex; flex-direction:column; gap:6px; }
-.pg-fl   { font-size:11.5px; font-weight:700; color:var(--text2); }
-.pg-fi-wrap { display:flex; align-items:center; background:#fff; border:1.5px solid rgba(0,0,0,0.1); border-radius:11px; overflow:hidden; transition:all 0.2s; }
-.pg-fi-wrap:focus-within { border-color:var(--green); box-shadow:0 0 0 3px rgba(15,118,110,0.1); }
-.pg-fi-wrap--err { border-color:var(--red)!important; box-shadow:0 0 0 3px rgba(220,38,38,0.08)!important; }
-.pg-fi { flex:1; height:44px; padding:0 14px; font-size:13.5px; font-weight:600; color:var(--text); background:transparent; outline:none; border:none; font-family:inherit; }
-.pg-fi-icon { padding:0 12px; color:var(--text3); flex-shrink:0; }
-.pg-fi-btn  { padding:0 12px; color:var(--text3); flex-shrink:0; cursor:pointer; background:none; border:none; transition:color 0.15s; }
-.pg-fi-btn:hover { color:var(--green); }
-.pg-err { font-size:11px; font-weight:600; color:var(--red); display:flex; align-items:center; gap:4px; }
-.pg-submit { display:flex; align-items:center; justify-content:center; gap:6px; width:100%; height:46px; border-radius:11px; background:var(--green); color:#fff; font-size:13.5px; font-weight:700; font-family:inherit; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(15,118,110,0.3); transition:all 0.18s; }
-.pg-submit:hover { box-shadow:0 6px 20px rgba(15,118,110,0.4); transform:translateY(-1px); }
-.pg-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-.pg-toast { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; margin-bottom:4px; background:var(--green-light); border:1px solid rgba(15,118,110,0.2); font-size:12.5px; font-weight:600; color:var(--green); animation:pgFade 0.25s ease; }
-@keyframes pgFade { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-.pg-divider { height:1px; background:rgba(0,0,0,0.06); margin:4px 0; }
-`;
-
 const ADMIN_WA = '6281234567890'; // ← Ganti nomor WA admin
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST COMPONENT
+═══════════════════════════════════════════════════════════ */
+function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error'; onClose: () => void }) {
+    useEffect(() => {
+        const t = setTimeout(onClose, 3000);
+        return () => clearTimeout(t);
+    }, [onClose]);
+
+    return createPortal(
+        <div
+            className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[13.5px] font-bold text-white shadow-xl animate-[fadeIn_0.3s_ease-out] border border-white/20 backdrop-blur-md ${type === 'success' ? 'bg-[#1B6B3A]/90 shadow-green-900/20' : 'bg-red-600/90 shadow-red-600/20'}`}
+        >
+            {type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+            {msg}
+        </div>,
+        document.body
+    );
+}
 
 /* ═══════════════════════════════════════════════════════════
    FORM: Username
@@ -70,7 +49,7 @@ function UsernameForm() {
 
     const { data, setData, put, processing, errors, recentlySuccessful } = useForm({
         username: (user?.username as string) ?? '',
-        email:    (user?.email    as string) ?? '',
+        email: (user?.email as string) ?? '',
     });
 
     const submit = (e: FormEvent) => {
@@ -79,41 +58,81 @@ function UsernameForm() {
     };
 
     return (
-        <div className="pg-card">
-            <div className="pg-card-title"><KeyRound size={16} color="var(--green)"/> Kredensial Akun</div>
-            <div className="pg-card-sub">Ubah username dan email yang digunakan untuk masuk ke sistem.</div>
-
-            {recentlySuccessful && (
-                <div className="pg-toast"><CheckCircle2 size={15}/> Kredensial akun berhasil diperbarui.</div>
-            )}
-
-            <form onSubmit={submit} className="pg-form">
-                <div className="pg-fg">
-                    <label className="pg-fl">Username</label>
-                    <div className={`pg-fi-wrap ${errors.username ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><User size={15}/></span>
-                        <input className="pg-fi" type="text" value={data.username}
-                            onChange={e => setData('username', e.target.value)}
-                            placeholder="Username baru" autoComplete="username"/>
-                    </div>
-                    {errors.username && <p className="pg-err"><AlertCircle size={12}/>{errors.username}</p>}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+            <div className="px-6 md:px-8 py-6 border-b border-slate-50">
+                <div className="text-[18px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
+                    <KeyRound size={20} className="text-[#1B6B3A] bg-green-50 p-1 rounded-lg" /> Kredensial Akun
                 </div>
+                <div className="text-[13px] text-slate-500 font-bold">Ubah username dan email yang digunakan untuk masuk ke sistem.</div>
+            </div>
 
-                <div className="pg-fg">
-                    <label className="pg-fl">Email <span style={{fontWeight:500,color:'var(--text3)'}}>(opsional)</span></label>
-                    <div className={`pg-fi-wrap ${errors.email ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><span style={{fontSize:13}}>@</span></span>
-                        <input className="pg-fi" type="email" value={data.email}
-                            onChange={e => setData('email', e.target.value)}
-                            placeholder="Alamat email" autoComplete="email"/>
+            <div className="px-6 md:px-8 py-7 flex flex-col gap-5">
+                {recentlySuccessful && (
+                    <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-green-50 border border-green-100 text-[13px] font-bold text-green-700 mb-2 animate-[fadeIn_0.3s_ease-out]">
+                        <CheckCircle2 size={16} /> Kredensial akun berhasil diperbarui.
                     </div>
-                    {errors.email && <p className="pg-err"><AlertCircle size={12}/>{errors.email}</p>}
-                </div>
+                )}
 
-                <button type="submit" className="pg-submit" disabled={processing}>
-                    <Save size={15}/> {processing ? 'Menyimpan…' : 'Simpan Perubahan'}
-                </button>
-            </form>
+                <form onSubmit={submit} className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Username Login</label>
+                        <div className="relative flex items-center">
+                            <User className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+                            <input
+                                type="text"
+                                value={data.username}
+                                onChange={(e) => setData('username', e.target.value)}
+                                placeholder="Username baru"
+                                autoComplete="username"
+                                className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.username ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                        </div>
+                        {errors.username && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.username}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                            Email <span className="font-semibold opacity-70">(opsional)</span>
+                        </label>
+                        <div className="relative flex items-center">
+                            <span className="absolute left-4 text-slate-400 pointer-events-none font-bold text-lg">@</span>
+                            <input
+                                type="email"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
+                                placeholder="Alamat email"
+                                autoComplete="email"
+                                className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.email ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                        </div>
+                        {errors.email && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.email}
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="mt-4 flex items-center justify-center gap-2 h-12 px-8 rounded-2xl bg-[#1B6B3A] text-white text-[14px] font-black shadow-lg shadow-green-900/20 transition-all hover:bg-[#14522d] active:scale-95 focus:outline-none disabled:opacity-60 w-full sm:w-max"
+                        disabled={processing}
+                    >
+                        {processing ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" /> Menyimpan...
+                            </>
+                        ) : (
+                            <>
+                                <Save size={18} /> Simpan Perubahan
+                            </>
+                        )}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
@@ -127,7 +146,9 @@ function PasswordForm() {
     const [showK, setShowK] = useState(false);
 
     const { data, setData, put, processing, errors, reset, recentlySuccessful } = useForm({
-        current_password: '', password: '', password_confirmation: '',
+        current_password: '',
+        password: '',
+        password_confirmation: '',
     });
 
     const submit = (e: FormEvent) => {
@@ -136,63 +157,110 @@ function PasswordForm() {
     };
 
     return (
-        <div className="pg-card">
-            <div className="pg-card-title"><Lock size={16} color="var(--green)"/> Ubah Kata Sandi</div>
-            <div className="pg-card-sub">Gunakan kata sandi yang kuat dan berbeda dari sebelumnya.</div>
-
-            {recentlySuccessful && (
-                <div className="pg-toast"><CheckCircle2 size={15}/> Kata sandi berhasil diperbarui.</div>
-            )}
-
-            <form onSubmit={submit} className="pg-form">
-                <div className="pg-fg">
-                    <label className="pg-fl">Kata Sandi Saat Ini</label>
-                    <div className={`pg-fi-wrap ${errors.current_password ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><Lock size={15}/></span>
-                        <input className="pg-fi" type={showC ? 'text' : 'password'} value={data.current_password}
-                            onChange={e => setData('current_password', e.target.value)}
-                            placeholder="••••••••" autoComplete="current-password"/>
-                        <button type="button" className="pg-fi-btn" onClick={() => setShowC(v => !v)}>
-                            {showC ? <EyeOff size={15}/> : <Eye size={15}/>}
-                        </button>
-                    </div>
-                    {errors.current_password && <p className="pg-err"><AlertCircle size={12}/>{errors.current_password}</p>}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+            <div className="px-6 md:px-8 py-6 border-b border-slate-50">
+                <div className="text-[18px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
+                    <Lock size={20} className="text-[#1B6B3A] bg-green-50 p-1 rounded-lg" /> Ubah Kata Sandi
                 </div>
+                <div className="text-[13px] text-slate-500 font-bold">Gunakan kata sandi yang kuat dan berbeda dari sebelumnya.</div>
+            </div>
 
-                <div className="pg-divider"/>
-
-                <div className="pg-fg">
-                    <label className="pg-fl">Kata Sandi Baru</label>
-                    <div className={`pg-fi-wrap ${errors.password ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><KeyRound size={15}/></span>
-                        <input className="pg-fi" type={showN ? 'text' : 'password'} value={data.password}
-                            onChange={e => setData('password', e.target.value)}
-                            placeholder="Minimal 8 karakter" autoComplete="new-password"/>
-                        <button type="button" className="pg-fi-btn" onClick={() => setShowN(v => !v)}>
-                            {showN ? <EyeOff size={15}/> : <Eye size={15}/>}
-                        </button>
+            <div className="px-6 md:px-8 py-7 flex flex-col gap-5">
+                {recentlySuccessful && (
+                    <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-green-50 border border-green-100 text-[13px] font-bold text-green-700 mb-2 animate-[fadeIn_0.3s_ease-out]">
+                        <CheckCircle2 size={16} /> Kata sandi berhasil diperbarui.
                     </div>
-                    {errors.password && <p className="pg-err"><AlertCircle size={12}/>{errors.password}</p>}
-                </div>
+                )}
 
-                <div className="pg-fg">
-                    <label className="pg-fl">Konfirmasi Kata Sandi Baru</label>
-                    <div className={`pg-fi-wrap ${errors.password_confirmation ? 'pg-fi-wrap--err' : ''}`}>
-                        <span className="pg-fi-icon"><KeyRound size={15}/></span>
-                        <input className="pg-fi" type={showK ? 'text' : 'password'} value={data.password_confirmation}
-                            onChange={e => setData('password_confirmation', e.target.value)}
-                            placeholder="Ulangi kata sandi baru" autoComplete="new-password"/>
-                        <button type="button" className="pg-fi-btn" onClick={() => setShowK(v => !v)}>
-                            {showK ? <EyeOff size={15}/> : <Eye size={15}/>}
-                        </button>
+                <form onSubmit={submit} className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Kata Sandi Saat Ini</label>
+                        <div className="relative flex items-center">
+                            <Lock className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+                            <input
+                                type={showC ? 'text' : 'password'}
+                                value={data.current_password}
+                                onChange={(e) => setData('current_password', e.target.value)}
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                                className={`w-full h-12 pl-12 pr-12 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.current_password ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                            <button type="button" className="absolute right-4 text-slate-400 hover:text-[#1B6B3A] focus:outline-none active:scale-90 transition-transform" onClick={() => setShowC((v) => !v)}>
+                                {showC ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        {errors.current_password && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.current_password}
+                            </div>
+                        )}
                     </div>
-                    {errors.password_confirmation && <p className="pg-err"><AlertCircle size={12}/>{errors.password_confirmation}</p>}
-                </div>
 
-                <button type="submit" className="pg-submit" disabled={processing}>
-                    <Save size={15}/> {processing ? 'Menyimpan…' : 'Perbarui Kata Sandi'}
-                </button>
-            </form>
+                    <div className="h-px w-full max-w-xl bg-slate-100 my-2" />
+
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Kata Sandi Baru</label>
+                        <div className="relative flex items-center">
+                            <KeyRound className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+                            <input
+                                type={showN ? 'text' : 'password'}
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="Minimal 8 karakter"
+                                autoComplete="new-password"
+                                className={`w-full h-12 pl-12 pr-12 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.password ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                            <button type="button" className="absolute right-4 text-slate-400 hover:text-[#1B6B3A] focus:outline-none active:scale-90 transition-transform" onClick={() => setShowN((v) => !v)}>
+                                {showN ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        {errors.password && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.password}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Konfirmasi Sandi Baru</label>
+                        <div className="relative flex items-center">
+                            <KeyRound className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+                            <input
+                                type={showK ? 'text' : 'password'}
+                                value={data.password_confirmation}
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                placeholder="Ulangi kata sandi baru"
+                                autoComplete="new-password"
+                                className={`w-full h-12 pl-12 pr-12 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.password_confirmation ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                            <button type="button" className="absolute right-4 text-slate-400 hover:text-[#1B6B3A] focus:outline-none active:scale-90 transition-transform" onClick={() => setShowK((v) => !v)}>
+                                {showK ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        {errors.password_confirmation && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.password_confirmation}
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="mt-4 flex items-center justify-center gap-2 h-12 px-8 rounded-2xl bg-[#1B6B3A] text-white text-[14px] font-black shadow-lg shadow-green-900/20 transition-all hover:bg-[#14522d] active:scale-95 focus:outline-none disabled:opacity-60 w-full sm:w-max"
+                        disabled={processing}
+                    >
+                        {processing ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" /> Menyimpan...
+                            </>
+                        ) : (
+                            <>
+                                <Lock size={18} /> Perbarui Sandi
+                            </>
+                        )}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
@@ -202,51 +270,62 @@ function PasswordForm() {
 ═══════════════════════════════════════════════════════════ */
 export default function PengaturanGuruPage({ profile }: Props) {
     return (
-        <>
-            <style>{CSS}</style>
-            <div className="pg-wrap">
-
+        <div className="flex flex-col gap-6 w-full max-w-4xl pb-10 animate-[fadeIn_0.3s_ease-out]">
+            {/* Header */}
+            <div className="flex justify-between items-end flex-wrap gap-3">
                 <div>
-                    <div className="pg-ph-title">Pengaturan Akun</div>
-                    <div className="pg-ph-sub">Kelola kredensial login dan lihat informasi profil Anda.</div>
+                    <div className="text-[24px] md:text-[28px] font-black text-slate-900 tracking-tight leading-none">Pengaturan Akun</div>
+                    <div className="text-[13px] text-slate-500 mt-1.5 font-bold italic">Kelola kredensial login dan lihat informasi profil Anda.</div>
+                </div>
+            </div>
+
+            {/* ── Profil read-only ── */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                <div className="px-6 md:px-8 py-6 border-b border-slate-50">
+                    <div className="text-[18px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
+                        <GraduationCap size={20} className="text-blue-600 bg-blue-50 p-1 rounded-lg" /> Informasi Profil Guru
+                    </div>
+                    <div className="text-[13px] text-slate-500 font-bold">Data ini terdaftar secara resmi dan tidak dapat diubah sendiri.</div>
                 </div>
 
-                {/* ── Profil read-only ── */}
-                <div className="pg-card">
-                    <div className="pg-card-title"><GraduationCap size={16} color="var(--blue)"/> Informasi Profil Guru</div>
-                    <div className="pg-card-sub">Data ini terdaftar secara resmi dan tidak dapat diubah sendiri.</div>
-
-                    <div className="pg-fields">
+                <div className="px-6 md:px-8 py-7 flex flex-col gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {[
-                            { label:'Nama Lengkap', value:profile?.nama_guru ?? '—', icon:<User size={14}/>         },
-                            { label:'No. Telepon',  value:profile?.phone    ?? '—', icon:<Phone size={14}/>        },
-                            { label:'Email',        value:profile?.email    ?? '—', icon:<span style={{fontSize:13}}>@</span> },
-                            { label:'Bidang Studi', value:profile?.bidang   ?? '—', icon:<GraduationCap size={14}/> },
-                        ].map(f => (
-                            <div key={f.label} className="pg-field">
-                                <span className="pg-label">{f.label}</span>
-                                <div className="pg-value-wrap">
-                                    <span className="pg-lock">{f.icon}</span>
-                                    <span className="pg-value">{f.value}</span>
-                                    <Lock size={13} className="pg-lock" style={{opacity:0.4}}/>
+                            { label: 'Nama Lengkap', value: profile?.nama_guru ?? '—', icon: <User size={16} /> },
+                            { label: 'No. Telepon', value: profile?.phone ?? '—', icon: <Phone size={16} /> },
+                            { label: 'Email', value: profile?.email ?? '—', icon: <span className="font-black text-lg">@</span> },
+                            { label: 'Bidang Studi', value: profile?.bidang ?? '—', icon: <GraduationCap size={16} /> },
+                        ].map((f) => (
+                            <div key={f.label} className="flex flex-col gap-1.5">
+                                <span className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">{f.label}</span>
+                                <div className="flex items-center gap-3 h-12 px-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                                    <span className="text-slate-400 shrink-0">{f.icon}</span>
+                                    <span className="text-[13px] font-bold text-slate-700 flex-1 truncate">{f.value}</span>
+                                    <Lock size={14} className="text-slate-300 shrink-0" />
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="pg-lock-banner">
-                        <AlertCircle size={15} style={{flexShrink:0}}/>
-                        <span>Ingin mengubah data profil? Hubungi administrator sekolah.</span>
-                        <a href={`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent("Assalamu'alaikum Admin, saya ingin mengajukan perubahan data profil akun guru saya.")}`}
-                            target="_blank" rel="noreferrer" className="pg-contact-btn">
-                            <MessageCircle size={13}/> Hubungi Admin <ExternalLink size={11}/>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-2xl mt-4 bg-blue-50 border border-blue-100">
+                        <div className="flex items-center gap-3 text-[13px] font-bold text-blue-800 flex-1">
+                            <AlertCircle size={20} className="text-blue-600 shrink-0" />
+                            <span>Ingin mengubah data profil? Hubungi administrator sekolah.</span>
+                        </div>
+                        <a
+                            href={`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent("Assalamu'alaikum Admin, saya ingin mengajukan perubahan data profil akun guru saya.")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[13px] font-black shadow-md shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all whitespace-nowrap focus:outline-none"
+                        >
+                            <MessageCircle size={16} /> Hubungi Admin <ExternalLink size={14} />
                         </a>
                     </div>
                 </div>
-
-                <UsernameForm/>
-                <PasswordForm/>
             </div>
-        </>
+
+            <UsernameForm />
+            <PasswordForm />
+        </div>
     );
 }

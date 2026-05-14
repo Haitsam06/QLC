@@ -1,12 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-    Search, Plus, BookOpen,
-    X, Save, FileText, User, Calendar,
-    CheckCircle2, AlertCircle, ChevronRight,
-    Clock, TrendingUp, Award, Eye, ArrowLeft,
-    Target, Star, BarChart2, Loader2, AlertTriangle,
-    Pencil, Trash2
-} from 'lucide-react';
+import { Search, Plus, BookOpen, X, Save, FileText, User, Calendar, CheckCircle2, AlertCircle, ChevronRight, Clock, TrendingUp, Award, Eye, ArrowLeft, Target, Star, BarChart2, Loader2, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import axios from 'axios';
 
 /* ═══════════════════════════════════════════════════════════
@@ -36,93 +29,89 @@ interface ProgressReport {
    HELPERS
 ═══════════════════════════════════════════════════════════ */
 const attendanceBadge: Record<string, { label: string; color: string }> = {
-    hadir: { label: 'Hadir',  color: 'bg-emerald-100 text-emerald-700' },
-    izin:  { label: 'Izin',   color: 'bg-blue-100 text-blue-700'       },
-    sakit: { label: 'Sakit',  color: 'bg-yellow-100 text-yellow-700'   },
-    alpha: { label: 'Alpha',  color: 'bg-red-100 text-red-700'         },
+    hadir: { label: 'Hadir', color: 'bg-emerald-100 text-emerald-700' },
+    izin: { label: 'Izin', color: 'bg-blue-100 text-blue-700' },
+    sakit: { label: 'Sakit', color: 'bg-yellow-100 text-yellow-700' },
+    alpha: { label: 'Alpha', color: 'bg-red-100 text-red-700' },
 };
 
 const kualitasBadge: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-    sangat_lancar: { label: 'Sangat Lancar',  color: 'text-blue-600',    icon: Star         },
-    lancar:        { label: 'Lancar',          color: 'text-emerald-600', icon: CheckCircle2 },
-    mengulang:     { label: 'Perlu Mengulang', color: 'text-amber-500',  icon: AlertCircle  },
+    sangat_lancar: { label: 'Sangat Lancar', color: 'text-blue-600', icon: Star },
+    lancar: { label: 'Lancar', color: 'text-emerald-600', icon: CheckCircle2 },
+    mengulang: { label: 'Perlu Mengulang', color: 'text-amber-500', icon: AlertCircle },
 };
 
 const reportTypeLabel: Record<string, string> = {
     hafalan: 'Hafalan',
     tilawah: 'Tilawah',
-    yanbua:  "Yanbu'a",
+    yanbua: "Yanbu'a",
 };
 
 function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString('id-ID', {
-        day: 'numeric', month: 'short', year: 'numeric',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
     });
 }
 
 function AttendanceBadge({ status }: { status: string }) {
     const b = attendanceBadge[status] ?? { label: status, color: 'bg-gray-100 text-gray-600' };
-    return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${b.color}`}>
-            {b.label}
-        </span>
-    );
+    return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${b.color}`}>{b.label}</span>;
 }
 
-function Toast({
-    message, type, onClose,
-}: { message: string; type: 'success' | 'error'; onClose: () => void }) {
+function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
     useEffect(() => {
         const t = setTimeout(onClose, 3500);
         return () => clearTimeout(t);
     }, [onClose]);
 
     return (
-        <div className={`fixed bottom-6 right-6 z-[200] flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold
-            ${type === 'success' ? 'bg-green-600 text-white' : 'bg-red-500 text-white'}`}>
+        <div
+            className={`fixed bottom-6 right-6 z-[200] flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold
+            ${type === 'success' ? 'bg-green-600 text-white' : 'bg-red-500 text-white'}`}
+        >
             {type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
             {message}
-            <button onClick={onClose} className="ml-1 opacity-70 hover:opacity-100"><X size={14} /></button>
+            <button onClick={onClose} className="ml-1 opacity-70 hover:opacity-100">
+                <X size={14} />
+            </button>
         </div>
     );
 }
 
-function DetailPanel({
-    student, onClose, onAddReport, onReportChanged,
-}: {
-    student: Student;
-    onClose: () => void;
-    onAddReport: () => void;
-    onReportChanged: (updatedReport?: ProgressReport) => void;
-}) {
-    const [reports,    setReports]    = useState<ProgressReport[]>([]);
-    const [loading,    setLoading]    = useState(true);
-    const [error,      setError]      = useState<string | null>(null);
+function DetailPanel({ student, onClose, onAddReport, onReportChanged }: { student: Student; onClose: () => void; onAddReport: () => void; onReportChanged: (updatedReport?: ProgressReport) => void }) {
+    const [reports, setReports] = useState<ProgressReport[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [editReport, setEditReport] = useState<ProgressReport | null>(null);
-    const [delReport,  setDelReport]  = useState<ProgressReport | null>(null);
+    const [delReport, setDelReport] = useState<ProgressReport | null>(null);
 
     const loadReports = () => {
         setLoading(true);
         setError(null);
-        axios.get<ProgressReport[]>(`/api/teacher/students/${student.id}/reports`)
-            .then(res => setReports(res.data))
+        axios
+            .get<ProgressReport[]>(`/api/teacher/students/${student.id}/reports`)
+            .then((res) => setReports(res.data))
             .catch(() => setError('Gagal memuat riwayat. Coba lagi.'))
             .finally(() => setLoading(false));
     };
 
-    useEffect(() => { loadReports(); }, [student.id]);
+    useEffect(() => {
+        loadReports();
+    }, [student.id]);
 
-    const totalHadir  = reports.filter(r => r.attendance === 'hadir').length;
-    const totalSangat = reports.filter(r => r.kualitas === 'sangat_lancar').length;
+    const totalHadir = reports.filter((r) => r.attendance === 'hadir').length;
+    const totalSangat = reports.filter((r) => r.kualitas === 'sangat_lancar').length;
 
     const handleEditSaved = (updated: ProgressReport) => {
-        setReports(prev => prev.map(r => r.id === updated.id ? updated : r));
+        setReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
         setEditReport(null);
         onReportChanged(updated);
     };
 
     const handleDeleted = (deletedId: string) => {
-        const remaining = reports.filter(r => r.id !== deletedId);
+        const remaining = reports.filter((r) => r.id !== deletedId);
         setReports(remaining);
         setDelReport(null);
         onReportChanged(remaining[0]);
@@ -130,155 +119,130 @@ function DetailPanel({
 
     return (
         <>
-        <div className="fixed inset-0 z-[90] flex justify-end">
-            <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="fixed inset-0 z-[90] flex justify-end">
+                <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative z-10 w-full max-w-md bg-white h-full flex flex-col shadow-2xl animate-slide-in">
-                <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 bg-white">
-                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <div className="flex-1 min-w-0">
-                        <h2 className="text-sm font-bold text-gray-900 truncate">{student.nama}</h2>
-                        <p className="text-[11px] text-gray-500 font-medium">{student.program}</p>
+                <div className="relative z-10 w-full max-w-md bg-white h-full flex flex-col shadow-2xl animate-slide-in">
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 bg-white">
+                        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                            <ArrowLeft size={18} />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-sm font-bold text-gray-900 truncate">{student.nama}</h2>
+                            <p className="text-[11px] text-gray-500 font-medium">{student.program}</p>
+                        </div>
+                        <button onClick={onAddReport} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors shrink-0">
+                            <Plus size={13} /> Input
+                        </button>
                     </div>
-                    <button
-                        onClick={onAddReport}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors shrink-0"
-                    >
-                        <Plus size={13} /> Input
-                    </button>
-                </div>
 
-                <div className="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100 bg-gray-50">
-                    {[
-                        { val: reports.length, label: 'Total Setoran', cls: 'text-gray-900'    },
-                        { val: totalHadir,     label: 'Hadir',         cls: 'text-emerald-600' },
-                        { val: totalSangat,    label: 'Sangat Lancar', cls: 'text-blue-600'    },
-                    ].map(({ val, label, cls }) => (
-                        <div key={label} className="flex flex-col items-center py-3">
-                            <span className={`text-lg font-extrabold ${cls}`}>{val}</span>
-                            <span className="text-[10px] font-semibold text-gray-400 uppercase mt-0.5">{label}</span>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-                    {loading && (
-                        <div className="flex flex-col items-center justify-center h-40 text-gray-400 gap-2">
-                            <Loader2 size={28} className="animate-spin" />
-                            <p className="text-xs font-medium">Memuat riwayat...</p>
-                        </div>
-                    )}
-
-                    {!loading && error && (
-                        <div className="flex flex-col items-center justify-center h-40 text-red-400 gap-2">
-                            <AlertTriangle size={28} />
-                            <p className="text-xs font-medium">{error}</p>
-                            <button onClick={loadReports} className="text-xs font-bold text-red-500 underline">
-                                Coba lagi
-                            </button>
-                        </div>
-                    )}
-
-                    {!loading && !error && reports.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-                            <FileText size={32} className="mb-2 opacity-40" />
-                            <p className="text-sm font-medium">Belum ada laporan</p>
-                            <p className="text-xs text-gray-400 mt-1">Tekan tombol Input untuk menambahkan</p>
-                        </div>
-                    )}
-
-                    {!loading && !error && reports.map((report) => {
-                        const kq       = report.kualitas ? kualitasBadge[report.kualitas] : null;
-                        const KqIcon   = kq?.icon ?? CheckCircle2;
-                        const isAbsent = ['izin', 'sakit', 'alpha'].includes(report.attendance);
-
-                        return (
-                            <div key={report.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:border-green-200 transition-colors">
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        {report.report_type && (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold">
-                                                <BookOpen size={10} />
-                                                {reportTypeLabel[report.report_type]}
-                                            </span>
-                                        )}
-                                        <AttendanceBadge status={report.attendance} />
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        <span className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
-                                            <Calendar size={11} /> {formatDate(report.date)}
-                                        </span>
-                                        <button
-                                            onClick={() => setEditReport(report)}
-                                            className="ml-1 p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                            title="Edit laporan"
-                                        >
-                                            <Pencil size={13} />
-                                        </button>
-                                        <button
-                                            onClick={() => setDelReport(report)}
-                                            className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                            title="Hapus laporan"
-                                        >
-                                            <Trash2 size={13} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {!isAbsent && (
-                                    <div className="grid grid-cols-2 gap-2 my-2">
-                                        <div className="bg-gray-50 rounded-lg px-3 py-2">
-                                            <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5 flex items-center gap-1">
-                                                <Target size={9} /> Target
-                                            </div>
-                                            <div className="text-xs font-semibold text-gray-700">{report.hafalan_target ?? '—'}</div>
-                                        </div>
-                                        <div className="bg-green-50 rounded-lg px-3 py-2">
-                                            <div className="text-[10px] font-bold text-green-500 uppercase mb-0.5 flex items-center gap-1">
-                                                <TrendingUp size={9} /> Capaian
-                                            </div>
-                                            <div className="text-xs font-semibold text-gray-700">{report.hafalan_achievement ?? '—'}</div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {kq && (
-                                    <div className={`flex items-center gap-1.5 text-xs font-bold ${kq.color} mb-1`}>
-                                        <KqIcon size={13} /> {kq.label}
-                                    </div>
-                                )}
-
-                                {report.teacher_notes && (
-                                    <p className="text-[11px] text-gray-500 leading-relaxed border-t border-gray-100 pt-2 mt-2">
-                                        {report.teacher_notes}
-                                    </p>
-                                )}
+                    <div className="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100 bg-gray-50">
+                        {[
+                            { val: reports.length, label: 'Total Setoran', cls: 'text-gray-900' },
+                            { val: totalHadir, label: 'Hadir', cls: 'text-emerald-600' },
+                            { val: totalSangat, label: 'Sangat Lancar', cls: 'text-blue-600' },
+                        ].map(({ val, label, cls }) => (
+                            <div key={label} className="flex flex-col items-center py-3">
+                                <span className={`text-lg font-extrabold ${cls}`}>{val}</span>
+                                <span className="text-[10px] font-semibold text-gray-400 uppercase mt-0.5">{label}</span>
                             </div>
-                        );
-                    })}
+                        ))}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                        {loading && (
+                            <div className="flex flex-col items-center justify-center h-40 text-gray-400 gap-2">
+                                <Loader2 size={28} className="animate-spin" />
+                                <p className="text-xs font-medium">Memuat riwayat...</p>
+                            </div>
+                        )}
+
+                        {!loading && error && (
+                            <div className="flex flex-col items-center justify-center h-40 text-red-400 gap-2">
+                                <AlertTriangle size={28} />
+                                <p className="text-xs font-medium">{error}</p>
+                                <button onClick={loadReports} className="text-xs font-bold text-red-500 underline">
+                                    Coba lagi
+                                </button>
+                            </div>
+                        )}
+
+                        {!loading && !error && reports.length === 0 && (
+                            <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+                                <FileText size={32} className="mb-2 opacity-40" />
+                                <p className="text-sm font-medium">Belum ada laporan</p>
+                                <p className="text-xs text-gray-400 mt-1">Tekan tombol Input untuk menambahkan</p>
+                            </div>
+                        )}
+
+                        {!loading &&
+                            !error &&
+                            reports.map((report) => {
+                                const kq = report.kualitas ? kualitasBadge[report.kualitas] : null;
+                                const KqIcon = kq?.icon ?? CheckCircle2;
+                                const isAbsent = ['izin', 'sakit', 'alpha'].includes(report.attendance);
+
+                                return (
+                                    <div key={report.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:border-green-200 transition-colors">
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {report.report_type && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold">
+                                                        <BookOpen size={10} />
+                                                        {reportTypeLabel[report.report_type]}
+                                                    </span>
+                                                )}
+                                                <AttendanceBadge status={report.attendance} />
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <span className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+                                                    <Calendar size={11} /> {formatDate(report.date)}
+                                                </span>
+                                                <button onClick={() => setEditReport(report)} className="ml-1 p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Edit laporan">
+                                                    <Pencil size={13} />
+                                                </button>
+                                                <button onClick={() => setDelReport(report)} className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Hapus laporan">
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {!isAbsent && (
+                                            <div className="grid grid-cols-2 gap-2 my-2">
+                                                <div className="bg-gray-50 rounded-lg px-3 py-2">
+                                                    <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5 flex items-center gap-1">
+                                                        <Target size={9} /> Target
+                                                    </div>
+                                                    <div className="text-xs font-semibold text-gray-700">{report.hafalan_target ?? '—'}</div>
+                                                </div>
+                                                <div className="bg-green-50 rounded-lg px-3 py-2">
+                                                    <div className="text-[10px] font-bold text-green-500 uppercase mb-0.5 flex items-center gap-1">
+                                                        <TrendingUp size={9} /> Capaian
+                                                    </div>
+                                                    <div className="text-xs font-semibold text-gray-700">{report.hafalan_achievement ?? '—'}</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {kq && (
+                                            <div className={`flex items-center gap-1.5 text-xs font-bold ${kq.color} mb-1`}>
+                                                <KqIcon size={13} /> {kq.label}
+                                            </div>
+                                        )}
+
+                                        {report.teacher_notes && <p className="text-[11px] text-gray-500 leading-relaxed border-t border-gray-100 pt-2 mt-2">{report.teacher_notes}</p>}
+                                    </div>
+                                );
+                            })}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        {editReport && (
-            <EditModal
-                report={editReport}
-                onClose={() => setEditReport(null)}
-                onSaved={handleEditSaved}
-            />
-        )}
+            {editReport && <EditModal report={editReport} onClose={() => setEditReport(null)} onSaved={handleEditSaved} />}
 
-        {delReport && (
-            <DeleteConfirmModal
-                report={delReport}
-                onClose={() => setDelReport(null)}
-                onDeleted={handleDeleted}
-            />
-        )}
+            {delReport && <DeleteConfirmModal report={delReport} onClose={() => setDelReport(null)} onDeleted={handleDeleted} />}
 
-        <style>{`
+            <style>{`
             @keyframes slide-in {
                 from { transform: translateX(100%); opacity: 0; }
                 to   { transform: translateX(0);    opacity: 1; }
@@ -289,22 +253,16 @@ function DetailPanel({
     );
 }
 
-function EditModal({
-    report, onClose, onSaved,
-}: {
-    report: ProgressReport;
-    onClose: () => void;
-    onSaved: (updated: ProgressReport) => void;
-}) {
-    const [date,               setDate]              = useState(report.date);
-    const [attendance,         setAttendance]        = useState(report.attendance);
-    const [reportType,         setReportType]        = useState(report.report_type ?? 'hafalan');
-    const [kualitas,           setKualitas]          = useState(report.kualitas ?? 'lancar');
-    const [hafalanTarget,      setHafalanTarget]     = useState(report.hafalan_target ?? '');
+function EditModal({ report, onClose, onSaved }: { report: ProgressReport; onClose: () => void; onSaved: (updated: ProgressReport) => void }) {
+    const [date, setDate] = useState(report.date);
+    const [attendance, setAttendance] = useState(report.attendance);
+    const [reportType, setReportType] = useState(report.report_type ?? 'hafalan');
+    const [kualitas, setKualitas] = useState(report.kualitas ?? 'lancar');
+    const [hafalanTarget, setHafalanTarget] = useState(report.hafalan_target ?? '');
     const [hafalanAchievement, setHafalanAchievement] = useState(report.hafalan_achievement ?? '');
-    const [notes,              setNotes]             = useState(report.teacher_notes ?? '');
-    const [saving,             setSaving]            = useState(false);
-    const [formError,          setFormError]         = useState<string | null>(null);
+    const [notes, setNotes] = useState(report.teacher_notes ?? '');
+    const [saving, setSaving] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
 
     const isAbsent = ['izin', 'sakit', 'alpha'].includes(attendance);
 
@@ -315,16 +273,15 @@ function EditModal({
             const res = await axios.put<ProgressReport>(`/api/teacher/reports/${report.id}`, {
                 date,
                 attendance,
-                report_type:         isAbsent ? null : reportType,
-                kualitas:            isAbsent ? null : kualitas,
-                hafalan_target:      isAbsent ? null : (hafalanTarget.trim()      || null),
-                hafalan_achievement: isAbsent ? null : (hafalanAchievement.trim() || null),
-                teacher_notes:       notes.trim() || null,
+                report_type: isAbsent ? null : reportType,
+                kualitas: isAbsent ? null : kualitas,
+                hafalan_target: isAbsent ? null : hafalanTarget.trim() || null,
+                hafalan_achievement: isAbsent ? null : hafalanAchievement.trim() || null,
+                teacher_notes: notes.trim() || null,
             });
             onSaved(res.data);
         } catch (err: unknown) {
-            const msg = (err as { response?: { data?: { message?: string } } })
-                ?.response?.data?.message ?? 'Gagal menyimpan perubahan.';
+            const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Gagal menyimpan perubahan.';
             setFormError(msg);
         } finally {
             setSaving(false);
@@ -354,24 +311,14 @@ function EditModal({
 
                     <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 shadow-sm flex items-center justify-between">
                         <div className="text-xs font-bold text-gray-500 uppercase">Tanggal</div>
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={e => setDate(e.target.value)}
-                            className="text-xs font-bold text-gray-700 border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 bg-gray-50"
-                        />
+                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="text-xs font-bold text-gray-700 border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 bg-gray-50" />
                     </div>
 
                     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                         <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Status Kehadiran</h3>
                         <div className="grid grid-cols-4 gap-2">
-                            {(['hadir', 'izin', 'sakit', 'alpha'] as const).map(s => (
-                                <button key={s} type="button" onClick={() => setAttendance(s)}
-                                    className={`py-2 rounded-lg text-xs font-bold border transition-all ${
-                                        attendance === s
-                                            ? 'border-green-500 bg-green-600 text-white shadow-sm'
-                                            : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'
-                                    }`}>
+                            {(['hadir', 'izin', 'sakit', 'alpha'] as const).map((s) => (
+                                <button key={s} type="button" onClick={() => setAttendance(s)} className={`py-2 rounded-lg text-xs font-bold border transition-all ${attendance === s ? 'border-green-500 bg-green-600 text-white shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}>
                                     {attendanceBadge[s].label}
                                 </button>
                             ))}
@@ -382,14 +329,21 @@ function EditModal({
                         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                             <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Jenis Setoran</h3>
                             <div className="grid grid-cols-3 gap-2">
-                                {([
-                                    { id: 'hafalan', label: 'Hafalan', icon: BookOpen  },
-                                    { id: 'tilawah', label: 'Tilawah', icon: FileText  },
-                                    { id: 'yanbua',  label: "Yanbu'a", icon: BarChart2 },
-                                ] as const).map(t => (
-                                    <button key={t.id} type="button" disabled={isAbsent} onClick={() => setReportType(t.id)}
+                                {(
+                                    [
+                                        { id: 'hafalan', label: 'Hafalan', icon: BookOpen },
+                                        { id: 'tilawah', label: 'Tilawah', icon: FileText },
+                                        { id: 'yanbua', label: "Yanbu'a", icon: BarChart2 },
+                                    ] as const
+                                ).map((t) => (
+                                    <button
+                                        key={t.id}
+                                        type="button"
+                                        disabled={isAbsent}
+                                        onClick={() => setReportType(t.id)}
                                         className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                                            ${reportType === t.id && !isAbsent ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}>
+                                            ${reportType === t.id && !isAbsent ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}
+                                    >
                                         <t.icon size={16} />
                                         <span className="font-bold text-[11px]">{t.label}</span>
                                     </button>
@@ -399,14 +353,21 @@ function EditModal({
                         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                             <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Kualitas Bacaan</h3>
                             <div className="flex flex-col gap-2">
-                                {([
-                                    { id: 'sangat_lancar', label: 'Sangat Lancar',   activeColor: 'border-blue-400 bg-blue-50 text-blue-800',       icon: Star         },
-                                    { id: 'lancar',        label: 'Lancar',           activeColor: 'border-emerald-400 bg-emerald-50 text-emerald-800', icon: CheckCircle2 },
-                                    { id: 'mengulang',     label: 'Perlu Mengulang', activeColor: 'border-amber-400 bg-amber-50 text-amber-800',     icon: AlertCircle  },
-                                ] as const).map(k => (
-                                    <button key={k.id} type="button" disabled={isAbsent} onClick={() => setKualitas(k.id)}
+                                {(
+                                    [
+                                        { id: 'sangat_lancar', label: 'Sangat Lancar', activeColor: 'border-blue-400 bg-blue-50 text-blue-800', icon: Star },
+                                        { id: 'lancar', label: 'Lancar', activeColor: 'border-emerald-400 bg-emerald-50 text-emerald-800', icon: CheckCircle2 },
+                                        { id: 'mengulang', label: 'Perlu Mengulang', activeColor: 'border-amber-400 bg-amber-50 text-amber-800', icon: AlertCircle },
+                                    ] as const
+                                ).map((k) => (
+                                    <button
+                                        key={k.id}
+                                        type="button"
+                                        disabled={isAbsent}
+                                        onClick={() => setKualitas(k.id)}
                                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                                            ${kualitas === k.id && !isAbsent ? k.activeColor : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}>
+                                            ${kualitas === k.id && !isAbsent ? k.activeColor : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}
+                                    >
                                         <k.icon size={14} /> {k.label}
                                     </button>
                                 ))}
@@ -421,17 +382,25 @@ function EditModal({
                                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 flex items-center gap-1">
                                     <Target size={10} /> Target
                                 </label>
-                                <input type="text" value={hafalanTarget} onChange={e => setHafalanTarget(e.target.value)}
+                                <input
+                                    type="text"
+                                    value={hafalanTarget}
+                                    onChange={(e) => setHafalanTarget(e.target.value)}
                                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
-                                    placeholder="Al-Mulk: 1-15" />
+                                    placeholder="Al-Mulk: 1-15"
+                                />
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 flex items-center gap-1">
                                     <TrendingUp size={10} /> Capaian Aktual
                                 </label>
-                                <input type="text" value={hafalanAchievement} onChange={e => setHafalanAchievement(e.target.value)}
+                                <input
+                                    type="text"
+                                    value={hafalanAchievement}
+                                    onChange={(e) => setHafalanAchievement(e.target.value)}
                                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
-                                    placeholder="Al-Mulk: 1-10" />
+                                    placeholder="Al-Mulk: 1-10"
+                                />
                             </div>
                         </div>
                     </div>
@@ -440,19 +409,20 @@ function EditModal({
                         <h3 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-1.5">
                             <FileText size={13} className="text-green-600" /> Catatan Asatidz
                         </h3>
-                        <textarea value={notes} onChange={e => setNotes(e.target.value)}
+                        <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
                             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-green-500 resize-none min-h-[72px] transition-all"
-                            placeholder="Catatan tajwid, perkembangan, atau hal yang perlu diperhatikan..." />
+                            placeholder="Catatan tajwid, perkembangan, atau hal yang perlu diperhatikan..."
+                        />
                     </div>
                 </div>
 
                 <div className="px-5 py-3.5 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
-                    <button onClick={onClose} disabled={saving}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50">
+                    <button onClick={onClose} disabled={saving} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50">
                         Batal
                     </button>
-                    <button onClick={handleSubmit} disabled={saving}
-                        className="px-5 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                    <button onClick={handleSubmit} disabled={saving} className="px-5 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                         {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                         {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
                     </button>
@@ -462,15 +432,9 @@ function EditModal({
     );
 }
 
-function DeleteConfirmModal({
-    report, onClose, onDeleted,
-}: {
-    report: ProgressReport;
-    onClose: () => void;
-    onDeleted: (id: string) => void;
-}) {
-    const [deleting,  setDeleting]  = useState(false);
-    const [delError,  setDelError]  = useState<string | null>(null);
+function DeleteConfirmModal({ report, onClose, onDeleted }: { report: ProgressReport; onClose: () => void; onDeleted: (id: string) => void }) {
+    const [deleting, setDeleting] = useState(false);
+    const [delError, setDelError] = useState<string | null>(null);
 
     const handleDelete = async () => {
         setDeleting(true);
@@ -479,8 +443,7 @@ function DeleteConfirmModal({
             await axios.delete(`/api/teacher/reports/${report.id}`);
             onDeleted(report.id);
         } catch (err: unknown) {
-            const msg = (err as { response?: { data?: { message?: string } } })
-                ?.response?.data?.message ?? 'Gagal menghapus laporan.';
+            const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Gagal menghapus laporan.';
             setDelError(msg);
         } finally {
             setDeleting(false);
@@ -506,12 +469,10 @@ function DeleteConfirmModal({
                 )}
 
                 <div className="flex gap-3">
-                    <button onClick={onClose} disabled={deleting}
-                        className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50">
+                    <button onClick={onClose} disabled={deleting} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50">
                         Batal
                     </button>
-                    <button onClick={handleDelete} disabled={deleting}
-                        className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-60">
+                    <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-60">
                         {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                         {deleting ? 'Menghapus...' : 'Hapus'}
                     </button>
@@ -521,22 +482,16 @@ function DeleteConfirmModal({
     );
 }
 
-function InputModal({
-    student, onClose, onSaved,
-}: {
-    student: Student;
-    onClose: () => void;
-    onSaved: (report: ProgressReport) => void;
-}) {
-    const [date,                setDate]               = useState(new Date().toISOString().split('T')[0]);
-    const [attendance,          setAttendance]         = useState<'hadir' | 'izin' | 'sakit' | 'alpha'>('hadir');
-    const [reportType,          setReportType]         = useState<'hafalan' | 'tilawah' | 'yanbua'>('hafalan');
-    const [kualitas,            setKualitas]           = useState<'sangat_lancar' | 'lancar' | 'mengulang'>('lancar');
-    const [hafalanTarget,       setHafalanTarget]      = useState('');
-    const [hafalanAchievement,  setHafalanAchievement] = useState('');
-    const [notes,               setNotes]              = useState('');
-    const [saving,              setSaving]             = useState(false);
-    const [formError,           setFormError]          = useState<string | null>(null);
+function InputModal({ student, onClose, onSaved }: { student: Student; onClose: () => void; onSaved: (report: ProgressReport) => void }) {
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [attendance, setAttendance] = useState<'hadir' | 'izin' | 'sakit' | 'alpha'>('hadir');
+    const [reportType, setReportType] = useState<'hafalan' | 'tilawah' | 'yanbua'>('hafalan');
+    const [kualitas, setKualitas] = useState<'sangat_lancar' | 'lancar' | 'mengulang'>('lancar');
+    const [hafalanTarget, setHafalanTarget] = useState('');
+    const [hafalanAchievement, setHafalanAchievement] = useState('');
+    const [notes, setNotes] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
 
     const isAbsent = ['izin', 'sakit', 'alpha'].includes(attendance);
 
@@ -545,14 +500,14 @@ function InputModal({
         setFormError(null);
 
         const payload = {
-            student_id:           student.id,
+            student_id: student.id,
             date,
             attendance,
-            report_type:          isAbsent ? null : reportType,
-            kualitas:             isAbsent ? null : kualitas,
-            hafalan_target:       isAbsent ? null : (hafalanTarget.trim() || null),
-            hafalan_achievement:  isAbsent ? null : (hafalanAchievement.trim() || null),
-            teacher_notes:        notes.trim() || null,
+            report_type: isAbsent ? null : reportType,
+            kualitas: isAbsent ? null : kualitas,
+            hafalan_target: isAbsent ? null : hafalanTarget.trim() || null,
+            hafalan_achievement: isAbsent ? null : hafalanAchievement.trim() || null,
+            teacher_notes: notes.trim() || null,
         };
 
         try {
@@ -560,8 +515,7 @@ function InputModal({
             onSaved(res.data);
             onClose();
         } catch (err: unknown) {
-            const msg = (err as { response?: { data?: { message?: string } } })
-                ?.response?.data?.message ?? 'Gagal menyimpan laporan. Coba lagi.';
+            const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Gagal menyimpan laporan. Coba lagi.';
             setFormError(msg);
         } finally {
             setSaving(false);
@@ -602,29 +556,15 @@ function InputModal({
                         </div>
                         <div className="hidden sm:flex flex-col items-end">
                             <label className="text-[10px] font-bold text-gray-400 uppercase mb-1">Tanggal</label>
-                            <input
-                                type="date"
-                                value={date}
-                                onChange={e => setDate(e.target.value)}
-                                className="text-xs font-bold text-gray-700 border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 bg-gray-50"
-                            />
+                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="text-xs font-bold text-gray-700 border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 bg-gray-50" />
                         </div>
                     </div>
 
                     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                         <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Status Kehadiran</h3>
                         <div className="grid grid-cols-4 gap-2">
-                            {(['hadir', 'izin', 'sakit', 'alpha'] as const).map(s => (
-                                <button
-                                    key={s}
-                                    type="button"
-                                    onClick={() => setAttendance(s)}
-                                    className={`py-2 rounded-lg text-xs font-bold border transition-all ${
-                                        attendance === s
-                                            ? 'border-green-500 bg-green-600 text-white shadow-sm'
-                                            : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'
-                                    }`}
-                                >
+                            {(['hadir', 'izin', 'sakit', 'alpha'] as const).map((s) => (
+                                <button key={s} type="button" onClick={() => setAttendance(s)} className={`py-2 rounded-lg text-xs font-bold border transition-all ${attendance === s ? 'border-green-500 bg-green-600 text-white shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}>
                                     {attendanceBadge[s].label}
                                 </button>
                             ))}
@@ -635,21 +575,20 @@ function InputModal({
                         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                             <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Jenis Setoran</h3>
                             <div className="grid grid-cols-3 gap-2">
-                                {([
-                                    { id: 'hafalan', label: 'Hafalan', icon: BookOpen  },
-                                    { id: 'tilawah', label: 'Tilawah', icon: FileText  },
-                                    { id: 'yanbua',  label: "Yanbu'a", icon: BarChart2 },
-                                ] as const).map(t => (
+                                {(
+                                    [
+                                        { id: 'hafalan', label: 'Hafalan', icon: BookOpen },
+                                        { id: 'tilawah', label: 'Tilawah', icon: FileText },
+                                        { id: 'yanbua', label: "Yanbu'a", icon: BarChart2 },
+                                    ] as const
+                                ).map((t) => (
                                     <button
                                         key={t.id}
                                         type="button"
                                         disabled={isAbsent}
                                         onClick={() => setReportType(t.id)}
                                         className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                                            ${reportType === t.id && !isAbsent
-                                                ? 'border-green-500 bg-green-50 text-green-700'
-                                                : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'
-                                            }`}
+                                            ${reportType === t.id && !isAbsent ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white'}`}
                                     >
                                         <t.icon size={16} />
                                         <span className="font-bold text-[11px]">{t.label}</span>
@@ -661,11 +600,13 @@ function InputModal({
                         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                             <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Kualitas Bacaan</h3>
                             <div className="flex flex-col gap-2">
-                                {([
-                                    { id: 'sangat_lancar', label: 'Sangat Lancar',   activeColor: 'border-blue-400 bg-blue-50 text-blue-800',     icon: Star         },
-                                    { id: 'lancar',        label: 'Lancar',           activeColor: 'border-emerald-400 bg-emerald-50 text-emerald-800', icon: CheckCircle2 },
-                                    { id: 'mengulang',     label: 'Perlu Mengulang', activeColor: 'border-amber-400 bg-amber-50 text-amber-800',   icon: AlertCircle  },
-                                ] as const).map(k => {
+                                {(
+                                    [
+                                        { id: 'sangat_lancar', label: 'Sangat Lancar', activeColor: 'border-blue-400 bg-blue-50 text-blue-800', icon: Star },
+                                        { id: 'lancar', label: 'Lancar', activeColor: 'border-emerald-400 bg-emerald-50 text-emerald-800', icon: CheckCircle2 },
+                                        { id: 'mengulang', label: 'Perlu Mengulang', activeColor: 'border-amber-400 bg-amber-50 text-amber-800', icon: AlertCircle },
+                                    ] as const
+                                ).map((k) => {
                                     const active = kualitas === k.id && !isAbsent;
                                     return (
                                         <button
@@ -694,7 +635,7 @@ function InputModal({
                                 <input
                                     type="text"
                                     value={hafalanTarget}
-                                    onChange={e => setHafalanTarget(e.target.value)}
+                                    onChange={(e) => setHafalanTarget(e.target.value)}
                                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
                                     placeholder={reportType === 'yanbua' ? 'Jilid 4: Hal 1-5' : 'Al-Mulk: 1-15'}
                                 />
@@ -706,7 +647,7 @@ function InputModal({
                                 <input
                                     type="text"
                                     value={hafalanAchievement}
-                                    onChange={e => setHafalanAchievement(e.target.value)}
+                                    onChange={(e) => setHafalanAchievement(e.target.value)}
                                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
                                     placeholder={reportType === 'yanbua' ? 'Jilid 4: Hal 1-3' : 'Al-Mulk: 1-15'}
                                 />
@@ -720,7 +661,7 @@ function InputModal({
                         </h3>
                         <textarea
                             value={notes}
-                            onChange={e => setNotes(e.target.value)}
+                            onChange={(e) => setNotes(e.target.value)}
                             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-green-500 resize-none min-h-[72px] transition-all"
                             placeholder="Catatan tajwid, perkembangan, atau hal yang perlu diperhatikan... (opsional)"
                         />
@@ -728,18 +669,10 @@ function InputModal({
                 </div>
 
                 <div className="px-5 py-3.5 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
-                    <button
-                        onClick={onClose}
-                        disabled={saving}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
-                    >
+                    <button onClick={onClose} disabled={saving} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50">
                         Batal
                     </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={saving}
-                        className="px-5 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={handleSubmit} disabled={saving} className="px-5 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                         {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                         {saving ? 'Menyimpan...' : 'Simpan Laporan'}
                     </button>
@@ -750,52 +683,46 @@ function InputModal({
 }
 
 export default function LaporanGuruPage() {
-    const [students,      setStudents]      = useState<Student[]>([]);
-    const [loadingPage,   setLoadingPage]   = useState(true);
-    const [pageError,     setPageError]     = useState<string | null>(null);
+    const [students, setStudents] = useState<Student[]>([]);
+    const [loadingPage, setLoadingPage] = useState(true);
+    const [pageError, setPageError] = useState<string | null>(null);
 
-    const [searchQuery,   setSearchQuery]   = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [filterProgram, setFilterProgram] = useState('semua');
 
     const [detailStudent, setDetailStudent] = useState<Student | null>(null);
-    const [modalStudent,  setModalStudent]  = useState<Student | null>(null);
+    const [modalStudent, setModalStudent] = useState<Student | null>(null);
 
     const [detailRefreshKey, setDetailRefreshKey] = useState(0);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     useEffect(() => {
-        axios.get<Student[]>('/api/teacher/students')
-            .then(res => setStudents(res.data))
+        axios
+            .get<Student[]>('/api/teacher/students')
+            .then((res) => setStudents(res.data))
             .catch(() => setPageError('Gagal memuat data santri. Refresh halaman.'))
             .finally(() => setLoadingPage(false));
     }, []);
 
-    const programs = ['semua', ...Array.from(new Set(students.map(s => s.program)))];
+    const programs = ['semua', ...Array.from(new Set(students.map((s) => s.program)))];
 
-    const filtered = students.filter(s => {
-        const matchSearch  = s.nama.toLowerCase().includes(searchQuery.toLowerCase());
+    const filtered = students.filter((s) => {
+        const matchSearch = s.nama.toLowerCase().includes(searchQuery.toLowerCase());
         const matchProgram = filterProgram === 'semua' || s.program === filterProgram;
         return matchSearch && matchProgram;
     });
 
     const handleSaved = (newReport: ProgressReport) => {
-        setStudents(prev =>
-            prev.map(s => s.id === newReport.student_id ? { ...s, lastReport: newReport } : s)
-        );
+        setStudents((prev) => prev.map((s) => (s.id === newReport.student_id ? { ...s, lastReport: newReport } : s)));
         if (detailStudent?.id === newReport.student_id) {
-            setDetailRefreshKey(k => k + 1);
+            setDetailRefreshKey((k) => k + 1);
         }
         setToast({ message: 'Laporan berhasil disimpan!', type: 'success' });
     };
 
     const handleReportChanged = (updatedReport?: ProgressReport) => {
         if (!detailStudent) return;
-        setStudents(prev =>
-            prev.map(s => s.id === detailStudent.id
-                ? { ...s, lastReport: updatedReport ?? undefined }
-                : s
-            )
-        );
+        setStudents((prev) => prev.map((s) => (s.id === detailStudent.id ? { ...s, lastReport: updatedReport ?? undefined } : s)));
         setToast({ message: updatedReport ? 'Laporan berhasil diubah!' : 'Laporan berhasil dihapus!', type: 'success' });
     };
 
@@ -804,9 +731,7 @@ export default function LaporanGuruPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-1">Progress Reports</h1>
-                    <p className="text-sm text-gray-500 font-medium">
-                        Pantau &amp; input progres setoran hafalan, tilawah, dan yanbu'a santri.
-                    </p>
+                    <p className="text-sm text-gray-500 font-medium">Pantau &amp; input progres setoran hafalan, tilawah, dan yanbu'a santri.</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl shadow-sm text-xs font-bold text-gray-600">
@@ -815,7 +740,7 @@ export default function LaporanGuruPage() {
                     </div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl shadow-sm text-xs font-bold text-gray-600">
                         <Award size={13} className="text-blue-600" />
-                        {students.filter(s => s.lastReport?.kualitas === 'sangat_lancar').length} Sangat Lancar Hari Ini
+                        {students.filter((s) => s.lastReport?.kualitas === 'sangat_lancar').length} Sangat Lancar Hari Ini
                     </div>
                 </div>
             </div>
@@ -836,19 +761,8 @@ export default function LaporanGuruPage() {
                         className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all"
                         placeholder="Cari nama santri..."
                         value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                </div>
-                <div className="flex w-full sm:w-auto gap-2">
-                    <select
-                        value={filterProgram}
-                        onChange={e => setFilterProgram(e.target.value)}
-                        className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 focus:outline-none focus:ring-1 focus:ring-green-500"
-                    >
-                        {programs.map(p => (
-                            <option key={p} value={p}>{p === 'semua' ? 'Semua Program' : p}</option>
-                        ))}
-                    </select>
                 </div>
             </div>
 
@@ -866,15 +780,16 @@ export default function LaporanGuruPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {loadingPage && Array.from({ length: 5 }).map((_, i) => (
-                                <tr key={i}>
-                                    {Array.from({ length: 6 }).map((__, j) => (
-                                        <td key={j} className="px-5 py-4">
-                                            <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: j === 0 ? '80%' : '60%' }} />
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))}
+                            {loadingPage &&
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <tr key={i}>
+                                        {Array.from({ length: 6 }).map((__, j) => (
+                                            <td key={j} className="px-5 py-4">
+                                                <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: j === 0 ? '80%' : '60%' }} />
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
 
                             {!loadingPage && filtered.length === 0 && (
                                 <tr>
@@ -884,80 +799,64 @@ export default function LaporanGuruPage() {
                                 </tr>
                             )}
 
-                            {!loadingPage && filtered.map(student => {
-                                const lr   = student.lastReport;
-                                const kq   = lr?.kualitas ? kualitasBadge[lr.kualitas] : null;
-                                const KqIcon = kq?.icon ?? CheckCircle2;
+                            {!loadingPage &&
+                                filtered.map((student) => {
+                                    const lr = student.lastReport;
+                                    const kq = lr?.kualitas ? kualitasBadge[lr.kualitas] : null;
+                                    const KqIcon = kq?.icon ?? CheckCircle2;
 
-                                return (
-                                    <tr
-                                        key={student.id}
-                                        className="hover:bg-green-50/40 transition-colors cursor-pointer group"
-                                        onClick={() => setDetailStudent(student)}
-                                    >
-                                        <td className="px-5 py-3.5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
-                                                    {student.nama.substring(0, 2).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm font-bold text-gray-900 group-hover:text-green-700 transition-colors">
-                                                        {student.nama}
+                                    return (
+                                        <tr key={student.id} className="hover:bg-green-50/40 transition-colors cursor-pointer group" onClick={() => setDetailStudent(student)}>
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">{student.nama.substring(0, 2).toUpperCase()}</div>
+                                                    <div>
+                                                        <div className="text-sm font-bold text-gray-900 group-hover:text-green-700 transition-colors">{student.nama}</div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <span className="text-xs font-semibold text-gray-600">{student.program}</span>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            {lr ? (
-                                                <div>
-                                                    <div className="flex items-center gap-1 text-xs font-semibold text-gray-700">
-                                                        <BookOpen size={11} className="text-gray-400" />
-                                                        {lr.hafalan_achievement || lr.hafalan_target || '—'}
+                                            </td>
+                                            <td className="px-5 py-3.5">
+                                                <span className="text-xs font-semibold text-gray-600">{student.program}</span>
+                                            </td>
+                                            <td className="px-5 py-3.5">
+                                                {lr ? (
+                                                    <div>
+                                                        <div className="flex items-center gap-1 text-xs font-semibold text-gray-700">
+                                                            <BookOpen size={11} className="text-gray-400" />
+                                                            {lr.hafalan_achievement || lr.hafalan_target || '—'}
+                                                        </div>
+                                                        <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                                                            <Clock size={10} /> {formatDate(lr.date)}
+                                                            {lr.report_type && ` · ${reportTypeLabel[lr.report_type]}`}
+                                                        </div>
                                                     </div>
-                                                    <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                                                        <Clock size={10} /> {formatDate(lr.date)}
-                                                        {lr.report_type && ` · ${reportTypeLabel[lr.report_type]}`}
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-5 py-3.5">{lr ? <AttendanceBadge status={lr.attendance} /> : <span className="text-xs text-gray-400">—</span>}</td>
+                                            <td className="px-5 py-3.5">
+                                                {kq ? (
+                                                    <div className={`flex items-center gap-1.5 text-xs font-bold ${kq.color}`}>
+                                                        <KqIcon size={13} /> {kq.label}
                                                     </div>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button onClick={() => setDetailStudent(student)} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Lihat riwayat">
+                                                        <Eye size={15} />
+                                                    </button>
+                                                    <button onClick={() => setModalStudent(student)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm transition-all">
+                                                        <Plus size={13} /> Input
+                                                    </button>
                                                 </div>
-                                            ) : (
-                                                <span className="text-xs text-gray-400">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            {lr ? <AttendanceBadge status={lr.attendance} /> : <span className="text-xs text-gray-400">—</span>}
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            {kq ? (
-                                                <div className={`flex items-center gap-1.5 text-xs font-bold ${kq.color}`}>
-                                                    <KqIcon size={13} /> {kq.label}
-                                                </div>
-                                            ) : (
-                                                <span className="text-xs text-gray-400">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => setDetailStudent(student)}
-                                                    className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                    title="Lihat riwayat"
-                                                >
-                                                    <Eye size={15} />
-                                                </button>
-                                                <button
-                                                    onClick={() => setModalStudent(student)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm transition-all"
-                                                >
-                                                    <Plus size={13} /> Input
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                         </tbody>
                     </table>
                 </div>
@@ -973,31 +872,11 @@ export default function LaporanGuruPage() {
             </div>
 
             {/* ── Modals ── */}
-            {detailStudent && (
-                <DetailPanel
-                    key={`${detailStudent.id}-${detailRefreshKey}`}
-                    student={detailStudent}
-                    onClose={() => setDetailStudent(null)}
-                    onAddReport={() => setModalStudent(detailStudent)}
-                    onReportChanged={handleReportChanged}
-                />
-            )}
+            {detailStudent && <DetailPanel key={`${detailStudent.id}-${detailRefreshKey}`} student={detailStudent} onClose={() => setDetailStudent(null)} onAddReport={() => setModalStudent(detailStudent)} onReportChanged={handleReportChanged} />}
 
-            {modalStudent && (
-                <InputModal
-                    student={modalStudent}
-                    onClose={() => setModalStudent(null)}
-                    onSaved={handleSaved}
-                />
-            )}
+            {modalStudent && <InputModal student={modalStudent} onClose={() => setModalStudent(null)} onSaved={handleSaved} />}
 
-            {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
-            )}
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         </div>
     );
 }

@@ -1,14 +1,11 @@
-import { useState, FormEvent } from 'react';
-import { router, useForm, usePage } from '@inertiajs/react';
+import { useState, FormEvent, useEffect } from 'react';
+import { useForm, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
-import {
-    User, Lock, Eye, EyeOff, CheckCircle2,
-    AlertCircle, Shield, Phone, MessageCircle,
-    KeyRound, Save, ExternalLink,
-} from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { User, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Shield, Phone, MessageCircle, KeyRound, Save, ExternalLink, Loader2 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
-   TYPES
+   TYPES & CONSTANTS
 ═══════════════════════════════════════════════════════════ */
 export interface ParentProfile {
     parent_name: string;
@@ -21,6 +18,28 @@ interface Props {
     flash?: { success?: string };
 }
 
+const ADMIN_WA = '6281285723834'; // ← Ganti dengan nomor WA admin yang sebenarnya
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST COMPONENT
+═══════════════════════════════════════════════════════════ */
+function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error'; onClose: () => void }) {
+    useEffect(() => {
+        const t = setTimeout(onClose, 3000);
+        return () => clearTimeout(t);
+    }, [onClose]);
+
+    return createPortal(
+        <div
+            className={`fixed bottom-24 lg:bottom-6 right-6 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[13.5px] font-bold text-white shadow-xl animate-[fadeIn_0.3s_ease-out] border border-white/20 backdrop-blur-md ${type === 'success' ? 'bg-[#1B6B3A]/90 shadow-green-900/20' : 'bg-red-600/90 shadow-red-600/20'}`}
+        >
+            {type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+            {msg}
+        </div>,
+        document.body
+    );
+}
+
 /* ═══════════════════════════════════════════════════════════
    FORM: Username
 ═══════════════════════════════════════════════════════════ */
@@ -30,7 +49,7 @@ function UsernameForm() {
 
     const { data, setData, put, processing, errors, recentlySuccessful } = useForm({
         username: (user?.username as string) ?? '',
-        email:    (user?.email    as string) ?? '',
+        email: (user?.email as string) ?? '',
     });
 
     const submit = (e: FormEvent) => {
@@ -39,55 +58,83 @@ function UsernameForm() {
     };
 
     return (
-        <div className="bg-white rounded-[18px] p-5 md:p-6 border border-slate-100 shadow-sm">
-            <div className="text-[14px] font-extrabold text-slate-900 flex items-center gap-2 mb-1"><KeyRound size={16} className="text-teal-600"/> Kredensial Akun</div>
-            <div className="text-[11.5px] text-slate-500 mb-5">Ubah username dan email yang digunakan untuk masuk ke sistem.</div>
-
-            {recentlySuccessful && (
-                <div className="flex items-center gap-2.5 p-3 rounded-xl mb-4 bg-green-50 border border-green-100 text-[12.5px] font-bold text-green-700 animate-in fade-in slide-in-from-top-2">
-                    <CheckCircle2 size={15}/> Kredensial akun berhasil diperbarui.
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col transition-all">
+            <div className="px-6 md:px-8 py-6 border-b border-slate-50">
+                <div className="text-[18px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
+                    <KeyRound size={20} className="text-[#1B6B3A] bg-green-50 p-1 rounded-lg" /> Kredensial Akun
                 </div>
-            )}
+                <div className="text-[13px] text-slate-500 font-bold">Ubah username dan email yang digunakan untuk masuk ke sistem.</div>
+            </div>
 
-            <form onSubmit={submit} className="flex flex-col gap-4">
-                {/* Username */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11.5px] font-bold text-slate-700">Username</label>
-                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.username ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
-                        <span className="px-3 text-slate-400 shrink-0"><User size={15}/></span>
-                        <input
-                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
-                            type="text"
-                            value={data.username}
-                            onChange={e => setData('username', e.target.value)}
-                            placeholder="Username baru"
-                            autoComplete="username"
-                        />
+            <div className="px-6 md:px-8 py-7 flex flex-col gap-5">
+                {recentlySuccessful && (
+                    <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-green-50 border border-green-100 text-[13px] font-bold text-green-700 mb-2 animate-[fadeIn_0.3s_ease-out]">
+                        <CheckCircle2 size={16} /> Kredensial akun berhasil diperbarui.
                     </div>
-                    {errors.username && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.username}</p>}
-                </div>
+                )}
 
-                {/* Email (opsional) */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11.5px] font-bold text-slate-700">Email <span className="font-medium text-slate-400">(opsional)</span></label>
-                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.email ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
-                        <span className="px-3 text-slate-400 shrink-0 text-[14px] font-bold">@</span>
-                        <input
-                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
-                            type="email"
-                            value={data.email}
-                            onChange={e => setData('email', e.target.value)}
-                            placeholder="Alamat email"
-                            autoComplete="email"
-                        />
+                <form onSubmit={submit} className="flex flex-col gap-5">
+                    {/* Username */}
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Username Login</label>
+                        <div className="relative flex items-center">
+                            <User className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+                            <input
+                                type="text"
+                                value={data.username}
+                                onChange={(e) => setData('username', e.target.value)}
+                                placeholder="Username baru"
+                                autoComplete="username"
+                                className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.username ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                        </div>
+                        {errors.username && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.username}
+                            </div>
+                        )}
                     </div>
-                    {errors.email && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.email}</p>}
-                </div>
 
-                <button type="submit" disabled={processing} className="flex items-center justify-center gap-1.5 w-full h-11 mt-2 rounded-xl bg-teal-700 text-white text-[13.5px] font-bold hover:bg-teal-800 transition-all shadow-md hover:shadow-lg hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-md">
-                    <Save size={15}/> {processing ? 'Menyimpan…' : 'Simpan Perubahan'}
-                </button>
-            </form>
+                    {/* Email (opsional) */}
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                            Email <span className="font-semibold opacity-70">(opsional)</span>
+                        </label>
+                        <div className="relative flex items-center">
+                            <span className="absolute left-4 text-slate-400 pointer-events-none font-bold text-lg">@</span>
+                            <input
+                                type="email"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
+                                placeholder="Alamat email"
+                                autoComplete="email"
+                                className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.email ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                        </div>
+                        {errors.email && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.email}
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="mt-4 flex items-center justify-center gap-2 h-12 px-8 rounded-2xl bg-[#1B6B3A] text-white text-[14px] font-black shadow-lg shadow-green-900/20 transition-all hover:bg-[#14522d] active:scale-95 focus:outline-none disabled:opacity-60 w-full sm:w-max"
+                        disabled={processing}
+                    >
+                        {processing ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" /> Menyimpan...
+                            </>
+                        ) : (
+                            <>
+                                <Save size={18} /> Simpan Perubahan
+                            </>
+                        )}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
@@ -97,12 +144,12 @@ function UsernameForm() {
 ═══════════════════════════════════════════════════════════ */
 function PasswordForm() {
     const [showCurrent, setShowCurrent] = useState(false);
-    const [showNew,     setShowNew]     = useState(false);
+    const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
 
     const { data, setData, put, processing, errors, reset, recentlySuccessful } = useForm({
-        current_password:      '',
-        password:              '',
+        current_password: '',
+        password: '',
         password_confirmation: '',
     });
 
@@ -115,83 +162,113 @@ function PasswordForm() {
     };
 
     return (
-        <div className="bg-white rounded-[18px] p-5 md:p-6 border border-slate-100 shadow-sm">
-            <div className="text-[14px] font-extrabold text-slate-900 flex items-center gap-2 mb-1"><Lock size={16} className="text-teal-600"/> Ubah Kata Sandi</div>
-            <div className="text-[11.5px] text-slate-500 mb-5">Gunakan kata sandi yang kuat dan berbeda dari sebelumnya.</div>
-
-            {recentlySuccessful && (
-                <div className="flex items-center gap-2.5 p-3 rounded-xl mb-4 bg-green-50 border border-green-100 text-[12.5px] font-bold text-green-700 animate-in fade-in slide-in-from-top-2">
-                    <CheckCircle2 size={15}/> Kata sandi berhasil diperbarui.
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col transition-all">
+            <div className="px-6 md:px-8 py-6 border-b border-slate-50">
+                <div className="text-[18px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
+                    <Lock size={20} className="text-[#1B6B3A] bg-green-50 p-1 rounded-lg" /> Ubah Kata Sandi
                 </div>
-            )}
+                <div className="text-[13px] text-slate-500 font-bold">Gunakan kata sandi yang kuat dan berbeda dari sebelumnya.</div>
+            </div>
 
-            <form onSubmit={submit} className="flex flex-col gap-4">
-                {/* Password lama */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11.5px] font-bold text-slate-700">Kata Sandi Saat Ini</label>
-                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.current_password ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
-                        <span className="px-3 text-slate-400 shrink-0"><Lock size={15}/></span>
-                        <input
-                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
-                            type={showCurrent ? 'text' : 'password'}
-                            value={data.current_password}
-                            onChange={e => setData('current_password', e.target.value)}
-                            placeholder="••••••••"
-                            autoComplete="current-password"
-                        />
-                        <button type="button" className="px-3 text-slate-400 hover:text-teal-600 transition-colors" onClick={() => setShowCurrent(v => !v)}>
-                            {showCurrent ? <EyeOff size={15}/> : <Eye size={15}/>}
-                        </button>
+            <div className="px-6 md:px-8 py-7 flex flex-col gap-5">
+                {recentlySuccessful && (
+                    <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-green-50 border border-green-100 text-[13px] font-bold text-green-700 mb-2 animate-[fadeIn_0.3s_ease-out]">
+                        <CheckCircle2 size={16} /> Kata sandi berhasil diperbarui.
                     </div>
-                    {errors.current_password && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.current_password}</p>}
-                </div>
+                )}
 
-                <div className="h-px bg-slate-100 my-1"/>
-
-                {/* Password baru */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11.5px] font-bold text-slate-700">Kata Sandi Baru</label>
-                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.password ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
-                        <span className="px-3 text-slate-400 shrink-0"><KeyRound size={15}/></span>
-                        <input
-                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
-                            type={showNew ? 'text' : 'password'}
-                            value={data.password}
-                            onChange={e => setData('password', e.target.value)}
-                            placeholder="Minimal 8 karakter"
-                            autoComplete="new-password"
-                        />
-                        <button type="button" className="px-3 text-slate-400 hover:text-teal-600 transition-colors" onClick={() => setShowNew(v => !v)}>
-                            {showNew ? <EyeOff size={15}/> : <Eye size={15}/>}
-                        </button>
+                <form onSubmit={submit} className="flex flex-col gap-5">
+                    {/* Password lama */}
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Kata Sandi Saat Ini</label>
+                        <div className="relative flex items-center">
+                            <Lock className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+                            <input
+                                type={showCurrent ? 'text' : 'password'}
+                                value={data.current_password}
+                                onChange={(e) => setData('current_password', e.target.value)}
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                                className={`w-full h-12 pl-12 pr-12 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.current_password ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                            <button type="button" className="absolute right-4 text-slate-400 hover:text-[#1B6B3A] focus:outline-none active:scale-90 transition-transform" onClick={() => setShowCurrent((v) => !v)}>
+                                {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        {errors.current_password && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.current_password}
+                            </div>
+                        )}
                     </div>
-                    {errors.password && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.password}</p>}
-                </div>
 
-                {/* Konfirmasi password baru */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11.5px] font-bold text-slate-700">Konfirmasi Kata Sandi Baru</label>
-                    <div className={`flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all focus-within:ring-4 ${errors.password_confirmation ? 'border-red-400 focus-within:border-red-500 focus-within:ring-red-100' : 'border-slate-100 focus-within:border-teal-600 focus-within:ring-teal-50'}`}>
-                        <span className="px-3 text-slate-400 shrink-0"><KeyRound size={15}/></span>
-                        <input
-                            className="flex-1 h-11 px-1 text-[13.5px] font-semibold text-slate-900 bg-transparent outline-none border-none focus:ring-0 placeholder:text-slate-300"
-                            type={showConfirm ? 'text' : 'password'}
-                            value={data.password_confirmation}
-                            onChange={e => setData('password_confirmation', e.target.value)}
-                            placeholder="Ulangi kata sandi baru"
-                            autoComplete="new-password"
-                        />
-                        <button type="button" className="px-3 text-slate-400 hover:text-teal-600 transition-colors" onClick={() => setShowConfirm(v => !v)}>
-                            {showConfirm ? <EyeOff size={15}/> : <Eye size={15}/>}
-                        </button>
+                    <div className="h-px w-full max-w-xl bg-slate-100 my-2" />
+
+                    {/* Password baru */}
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Kata Sandi Baru</label>
+                        <div className="relative flex items-center">
+                            <KeyRound className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+                            <input
+                                type={showNew ? 'text' : 'password'}
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="Minimal 8 karakter"
+                                autoComplete="new-password"
+                                className={`w-full h-12 pl-12 pr-12 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.password ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                            <button type="button" className="absolute right-4 text-slate-400 hover:text-[#1B6B3A] focus:outline-none active:scale-90 transition-transform" onClick={() => setShowNew((v) => !v)}>
+                                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        {errors.password && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.password}
+                            </div>
+                        )}
                     </div>
-                    {errors.password_confirmation && <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/>{errors.password_confirmation}</p>}
-                </div>
 
-                <button type="submit" disabled={processing} className="flex items-center justify-center gap-1.5 w-full h-11 mt-2 rounded-xl bg-teal-700 text-white text-[13.5px] font-bold hover:bg-teal-800 transition-all shadow-md hover:shadow-lg hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-md">
-                    <Save size={15}/> {processing ? 'Menyimpan…' : 'Perbarui Kata Sandi'}
-                </button>
-            </form>
+                    {/* Konfirmasi password baru */}
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Konfirmasi Kata Sandi Baru</label>
+                        <div className="relative flex items-center">
+                            <KeyRound className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+                            <input
+                                type={showConfirm ? 'text' : 'password'}
+                                value={data.password_confirmation}
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                placeholder="Ulangi kata sandi baru"
+                                autoComplete="new-password"
+                                className={`w-full h-12 pl-12 pr-12 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.password_confirmation ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                            />
+                            <button type="button" className="absolute right-4 text-slate-400 hover:text-[#1B6B3A] focus:outline-none active:scale-90 transition-transform" onClick={() => setShowConfirm((v) => !v)}>
+                                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        {errors.password_confirmation && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} /> {errors.password_confirmation}
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="mt-4 flex items-center justify-center gap-2 h-12 px-8 rounded-2xl bg-amber-500 text-white text-[14px] font-black shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-600 active:scale-95 focus:outline-none disabled:opacity-60 w-full sm:w-max"
+                        disabled={processing}
+                    >
+                        {processing ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" /> Mengubah...
+                            </>
+                        ) : (
+                            <>
+                                <Lock size={18} /> Perbarui Sandi
+                            </>
+                        )}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
@@ -199,59 +276,81 @@ function PasswordForm() {
 /* ═══════════════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════════ */
-const ADMIN_WA = '6281234567890'; // ← Ganti nomor WA admin
+export default function PengaturanPage({ profile, flash }: Props) {
+    const [toastMsg, setToastMsg] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-export default function PengaturanPage({ profile }: Props) {
+    useEffect(() => {
+        if (flash?.success) setToastMsg({ msg: flash.success, type: 'success' });
+    }, [flash]);
+
     return (
-        <div className="flex flex-col gap-5">
-            {/* Heading */}
-            <div>
-                <div className="text-[22px] font-black text-slate-900">Pengaturan Akun</div>
-                <div className="text-[12px] text-slate-500 mt-1">Kelola kredensial login dan lihat informasi profil Anda.</div>
-            </div>
+        <>
+            <style>{`
+                @keyframes fadeIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+            `}</style>
 
-            {/* Profil (read-only) */}
-            <div className="bg-white rounded-[18px] p-5 md:p-6 border border-slate-100 shadow-sm">
-                <div className="text-[14px] font-extrabold text-slate-900 flex items-center gap-2 mb-1"><User size={16} className="text-blue-600"/> Informasi Profil</div>
-                <div className="text-[11.5px] text-slate-500 mb-5">Data ini terdaftar secara resmi dan tidak dapat diubah sendiri.</div>
-
-                <div className="flex flex-col gap-3.5">
-                    {[
-                        { label: 'Nama Lengkap',    value: profile?.parent_name ?? '—', icon: <User size={14}/>     },
-                        { label: 'Nomor Telepon',   value: profile?.phone       ?? '—', icon: <Phone size={14}/>    },
-                        { label: 'Alamat',          value: profile?.address     ?? '—', icon: <Shield size={14}/>   },
-                    ].map(f => (
-                        <div key={f.label} className="flex flex-col gap-1.5">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{f.label}</span>
-                            <div className="flex items-center gap-2.5 p-[10px_14px] rounded-xl bg-slate-50 border border-slate-200">
-                                <span className="text-slate-400 shrink-0">{f.icon}</span>
-                                <span className="text-[13.5px] font-bold text-slate-700 flex-1">{f.value}</span>
-                                <Lock size={13} className="text-slate-300 shrink-0"/>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Banner hubungi admin */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-xl mt-5 bg-blue-50 border border-blue-100 text-[12px] text-blue-700 font-semibold">
-                    <div className="flex items-center gap-2 flex-1">
-                        <AlertCircle size={15} className="shrink-0"/>
-                        <span>Ingin mengubah data profil? Hubungi administrator sekolah.</span>
+            <div className="flex flex-col gap-6 w-full max-w-4xl animate-[fadeIn_0.3s_ease-out]">
+                {/* Heading */}
+                <div className="flex justify-between items-end flex-wrap gap-3 mb-2">
+                    <div>
+                        <div className="text-[24px] md:text-[28px] font-black text-slate-900 tracking-tight leading-none">Pengaturan Akun</div>
+                        <div className="text-[13px] text-slate-500 mt-1.5 font-bold italic">Kelola kredensial login dan lihat informasi profil Anda.</div>
                     </div>
-                    <a
-                        href={`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent('Assalamu\'alaikum Admin, saya ingin mengajukan perubahan data profil akun saya.')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-[11.5px] font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors shrink-0 whitespace-nowrap"
-                    >
-                        <MessageCircle size={13}/> Hubungi Admin
-                        <ExternalLink size={11}/>
-                    </a>
                 </div>
+
+                {/* ── Profil (read-only) ── */}
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                    <div className="px-6 md:px-8 py-6 border-b border-slate-50">
+                        <div className="text-[18px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
+                            <User size={20} className="text-blue-600 bg-blue-50 p-1 rounded-lg" /> Informasi Profil Wali
+                        </div>
+                        <div className="text-[13px] text-slate-500 font-bold">Data ini terdaftar secara resmi dan tidak dapat diubah sendiri.</div>
+                    </div>
+
+                    <div className="px-6 md:px-8 py-7 flex flex-col gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {[
+                                { label: 'Nama Lengkap', value: profile?.parent_name ?? '—', icon: <User size={16} /> },
+                                { label: 'Nomor Telepon', value: profile?.phone ?? '—', icon: <Phone size={16} /> },
+                                { label: 'Alamat', value: profile?.address ?? '—', icon: <Shield size={16} /> },
+                            ].map((f) => (
+                                <div key={f.label} className="flex flex-col gap-1.5">
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">{f.label}</span>
+                                    <div className="flex items-center gap-3 h-12 px-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                                        <span className="text-slate-400 shrink-0">{f.icon}</span>
+                                        <span className="text-[13px] font-bold text-slate-700 flex-1 truncate">{f.value}</span>
+                                        <Lock size={14} className="text-slate-300 shrink-0" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Banner hubungi admin */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-2xl mt-4 bg-blue-50 border border-blue-100">
+                            <div className="flex items-center gap-3 text-[13px] font-bold text-blue-800 flex-1">
+                                <AlertCircle size={20} className="text-blue-600 shrink-0" />
+                                <span>Ingin mengubah data profil? Hubungi administrator sekolah.</span>
+                            </div>
+                            <a
+                                href={`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent("Assalamu'alaikum Admin, saya ingin mengajukan perubahan data profil akun wali murid saya.")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[13px] font-black shadow-md shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all whitespace-nowrap focus:outline-none"
+                            >
+                                <MessageCircle size={16} /> Hubungi Admin <ExternalLink size={14} />
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Kredensial ── */}
+                <UsernameForm />
+
+                {/* ── Password ── */}
+                <PasswordForm />
             </div>
 
-            <UsernameForm />
-            <PasswordForm />
-        </div>
+            {toastMsg && <Toast msg={toastMsg.msg} type={toastMsg.type} onClose={() => setToastMsg(null)} />}
+        </>
     );
 }

@@ -849,65 +849,169 @@ function ProgramsTab({ onToast }: { onToast: (msg: string, type: 'success' | 'er
     );
 }
 
-function ProgramModal({ mode, init, onClose, onSave }: { mode: 'add' | 'edit'; init: Program | null; onClose: () => void; onSave: (fd: FormData) => Promise<void> }) {
-    const [f, setF] = useState({ name: init?.name ?? '', description: init?.description ?? '', target_audience: init?.target_audience ?? '', duration: init?.duration ?? '' });
+/* ═══════════════════════════════════════════════════════════
+   PROGRAM MODAL (ADMIN - FULL EDITABLE)
+═══════════════════════════════════════════════════════════ */
+function ProgramModal({ mode, init, onClose, onSave }: { mode: 'add' | 'edit'; init: any | null; onClose: () => void; onSave: (fd: FormData) => Promise<void> }) {
+    const [f, setF] = useState({
+        name: init?.name ?? '',
+        description: init?.description ?? '',
+        target_audience: init?.target_audience ?? '',
+        // 'duration' telah dihapus
+        advantages: init?.advantages ?? [{ title: '', desc: '' }],
+    });
+
+    // State untuk file gambar
     const [imgFile, setImgFile] = useState<File | null>(null);
-    const [preview, setPreview] = useState<string | null>(init?.image_url ?? null);
+    const [heroFile, setHeroFile] = useState<File | null>(null);
+    const [aboutFile, setAboutFile] = useState<File | null>(null);
+    const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+
+    // Preview
+    const [previews, setPreviews] = useState({
+        main: init?.image_url ?? null,
+        hero: init?.hero_image_url ?? null,
+        about: init?.about_image_url ?? null,
+        gallery: init?.gallery ?? [],
+    });
+
     const [busy, setBusy] = useState(false);
+
+    const addAdv = () => setF({ ...f, advantages: [...f.advantages, { title: '', desc: '' }] });
+    const remAdv = (i: number) => setF({ ...f, advantages: f.advantages.filter((_: any, idx: number) => idx !== i) });
+    const updAdv = (i: number, k: string, v: string) => {
+        const newAdv = [...f.advantages];
+        newAdv[i][k] = v;
+        setF({ ...f, advantages: newAdv });
+    };
 
     const submit = async () => {
         if (!f.name) return;
         setBusy(true);
         const fd = new FormData();
-        Object.entries(f).forEach(([k, v]) => fd.append(k, v));
+        fd.append('name', f.name);
+        fd.append('description', f.description);
+        fd.append('target_audience', f.target_audience);
+        fd.append('advantages', JSON.stringify(f.advantages));
+
         if (imgFile) fd.append('image', imgFile);
+        if (heroFile) fd.append('hero_image', heroFile);
+        if (aboutFile) fd.append('about_image', aboutFile);
+
+        galleryFiles.forEach((file, i) => fd.append(`gallery_images[${i}]`, file));
+
         if (mode === 'edit') fd.append('_method', 'PUT');
+
         await onSave(fd);
         setBusy(false);
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[800] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="w-full max-w-[600px] bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
-                <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-[#FAFAFA]">
-                    <span className="text-[20px] font-extrabold text-slate-900">{mode === 'add' ? 'Tambah Program' : 'Edit Program'}</span>
-                    <button className="w-10 h-10 rounded-full flex items-center justify-center hover:text-red-600 border shadow-sm" onClick={onClose}>
-                        <X size={18} />
+        <div className="fixed inset-0 z-[800] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-[900px] bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+                <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-slate-50">
+                    <span className="text-[20px] font-extrabold text-slate-900">{mode === 'add' ? 'Tambah' : 'Edit'} Detail Program</span>
+                    <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-50 text-slate-400" onClick={onClose}>
+                        <X size={20} />
                     </button>
                 </div>
-                <div className="px-8 py-6 flex flex-col gap-5 overflow-y-auto">
-                    <Fg label="Nama Program">
-                        <input className="w-full h-12 px-5 border rounded-xl" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-                    </Fg>
-                    <Fg label="Deskripsi">
-                        <textarea className="w-full p-5 border rounded-xl min-h-[100px]" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-                    </Fg>
-                    <div className="grid grid-cols-2 gap-5">
+
+                <div className="px-8 py-8 flex flex-col gap-8 overflow-y-auto">
+                    <div className="grid grid-cols-1 gap-5">
+                        <Fg label="Nama Program">
+                            <input className="w-full h-12 px-5 border rounded-xl font-bold" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+                        </Fg>
+                        <Fg label="Deskripsi / Tentang Program">
+                            <textarea className="w-full p-5 border rounded-xl min-h-[120px]" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+                        </Fg>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-5">
+                        {/* Target audiens sekarang memakai lebar penuh karena durasi dihapus */}
                         <Fg label="Target Audiens">
                             <input className="w-full h-12 px-5 border rounded-xl" value={f.target_audience} onChange={(e) => setF({ ...f, target_audience: e.target.value })} />
                         </Fg>
-                        <Fg label="Durasi">
-                            <input className="w-full h-12 px-5 border rounded-xl" value={f.duration} onChange={(e) => setF({ ...f, duration: e.target.value })} />
-                        </Fg>
                     </div>
-                    <Fg label="Foto Program">
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <FileUpload
+                            label="Thumbnail (Kartu Depan)"
+                            preview={previews.main}
                             accept="image/*"
-                            preview={preview}
-                            label="Pilih Foto"
                             onFile={(file) => {
                                 setImgFile(file);
-                                setPreview(URL.createObjectURL(file));
+                                setPreviews({ ...previews, main: URL.createObjectURL(file) });
                             }}
                         />
-                    </Fg>
+                        <FileUpload
+                            label="Background Hero (Atas)"
+                            preview={previews.hero}
+                            accept="image/*"
+                            onFile={(file) => {
+                                setHeroFile(file);
+                                setPreviews({ ...previews, hero: URL.createObjectURL(file) });
+                            }}
+                        />
+                        <FileUpload
+                            label="Gambar Tentang Program"
+                            preview={previews.about}
+                            accept="image/*"
+                            onFile={(file) => {
+                                setAboutFile(file);
+                                setPreviews({ ...previews, about: URL.createObjectURL(file) });
+                            }}
+                        />
+                    </div>
+
+                    <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="text-[12px] font-black uppercase text-slate-500 tracking-widest">List Keunggulan</label>
+                            <button onClick={addAdv} className="text-[11px] font-bold text-blue-600 flex items-center gap-1">
+                                <Plus size={14} /> Tambah Poin
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            {f.advantages.map((adv: any, i: number) => (
+                                <div key={i} className="flex gap-3 items-start bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                                    <div className="flex-1 flex flex-col gap-2">
+                                        <input placeholder="Judul Keunggulan" className="w-full h-10 px-4 bg-slate-50 border-none rounded-lg text-sm font-bold" value={adv.title} onChange={(e) => updAdv(i, 'title', e.target.value)} />
+                                        <textarea placeholder="Penjelasan singkat" className="w-full p-4 bg-slate-50 border-none rounded-lg text-xs" value={adv.desc} onChange={(e) => updAdv(i, 'desc', e.target.value)} />
+                                    </div>
+                                    <button onClick={() => remAdv(i)} className="p-2 text-red-400 hover:text-red-600">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <label className="text-[12px] font-black uppercase text-slate-500 tracking-widest">Potret Kegiatan (Multi Upload)</label>
+                        <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                setGalleryFiles(files);
+                                setPreviews({ ...previews, gallery: files.map((f) => URL.createObjectURL(f)) });
+                            }}
+                            className="text-sm font-medium text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                            {previews.gallery.map((url: string, i: number) => (
+                                <img key={i} src={url} className="w-full aspect-square object-cover rounded-xl border border-slate-200" alt="Preview Gallery" />
+                            ))}
+                        </div>
+                    </div>
                 </div>
-                <div className="px-8 py-5 flex justify-end gap-3 border-t">
-                    <button className="px-6 h-12 rounded-full font-bold bg-slate-100" onClick={onClose}>
+
+                <div className="px-8 py-5 border-t bg-slate-50 flex justify-end gap-3">
+                    <button className="px-6 h-12 rounded-full font-bold bg-white border" onClick={onClose}>
                         Batal
                     </button>
-                    <button className="px-8 h-12 rounded-full font-bold text-white bg-blue-600 flex items-center gap-2" onClick={submit} disabled={busy || !f.name}>
-                        {busy ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />} Simpan
+                    <button className="px-10 h-12 rounded-full font-black text-white bg-blue-600 flex items-center gap-2 shadow-lg hover:bg-blue-700 active:scale-95 transition-all" onClick={submit} disabled={busy}>
+                        {busy ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Simpan Program
                     </button>
                 </div>
             </div>
@@ -915,7 +1019,6 @@ function ProgramModal({ mode, init, onClose, onSave }: { mode: 'add' | 'edit'; i
         document.body
     );
 }
-
 /* ═══════════════════════════════════════════════════════════
    TAB 5: GALLERY
 ═══════════════════════════════════════════════════════════ */

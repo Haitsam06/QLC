@@ -13,7 +13,16 @@ class Program extends Model
         'name',
         'description',
         'target_audience',
-        'duration',
-        'image_url'
+        // 'duration' telah dihapus
+        'image_url',
+        'hero_image_url',
+        'about_image_url',
+        'advantages',
+        'gallery'
+    ];
+
+    protected $casts = [
+        'advantages' => 'array',
+        'gallery' => 'array',
     ];
 }

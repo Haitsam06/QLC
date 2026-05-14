@@ -1,9 +1,5 @@
 import { router } from '@inertiajs/react';
-import {
-    Plus, CheckCircle2, Clock, XCircle,
-    GraduationCap, Calendar, FileText,
-    ExternalLink, Baby,
-} from 'lucide-react';
+import { Plus, CheckCircle2, Clock, XCircle, GraduationCap, Calendar, FileText, ExternalLink, Baby } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -23,132 +19,171 @@ export interface Child {
     created_at: string | null;
 }
 
-interface Props { anakList: Child[]; }
+interface Props {
+    anakList: Child[];
+}
 
-const STATUS_CONFIG = {
-    active:   { label:'Aktif',       cls:'bg-green-100 text-green-600 border-green-200', icon:<CheckCircle2 size={11}/> },
-    pending:  { label:'Menunggu',    cls:'bg-amber-100 text-amber-600 border-amber-200',  icon:<Clock size={11}/>        },
-    inactive: { label:'Tidak Aktif', cls:'bg-slate-100 text-slate-500 border-slate-200', icon:<XCircle size={11}/>     },
+/* ═══════════════════════════════════════════════════════════
+   HELPERS & CONFIG
+═══════════════════════════════════════════════════════════ */
+const STATUS_CONFIG: Record<EnrollmentStatus, { label: string; badgeCls: string; textCls: string; icon: React.ReactNode }> = {
+    active: {
+        label: 'Aktif',
+        badgeCls: 'bg-green-400/20 text-green-100 border-green-400/30',
+        textCls: 'text-green-600',
+        icon: <CheckCircle2 size={14} className="text-green-600" />,
+    },
+    pending: {
+        label: 'Menunggu',
+        badgeCls: 'bg-amber-400/20 text-amber-100 border-amber-400/30',
+        textCls: 'text-amber-500',
+        icon: <Clock size={14} className="text-amber-500" />,
+    },
+    inactive: {
+        label: 'Tidak Aktif',
+        badgeCls: 'bg-white/10 text-white/50 border-white/20',
+        textCls: 'text-slate-400',
+        icon: <XCircle size={14} className="text-slate-400" />,
+    },
 };
 
-const fmtDate = (d: string|null) => d ? new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '—';
-const inits   = (n: string)      => n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const fmtDate = (d: string | null) => (d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
 
+const inits = (n: string) =>
+    n
+        .split(' ')
+        .slice(0, 2)
+        .map((w) => w[0])
+        .join('')
+        .toUpperCase();
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════════════════════ */
 export default function AnakPage({ anakList }: Props) {
-    const activeCount  = anakList.filter(c => c.enrollment_status === 'active').length;
-    const pendingCount = anakList.filter(c => c.enrollment_status === 'pending').length;
+    const activeCount = anakList.filter((c) => c.enrollment_status === 'active').length;
+    const pendingCount = anakList.filter((c) => c.enrollment_status === 'pending').length;
 
     return (
-        <>
-            {/* Header */}
-            <div className="flex justify-between items-end flex-wrap gap-3 mb-5">
+        <div className="flex flex-col gap-5 w-full animate-[fadeIn_0.3s_ease-out]">
+            {/* ════ HEADER ════ */}
+            <div className="flex flex-col md:flex-row justify-between md:items-end flex-wrap gap-4 mb-2">
                 <div>
-                    <div className="text-[22px] font-black text-slate-900">Anak Saya</div>
-                    <div className="text-[12px] text-slate-500 mt-1">
-                        {anakList.length > 0
-                            ? `${anakList.length} anak terdaftar · ${activeCount} aktif · ${pendingCount} menunggu`
-                            : 'Belum ada anak yang didaftarkan'}
-                    </div>
+                    <h1 className="text-[24px] md:text-[28px] font-black text-slate-900 tracking-tight leading-none">Anak Saya</h1>
+                    <p className="text-[13px] text-slate-500 mt-1.5 font-bold italic">{anakList.length > 0 ? `${anakList.length} anak terdaftar · ${activeCount} aktif · ${pendingCount} menunggu` : 'Belum ada anak yang didaftarkan'}</p>
                 </div>
-                <button 
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-bold bg-teal-700 text-white hover:bg-teal-800 transition-all shadow-md hover:shadow-lg hover:-translate-y-[1px]" 
+                <button
                     onClick={() => router.visit(route('parents.daftar'))}
+                    className="flex items-center justify-center gap-2 h-12 px-6 rounded-2xl bg-[#1B6B3A] text-white text-[14px] font-black shadow-lg shadow-green-900/20 transition-all hover:bg-[#14522d] active:scale-95 focus:outline-none w-full md:w-auto"
                 >
-                    <Plus size={15}/> Daftarkan Anak
+                    <Plus size={18} strokeWidth={3} /> Daftarkan Anak
                 </button>
             </div>
 
-            {/* Stats */}
+            {/* ════ STATS GRID ════ */}
             {anakList.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full mb-2">
                     {[
-                        { icon:Baby,         bg:'bg-teal-50',    c:'text-teal-600',  v:anakList.length,  l:'Total Anak'          },
-                        { icon:CheckCircle2, bg:'bg-green-50',   c:'text-green-600', v:activeCount,      l:'Status Aktif'        },
-                        { icon:Clock,        bg:'bg-amber-50',   c:'text-amber-600', v:pendingCount,     l:'Menunggu Konfirmasi' },
-                    ].map((s,i) => (
-                        <div key={i} className="bg-white rounded-2xl p-[18px_20px] border border-slate-100 shadow-sm flex items-center gap-3.5">
-                            <div className={`w-11 h-11 rounded-xl shrink-0 flex items-center justify-center ${s.bg} ${s.c}`}>
-                                <s.icon size={20} />
+                        { icon: Baby, bg: 'bg-teal-50', c: 'text-teal-700', v: anakList.length, l: 'Total Anak' },
+                        { icon: CheckCircle2, bg: 'bg-green-50', c: 'text-green-600', v: activeCount, l: 'Status Aktif' },
+                        { icon: Clock, bg: 'bg-amber-50', c: 'text-amber-500', v: pendingCount, l: 'Menunggu' },
+                    ].map((s, i) => (
+                        <div key={i} className="bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm flex items-center gap-4 transition-transform active:scale-95">
+                            <div className={`w-12 h-12 rounded-[1rem] shrink-0 flex items-center justify-center ${s.bg} ${s.c}`}>
+                                <s.icon size={22} strokeWidth={2.5} />
                             </div>
                             <div>
-                                <div className="text-[26px] font-black text-slate-900 leading-none">{s.v}</div>
-                                <div className="text-[11px] text-slate-500 font-semibold mt-1">{s.l}</div>
+                                <div className="text-[22px] font-black text-slate-900 leading-none">{s.v}</div>
+                                <div className="text-[10px] font-black text-slate-400 uppercase mt-1 tracking-widest">{s.l}</div>
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* List Anak */}
+            {/* ════ EMPTY STATE ════ */}
             {anakList.length === 0 ? (
-                <div className="bg-white rounded-3xl p-[60px_40px] text-center border border-slate-100 flex flex-col items-center gap-3 shadow-sm">
-                    <div className="w-20 h-20 rounded-3xl bg-teal-50 border border-teal-100 flex items-center justify-center mb-1">
-                        <Baby size={36} className="text-teal-600"/>
+                <div className="bg-white rounded-[2.5rem] p-10 md:p-16 text-center border border-slate-100 shadow-sm flex flex-col items-center gap-4">
+                    <div className="w-20 h-20 bg-teal-50 border border-teal-100 rounded-[2rem] flex items-center justify-center mb-2">
+                        <Baby size={40} className="text-[#1B6B3A]" />
                     </div>
-                    <div className="text-[18px] font-extrabold text-slate-900">Belum Ada Anak Terdaftar</div>
-                    <p className="text-[13px] text-slate-500 max-w-[340px] leading-relaxed">
-                        Daftarkan anak Anda ke program QLC untuk mulai memantau perkembangan mereka.
-                    </p>
-                    <button 
-                        className="mt-2 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-bold bg-teal-700 text-white hover:bg-teal-800 transition-all shadow-md" 
+                    <div className="text-[20px] font-black text-slate-900">Belum Ada Anak Terdaftar</div>
+                    <p className="text-[13px] font-bold text-slate-400 max-w-sm leading-relaxed">Daftarkan anak Anda ke program QLC untuk mulai memantau perkembangan mereka.</p>
+                    <button
                         onClick={() => router.visit(route('parents.daftar'))}
+                        className="mt-2 flex items-center justify-center gap-2 h-12 px-8 rounded-2xl bg-amber-500 text-white text-[14px] font-black shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-600 active:scale-95 focus:outline-none"
                     >
-                        <Plus size={15}/> Daftarkan Anak Sekarang
+                        <Plus size={18} strokeWidth={3} /> Daftarkan Sekarang
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {anakList.map(child => {
+                /* ════ CHILD CARDS GRID ════ */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+                    {anakList.map((child) => {
                         const st = STATUS_CONFIG[child.enrollment_status] ?? STATUS_CONFIG.pending;
                         return (
-                            <div key={child.id} className="bg-white rounded-[20px] overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
-                                {/* Card Header */}
-                                <div className="bg-gradient-to-br from-teal-700 via-[#0d5c56] to-blue-600 p-5 flex items-center gap-3.5 relative overflow-hidden">
-                                    <div className="absolute w-[120px] h-[120px] rounded-full bg-white/10 -top-[40px] -right-[30px]" />
-                                    
-                                    <div className="w-[52px] h-[52px] rounded-2xl shrink-0 bg-white/20 border-2 border-white/30 flex items-center justify-center text-[20px] font-black text-white shadow-md relative z-10">
-                                        {inits(child.nama)}
+                            <div key={child.id} className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm transition-transform active:scale-[0.98] flex flex-col">
+                                {/* Card Header (Gradient) */}
+                                <div className="bg-gradient-to-br from-[#1B6B3A] via-[#0d5c56] to-blue-700 p-5 flex items-center gap-4 relative overflow-hidden">
+                                    {/* Decor */}
+                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                                    {/* Avatar */}
+                                    <div className="w-14 h-14 rounded-[1.2rem] shrink-0 bg-white/20 border-2 border-white/30 flex items-center justify-center text-[18px] font-black text-white shadow-md relative z-10">{inits(child.nama)}</div>
+
+                                    <div className="flex-1 relative z-10 min-w-0">
+                                        <div className="text-[16px] font-black text-white leading-tight truncate">{child.nama}</div>
+                                        <div className="text-[11px] font-bold text-white/80 mt-1 truncate">
+                                            {child.tempat_lahir}
+                                            {child.usia ? ` · ${child.usia} tahun` : ''}
+                                        </div>
                                     </div>
-                                    <div className="flex-1 relative z-10">
-                                        <div className="text-[16px] font-extrabold text-white leading-tight">{child.nama}</div>
-                                        <div className="text-[11px] text-white/70 mt-1">{child.tempat_lahir}{child.usia ? ` · ${child.usia} tahun` : ''}</div>
-                                    </div>
-                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border relative z-10 ${st.cls}`}>
-                                        {st.label}
-                                    </span>
+
+                                    {/* Status Badge Top */}
+                                    <span className={`shrink-0 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider relative z-10 border ${st.badgeCls}`}>{st.label}</span>
                                 </div>
-                                
+
                                 {/* Card Body */}
-                                <div className="p-4 flex flex-col gap-2.5">
-                                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 border border-teal-100">
-                                        <GraduationCap size={14} className="text-teal-600"/>
-                                        {child.program_name
-                                            ? <span className="text-[12.5px] font-bold text-teal-700">{child.program_name}</span>
-                                            : <span className="text-[12px] text-slate-400 italic">Program tidak ditemukan</span>}
+                                <div className="p-5 flex flex-col gap-4 flex-1">
+                                    <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-teal-50 border border-teal-100/50">
+                                        <GraduationCap size={18} className="text-[#1B6B3A] shrink-0" />
+                                        {child.program_name ? <span className="text-[13px] font-black text-[#1B6B3A]">{child.program_name}</span> : <span className="text-[12px] font-bold text-slate-400 italic">Program tidak ditemukan</span>}
                                     </div>
-                                    <div className="flex items-center gap-2 text-[12.5px] text-slate-600 mt-1">
-                                        <Calendar size={13} className="text-slate-400 shrink-0"/>
-                                        <span className="font-semibold text-slate-700">Tgl Lahir:</span>
-                                        <span>{fmtDate(child.tanggal_lahir)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
-                                        <Clock size={13} className="text-slate-400 shrink-0"/>
-                                        <span className="font-semibold text-slate-700">Didaftarkan:</span>
-                                        <span>{fmtDate(child.created_at)}</span>
+
+                                    <div className="flex flex-col gap-2.5 px-1">
+                                        <div className="flex items-center gap-3 text-[12.5px]">
+                                            <Calendar size={14} className="text-slate-400 shrink-0" />
+                                            <span className="font-bold text-slate-500 w-20">Tgl Lahir</span>
+                                            <span className="font-black text-slate-800 truncate">{fmtDate(child.tanggal_lahir)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-[12.5px]">
+                                            <Clock size={14} className="text-slate-400 shrink-0" />
+                                            <span className="font-bold text-slate-500 w-20">Didaftarkan</span>
+                                            <span className="font-black text-slate-800 truncate">{fmtDate(child.created_at)}</span>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Card Footer */}
-                                <div className="p-3.5 border-t border-slate-50 flex items-center justify-between gap-2 bg-slate-50/50">
+                                <div className="px-5 py-4 border-t border-slate-50 bg-slate-50/50 flex items-center justify-between gap-3">
                                     {child.bukti_pembayaran ? (
-                                        <a href={child.bukti_pembayaran} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[11.5px] font-bold text-blue-600 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100">
-                                            <FileText size={12}/> Bukti Pembayaran <ExternalLink size={10}/>
+                                        <a
+                                            href={child.bukti_pembayaran}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-100 text-[11px] font-black text-blue-700 hover:bg-blue-100 transition-colors active:scale-95 focus:outline-none"
+                                        >
+                                            <FileText size={14} />
+                                            Bukti Bayar
+                                            <ExternalLink size={12} className="opacity-70" />
                                         </a>
                                     ) : (
-                                        <span className="text-[11.5px] text-slate-400 italic">Belum ada bukti</span>
+                                        <span className="text-[11px] font-bold text-slate-400 italic bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-200/50">Belum ada bukti</span>
                                     )}
-                                    <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                                        {st.icon} {st.label}
+
+                                    <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+                                        {st.icon}
+                                        <span className={`text-[10px] font-black uppercase tracking-wider ${st.textCls}`}>{st.label}</span>
                                     </div>
                                 </div>
                             </div>
@@ -156,6 +191,6 @@ export default function AnakPage({ anakList }: Props) {
                     })}
                 </div>
             )}
-        </>
+        </div>
     );
 }
