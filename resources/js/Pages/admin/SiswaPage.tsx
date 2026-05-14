@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Head, router, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
-import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, GraduationCap, Loader2, AlertCircle, CheckCircle2, Calendar, Filter, ChevronDown, Users, FileText, ExternalLink, Clock, CheckCheck, XCircle, Check, Activity } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, GraduationCap, Loader2, AlertCircle, CheckCircle2, Calendar, Filter, ChevronDown, Users, FileText, ExternalLink, Clock, CheckCheck, XCircle, Check, Activity, Upload } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -46,6 +46,7 @@ interface StudentForm {
     tempat_lahir: string;
     tanggal_lahir: string;
     enrollment_status: EnrollmentStatus;
+    bukti_pembayaran?: File | null; // Tambahkan ini
 }
 
 const EMPTY_FORM: StudentForm = {
@@ -56,6 +57,7 @@ const EMPTY_FORM: StudentForm = {
     tempat_lahir: '',
     tanggal_lahir: '',
     enrollment_status: 'active',
+    bukti_pembayaran: null,
 };
 
 const API = '/api/students';
@@ -121,6 +123,9 @@ function FormModal({ mode, init, student, parents, programs, onClose, onSave }: 
     const [e, setE] = useState<Partial<Record<keyof StudentForm, string>>>({});
     const [busy, setBusy] = useState(false);
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [previewFile, setPreviewFile] = useState<string | null>(null);
+
     // Otomatis pilih QL - SCHOOL saat tambah data baru
     useEffect(() => {
         if (mode === 'add' && !f.program_id && programs.length > 0) {
@@ -142,6 +147,25 @@ function FormModal({ mode, init, student, parents, programs, onClose, onSave }: 
             return newForm;
         });
         setE((p) => ({ ...p, [k]: '' }));
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setF((p) => ({ ...p, bukti_pembayaran: file }));
+        if (file.type.startsWith('image/')) {
+            setPreviewFile(URL.createObjectURL(file));
+        } else {
+            setPreviewFile(null);
+        }
+        setE((err) => ({ ...err, bukti_pembayaran: '' }));
+    };
+
+    const removeFile = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setF((p) => ({ ...p, bukti_pembayaran: null }));
+        setPreviewFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const validate = () => {
@@ -178,7 +202,7 @@ function FormModal({ mode, init, student, parents, programs, onClose, onSave }: 
                     </button>
                 </div>
 
-                <div className="px-7 py-6 flex flex-col gap-5 overflow-y-auto flex-1">
+                <div className="px-7 py-6 flex flex-col gap-5 overflow-y-auto flex-1 scrollbar-hide">
                     {/* Notice untuk siswa pending */}
                     {mode === 'edit' && isPending && (
                         <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
@@ -187,27 +211,6 @@ function FormModal({ mode, init, student, parents, programs, onClose, onSave }: 
                                 Siswa ini mendaftar melalui portal wali murid dan menunggu verifikasi. Ubah status ke <b className="font-extrabold">Aktif</b> untuk menyetujui, atau <b className="font-extrabold">Tidak Aktif</b> untuk menolak.
                             </div>
                         </div>
-                    )}
-
-                    {/* Bukti Pembayaran */}
-                    {mode === 'edit' && student?.bukti_pembayaran && (
-                        <>
-                            <div className="flex items-center gap-3 text-[11px] font-extrabold uppercase tracking-widest text-slate-400 my-1 before:content-[''] before:flex-1 before:h-px before:bg-slate-100 after:content-[''] after:flex-1 after:h-px after:bg-slate-100">Bukti Pembayaran</div>
-                            <div className="flex items-center justify-between p-3.5 rounded-xl bg-blue-50 border border-blue-100">
-                                <div className="flex items-center gap-2 text-[13.5px] text-blue-700 font-bold">
-                                    <FileText size={18} />
-                                    <span>File bukti pembayaran tersedia</span>
-                                </div>
-                                <a
-                                    href={student.bukti_pembayaran}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-md shadow-blue-600/20 transition-all hover:-translate-y-px hover:bg-blue-700 focus:outline-none"
-                                >
-                                    <ExternalLink size={14} /> Buka File
-                                </a>
-                            </div>
-                        </>
                     )}
 
                     {/* Data Pribadi Section */}
@@ -289,6 +292,61 @@ function FormModal({ mode, init, student, parents, programs, onClose, onSave }: 
                             <div className="h-12 w-full px-4 flex items-center bg-slate-100 border border-slate-200 rounded-2xl text-sm font-bold text-slate-500 select-none cursor-not-allowed">{programs.find((p) => p.id === f.program_id)?.label || 'QL - SCHOOL'}</div>
                             <input type="hidden" name="program_id" value={f.program_id} />
                         </div>
+                    </div>
+
+                    {/* ════ BUKTI PEMBAYARAN ════ */}
+                    <div className="flex items-center gap-3 text-[11px] font-extrabold uppercase tracking-widest text-slate-400 my-1 before:content-[''] before:flex-1 before:h-px before:bg-slate-100 after:content-[''] after:flex-1 after:h-px after:bg-slate-100">Bukti Pembayaran</div>
+                    
+                    <div className="flex flex-col gap-1.5">
+                        {/* File Saat Ini (Hanya muncul saat mode edit & ada file lama & belum upload file baru) */}
+                        {mode === 'edit' && student?.bukti_pembayaran && !f.bukti_pembayaran && (
+                            <div className="flex items-center justify-between p-3.5 mb-2 rounded-xl bg-blue-50 border border-blue-100">
+                                <div className="flex items-center gap-2 text-[13.5px] text-blue-700 font-bold">
+                                    <FileText size={18} />
+                                    <span>File saat ini tersimpan</span>
+                                </div>
+                                <a
+                                    href={student.bukti_pembayaran}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-md shadow-blue-600/20 transition-all hover:-translate-y-px hover:bg-blue-700 focus:outline-none"
+                                >
+                                    <ExternalLink size={14} /> Lihat File
+                                </a>
+                            </div>
+                        )}
+
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${f.bukti_pembayaran ? 'border-[#1B6B3A] bg-green-50' : 'border-slate-300 hover:border-[#1B6B3A] hover:bg-slate-50'}`}
+                        >
+                            {f.bukti_pembayaran ? (
+                                <div className="space-y-2">
+                                    {previewFile ? (
+                                        <img src={previewFile} alt="preview" className="mx-auto max-h-32 rounded-lg object-contain shadow-sm border border-slate-200" />
+                                    ) : (
+                                        <div className="w-12 h-12 bg-green-100 rounded-xl mx-auto flex items-center justify-center">
+                                            <CheckCircle2 size={24} className="text-green-600" />
+                                        </div>
+                                    )}
+                                    <p className="text-sm font-bold text-green-700 truncate px-4">{f.bukti_pembayaran.name}</p>
+                                    <button type="button" onClick={removeFile} className="text-xs text-red-500 font-semibold flex items-center justify-center gap-1 mx-auto hover:text-red-700">
+                                        <X size={12} /> Batal / Hapus
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="w-12 h-12 bg-slate-100 rounded-xl mx-auto flex items-center justify-center">
+                                        <Upload size={22} className="text-slate-400" />
+                                    </div>
+                                    <p className="text-sm font-semibold text-slate-600">
+                                        {mode === 'edit' && student?.bukti_pembayaran ? 'Klik untuk mengganti file bukti pembayaran' : 'Klik untuk unggah file bukti pembayaran'}
+                                    </p>
+                                    <p className="text-[11px] font-medium text-slate-400">Format: JPG, PNG, atau PDF</p>
+                                </div>
+                            )}
+                        </div>
+                        <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} className="hidden" />
                     </div>
 
                     <div className="flex items-center gap-3 text-[11px] font-extrabold uppercase tracking-widest text-slate-400 my-1 before:content-[''] before:flex-1 before:h-px before:bg-slate-100 after:content-[''] after:flex-1 after:h-px after:bg-slate-100">Status Pendaftaran</div>
@@ -451,14 +509,31 @@ export default function SiswaPage() {
         loadOptions();
     }, [loadOptions]);
 
+    // Helper untuk mengubah data JSON menjadi format multipart/form-data
+    const buildFormData = (d: StudentForm) => {
+        const formData = new FormData();
+        Object.keys(d).forEach((key) => {
+            const val = d[key as keyof StudentForm];
+            if (val instanceof File) {
+                formData.append(key, val);
+            } else if (val !== null && val !== undefined && val !== '') {
+                formData.append(key, String(val));
+            }
+        });
+        return formData;
+    };
+
     const post = async (d: StudentForm) => {
+        const formData = buildFormData(d);
+        
         const j = await (
             await fetch(API, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify(d),
+                headers: { Accept: 'application/json' }, // Tidak pakai Content-Type json, biarkan browser atur boundry
+                body: formData,
             })
         ).json();
+        
         if (j.success) {
             setToast({ msg: 'Siswa berhasil ditambahkan.', type: 'success' });
             setModal(null);
@@ -473,13 +548,17 @@ export default function SiswaPage() {
 
     const put = async (d: StudentForm) => {
         if (!sel) return;
+        const formData = buildFormData(d);
+        formData.append('_method', 'PUT'); // Trick POST jadi PUT untuk Laravel karena FormData
+
         const j = await (
             await fetch(`${API}/${sel.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify(d),
+                method: 'POST',
+                headers: { Accept: 'application/json' },
+                body: formData,
             })
         ).json();
+        
         if (j.success) {
             setToast({ msg: 'Data berhasil diperbarui.', type: 'success' });
             setModal(null);
@@ -527,11 +606,9 @@ export default function SiswaPage() {
               tempat_lahir: sel.tempat_lahir,
               tanggal_lahir: sel.tanggal_lahir,
               enrollment_status: sel.enrollment_status,
+              bukti_pembayaran: null, // Kita kosongkan agar state mengurus file input secara terpisah dari string url lama
           }
         : EMPTY_FORM;
-
-    const activeCount = data.filter((s) => s.enrollment_status === 'active').length;
-    const pendingCount = data.filter((s) => s.enrollment_status === 'pending').length;
 
     return (
         <>
