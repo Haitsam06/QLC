@@ -4,9 +4,10 @@ import axios from 'axios';
 import type { PageProps } from '@/types';
 import {
     Briefcase, CalendarDays, FileCheck, LayoutDashboard,
-    Bell, LogOut, Download, MapPin, Eye, Loader2,
+    LogOut, Download, MapPin, Eye, Loader2,
     FileBadge, ShieldCheck, Menu, X
 } from 'lucide-react';
+import NotificationBell from '@/Components/NotificationBell';
 
 // ── Sub-pages ─────────────────────────────────────────────
 import JadwalMitra from './JadwalMitra';
@@ -143,9 +144,9 @@ export default function MitraDashboard() {
                             <LogOut size={16} />
                             <span className="hidden md:block">Logout</span>
                         </button>
-                        <button className="hidden sm:flex w-10 h-10 rounded-xl bg-gray-100 items-center justify-center text-gray-500 hover:bg-green-100 hover:text-green-700 transition-colors">
-                            <Bell size={20} />
-                        </button>
+                        <div className="hidden sm:flex">
+                            <NotificationBell onNavigate={setActive} />
+                        </div>
                         <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
                             <div className="text-right hidden lg:block">
                                 <div className="text-sm font-bold text-gray-900 leading-tight">{displayName}</div>

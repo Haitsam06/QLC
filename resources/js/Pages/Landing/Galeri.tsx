@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 import { Head } from '@inertiajs/react';
-import { ImageIcon, PlayCircle } from 'lucide-react';
+import { ChevronLeft, ImageIcon, PlayCircle } from 'lucide-react';
 
 interface GalleryItem {
     id: string;
@@ -55,6 +55,14 @@ export default function Galeri({ galleries }: Props) {
             <Navbar />
 
             <main className="px-4 pt-36 pb-24 max-w-7xl mx-auto min-h-screen">
+                <div className="mb-8">
+                    <button 
+                        onClick={() => window.history.back()} 
+                        className="flex items-center gap-1 text-gray-600 text-sm font-bold active:scale-90 transition-all hover:text-gray-900 bg-white hover:bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm w-fit"
+                    >
+                        <ChevronLeft size={18} /> Kembali
+                    </button>
+                </div>
                 {/* --- HEADER GALERI --- */}
                 <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
                     <span className="inline-flex items-center py-2 px-5 rounded-full bg-white/60 border border-white shadow-sm text-[#1B6B3A] text-sm font-bold tracking-wider mb-4 backdrop-blur-md">

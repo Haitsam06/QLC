@@ -667,12 +667,18 @@ function DetailMitraModal({ mitra, onClose, refreshKey, onDeleted }: { mitra: Mi
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-7 py-6 flex flex-col gap-5 bg-slate-50/50">
-                    <button
-                        className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-amber-500 text-white text-[14px] font-bold shadow-md shadow-amber-500/20 transition-all hover:bg-amber-600 hover:-translate-y-px focus:outline-none"
-                        onClick={() => setShowUpload(true)}
-                    >
-                        <Upload size={16} /> Upload Laporan Baru
-                    </button>
+                    {mitra.status === 'Active' ? (
+                        <button
+                            className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-amber-500 text-white text-[14px] font-bold shadow-md shadow-amber-500/20 transition-all hover:bg-amber-600 hover:-translate-y-px focus:outline-none"
+                            onClick={() => setShowUpload(true)}
+                        >
+                            <Upload size={16} /> Upload Laporan Baru
+                        </button>
+                    ) : (
+                        <div className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-100 text-slate-400 text-[14px] font-bold border border-slate-200 cursor-not-allowed select-none">
+                            <Upload size={16} /> Upload Laporan (Mitra Tidak Aktif)
+                        </div>
+                    )}
 
                     {error && (
                         <div className="flex items-center gap-2.5 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[13px] font-bold">
@@ -1292,9 +1298,9 @@ export default function ProgressPage() {
             )}
 
             {/* Delete confirm laporan siswa */}
-            {delModal && (
+            {delModal && createPortal(
                 <div
-                    className="fixed inset-0 z-[900] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]"
+                    className="fixed inset-0 z-[1000] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]"
                     onClick={(e) => e.target === e.currentTarget && setDelModal(null)}
                 >
                     <div className="w-full max-w-[400px] bg-white border border-slate-200 rounded-[24px] shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out] text-center p-7 pt-8">
@@ -1322,7 +1328,8 @@ export default function ProgressPage() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}

@@ -1,8 +1,19 @@
 // resources/js/Components/Navbar.tsx
 import React, { useState, useEffect } from 'react';
-import { router, Link } from '@inertiajs/react';
+import { router, Link, usePage } from '@inertiajs/react';
 
 const Navbar = () => {
+    const { auth } = usePage().props as any;
+    const isLoggedIn = !!auth?.user;
+    const userRole = (auth?.user as any)?.role || '';
+
+    const getDashboardRoute = () => {
+        if (userRole === 'admin') return '/admin/dashboard';
+        if (userRole === 'teacher') return '/teacher/dashboard';
+        if (userRole === 'mitra') return '/mitra/dashboard';
+        return '/parents/dashboard';
+    };
+
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeSection, setActiveSection] = useState('beranda');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -94,14 +105,23 @@ const Navbar = () => {
                         })}
                     </div>
 
-                    {/* Tombol Daftar Desktop */}
+                    {/* Tombol Daftar / Dashboard Desktop */}
                     <div className="hidden lg:block">
-                        <Link
-                            href={route('register')}
-                            className="inline-block bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm"
-                        >
-                            Daftar Sekarang
-                        </Link>
+                        {isLoggedIn ? (
+                            <Link
+                                href={getDashboardRoute()}
+                                className="inline-block bg-gradient-to-r from-[#1B6B3A] to-[#34ad62] text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm"
+                            >
+                                Dashboard
+                            </Link>
+                        ) : (
+                            <Link
+                                href={route('register')}
+                                className="inline-block bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm"
+                            >
+                                Daftar Sekarang
+                            </Link>
+                        )}
                     </div>
 
                     {/* Mobile Toggle Button */}
@@ -130,9 +150,15 @@ const Navbar = () => {
                                 {item}
                             </button>
                         ))}
-                        <Link href={route('register')} className="mt-2 bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-4 py-3 rounded-xl font-bold text-center shadow-md block">
-                            Daftar Sekarang
-                        </Link>
+                        {isLoggedIn ? (
+                            <Link href={getDashboardRoute()} className="mt-2 bg-gradient-to-r from-[#1B6B3A] to-[#34ad62] text-white px-4 py-3 rounded-xl font-bold text-center shadow-md block">
+                                Dashboard
+                            </Link>
+                        ) : (
+                            <Link href={route('register')} className="mt-2 bg-gradient-to-r from-[#D4A017] to-[#F0B429] text-white px-4 py-3 rounded-xl font-bold text-center shadow-md block">
+                                Daftar Sekarang
+                            </Link>
+                        )}
                     </div>
                 </div>
             )}

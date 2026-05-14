@@ -124,7 +124,27 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{bulan}</p>
                                 </div>
 
-                                {/* GRID 4 UNTUK MOBILE & DESKTOP */}
+                                {anakList.length === 0 ? (
+                                    /* ── EMPTY STATE ── */
+                                    <div className="flex flex-col items-center justify-center py-16 px-6 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm text-center gap-5">
+                                        <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-[#1B6B3A]/10 to-[#1B6B3A]/5 flex items-center justify-center text-4xl border border-[#1B6B3A]/10">
+                                            👦
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-slate-900 mb-2">Belum Ada Ananda Terdaftar</h2>
+                                            <p className="text-sm font-bold text-slate-400 leading-relaxed max-w-xs mx-auto">
+                                                Daftarkan putra/putri Anda ke program QLC untuk mulai memantau perkembangan belajar mereka.
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => setActive('anak')}
+                                            className="bg-[#1B6B3A] text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-lg shadow-green-900/20 hover:bg-[#14522d] active:scale-95 transition-all flex items-center gap-2"
+                                        >
+                                            <Users size={16} /> Daftarkan Ananda Sekarang
+                                        </button>
+                                    </div>
+                                ) : (
+                                /* GRID 4 UNTUK MOBILE & DESKTOP */
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                     {[
                                         { label: 'Ananda', val: stats.total_anak, icon: Users, bg: 'bg-blue-50', text: 'text-blue-600' },
@@ -141,125 +161,131 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-
-                            {/* 2. Child Selector & Focus Hero */}
-                            <div className="space-y-4">
-                                {activeChildren.length > 1 && (
-                                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4">
-                                        {activeChildren.map((c) => (
-                                            <button
-                                                key={c.id}
-                                                onClick={() => setSelectedChildId(c.id)}
-                                                className={`px-6 py-3 rounded-2xl text-xs font-black whitespace-nowrap transition-all active:scale-95 ${selectedChildId === c.id ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border border-slate-100 text-slate-400'}`}
-                                            >
-                                                {c.nama}
-                                            </button>
-                                        ))}
-                                    </div>
                                 )}
+                            </div>
 
-                                <div className="relative overflow-hidden bg-[#1B6B3A] rounded-[2.5rem] p-6 md:p-8 text-white shadow-xl shadow-green-900/20 group">
-                                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                                    <div className="flex items-center gap-5 relative z-10">
-                                        <div className="text-4xl bg-white/20 w-20 h-20 rounded-[2rem] flex items-center justify-center border border-white/20 backdrop-blur-md">👦</div>
-                                        <div>
-                                            <span className="inline-block px-2 py-0.5 rounded-lg bg-white/20 text-[10px] font-black mb-1 uppercase tracking-widest">Fokus Pantauan</span>
-                                            <h2 className="text-xl md:text-2xl font-black leading-tight">{activeChild?.nama}</h2>
-                                            <div className="flex items-center gap-2 text-sm mt-1 font-bold opacity-80 italic">
-                                                <GraduationCap size={16} /> {activeChild?.program_name || 'Reguler'}
+                            {/* 2–4. Child sections — only shown when children exist */}
+                            {anakList.length > 0 && (
+                                <>
+                                    {/* 2. Child Selector & Focus Hero */}
+                                    <div className="space-y-4">
+                                        {activeChildren.length > 1 && (
+                                            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4">
+                                                {activeChildren.map((c) => (
+                                                    <button
+                                                        key={c.id}
+                                                        onClick={() => setSelectedChildId(c.id)}
+                                                        className={`px-6 py-3 rounded-2xl text-xs font-black whitespace-nowrap transition-all active:scale-95 ${selectedChildId === c.id ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border border-slate-100 text-slate-400'}`}
+                                                    >
+                                                        {c.nama}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <div className="relative overflow-hidden bg-[#1B6B3A] rounded-[2.5rem] p-6 md:p-8 text-white shadow-xl shadow-green-900/20 group">
+                                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                                            <div className="flex items-center gap-5 relative z-10">
+                                                <div className="text-4xl bg-white/20 w-20 h-20 rounded-[2rem] flex items-center justify-center border border-white/20 backdrop-blur-md">👦</div>
+                                                <div>
+                                                    <span className="inline-block px-2 py-0.5 rounded-lg bg-white/20 text-[10px] font-black mb-1 uppercase tracking-widest">Fokus Pantauan</span>
+                                                    <h2 className="text-xl md:text-2xl font-black leading-tight">{activeChild?.nama}</h2>
+                                                    <div className="flex items-center gap-2 text-sm mt-1 font-bold opacity-80 italic">
+                                                        <GraduationCap size={16} /> {activeChild?.program_name || 'Reguler'}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* 3. Detail Statistics (Attendance & Quality) */}
-                            {(() => {
-                                const sel = children_stats[selectedChildId];
-                                if (!sel) return null;
-                                return (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        {/* Presensi Card */}
-                                        <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100">
-                                            <div className="flex justify-between items-center mb-6">
-                                                <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">Presensi</h3>
-                                                <span className="text-xs font-black bg-slate-50 px-3 py-1 rounded-full text-slate-500">
-                                                    {sel.attendance.hadir}/{sel.attendance.total} Sesi
-                                                </span>
-                                            </div>
-                                            <div className="w-full bg-slate-50 rounded-full h-3 border border-slate-100 p-0.5 mb-6">
-                                                <div className="bg-[#1B6B3A] h-full rounded-full shadow-[0_0_8px_rgba(27,107,58,0.2)]" style={{ width: `${(sel.attendance.hadir / sel.attendance.total) * 100}%` }}></div>
-                                            </div>
-                                            <div className="grid grid-cols-3 gap-3">
-                                                {[
-                                                    { l: 'Izin', v: sel.attendance.izin, c: 'text-amber-500' },
-                                                    { l: 'Sakit', v: sel.attendance.sakit, c: 'text-sky-500' },
-                                                    { l: 'Alpha', v: sel.attendance.alpha, c: 'text-red-500' },
-                                                ].map((item) => (
-                                                    <div key={item.l} className="bg-slate-50 rounded-2xl p-3 text-center">
-                                                        <span className={`block text-lg font-black ${item.c}`}>{item.v}</span>
-                                                        <span className="text-[9px] font-black text-slate-400 uppercase">{item.l}</span>
+                                    {/* 3. Detail Statistics (Attendance & Quality) */}
+                                    {(() => {
+                                        const sel = children_stats[selectedChildId];
+                                        if (!sel) return null;
+                                        return (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                {/* Presensi Card */}
+                                                <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100">
+                                                    <div className="flex justify-between items-center mb-6">
+                                                        <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">Presensi</h3>
+                                                        <span className="text-xs font-black bg-slate-50 px-3 py-1 rounded-full text-slate-500">
+                                                            {sel.attendance.hadir}/{sel.attendance.total} Sesi
+                                                        </span>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
+                                                    <div className="w-full bg-slate-50 rounded-full h-3 border border-slate-100 p-0.5 mb-6">
+                                                        <div className="bg-[#1B6B3A] h-full rounded-full shadow-[0_0_8px_rgba(27,107,58,0.2)]" style={{ width: `${(sel.attendance.hadir / sel.attendance.total) * 100}%` }}></div>
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-3">
+                                                        {[
+                                                            { l: 'Izin', v: sel.attendance.izin, c: 'text-amber-500' },
+                                                            { l: 'Sakit', v: sel.attendance.sakit, c: 'text-sky-500' },
+                                                            { l: 'Alpha', v: sel.attendance.alpha, c: 'text-red-500' },
+                                                        ].map((item) => (
+                                                            <div key={item.l} className="bg-slate-50 rounded-2xl p-3 text-center">
+                                                                <span className={`block text-lg font-black ${item.c}`}>{item.v}</span>
+                                                                <span className="text-[9px] font-black text-slate-400 uppercase">{item.l}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
 
-                                        {/* Kualitas Card */}
-                                        <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100">
-                                            <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest mb-6">Penilaian</h3>
-                                            <div className="space-y-4">
-                                                {[
-                                                    { l: 'Sangat Lancar', v: sel.quality.sangat_lancar, c: 'bg-green-500', t: 'text-green-600', total: sel.quality.total },
-                                                    { l: 'Lancar', v: sel.quality.lancar, c: 'bg-amber-500', t: 'text-amber-600', total: sel.quality.total },
-                                                    { l: 'Perlu Mengulang', v: sel.quality.mengulang, c: 'bg-red-500', t: 'text-red-600', total: sel.quality.total },
-                                                ].map((q) => (
-                                                    <div key={q.l} className="flex items-center gap-4">
-                                                        <div className="text-sm font-black text-slate-900 w-24 leading-tight">{q.l}</div>
-                                                        <div className="flex-1 h-2 bg-slate-50 rounded-full overflow-hidden">
-                                                            <div className={`${q.c} h-full rounded-full`} style={{ width: `${(q.v / q.total) * 100}%` }}></div>
+                                                {/* Kualitas Card */}
+                                                <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100">
+                                                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest mb-6">Penilaian</h3>
+                                                    <div className="space-y-4">
+                                                        {[
+                                                            { l: 'Sangat Lancar', v: sel.quality.sangat_lancar, c: 'bg-green-500', t: 'text-green-600', total: sel.quality.total },
+                                                            { l: 'Lancar', v: sel.quality.lancar, c: 'bg-amber-500', t: 'text-amber-600', total: sel.quality.total },
+                                                            { l: 'Perlu Mengulang', v: sel.quality.mengulang, c: 'bg-red-500', t: 'text-red-600', total: sel.quality.total },
+                                                        ].map((q) => (
+                                                            <div key={q.l} className="flex items-center gap-4">
+                                                                <div className="text-sm font-black text-slate-900 w-24 leading-tight">{q.l}</div>
+                                                                <div className="flex-1 h-2 bg-slate-50 rounded-full overflow-hidden">
+                                                                    <div className={`${q.c} h-full rounded-full`} style={{ width: `${(q.v / q.total) * 100}%` }}></div>
+                                                                </div>
+                                                                <div className={`text-xs font-black ${q.t}`}>{q.v}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* 4. Recent Notes */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center px-2">
+                                            <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">Catatan Asatidz</h3>
+                                            <button onClick={() => setActive('laporan')} className="p-2 text-[#1B6B3A] active:scale-90 transition-transform">
+                                                <ChevronRight size={24} />
+                                            </button>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {recent_reports
+                                                .filter((r) => r.student_id === selectedChildId)
+                                                .slice(0, 3)
+                                                .map((r) => (
+                                                    <div key={r.id} className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm active:scale-[0.98] transition-all">
+                                                        <div className="flex justify-between items-start mb-4">
+                                                            <div className="flex gap-2">
+                                                                <span className="text-[9px] font-black px-2 py-1 bg-slate-900 text-white rounded-lg uppercase">{r.report_type}</span>
+                                                                <span className="text-[9px] font-black px-2 py-1 bg-[#1B6B3A]/10 text-[#1B6B3A] rounded-lg uppercase">{r.kualitas?.replace('_', ' ')}</span>
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-slate-300 tracking-tighter">{r.date}</span>
                                                         </div>
-                                                        <div className={`text-xs font-black ${q.t}`}>{q.v}</div>
+                                                        <p className="text-sm font-bold text-slate-600 leading-relaxed italic border-l-4 border-slate-100 pl-4">"{r.teacher_notes}"</p>
+                                                        <div className="mt-5 flex items-center gap-3 pt-4 border-t border-slate-50 text-[11px] font-black text-slate-900 uppercase">
+                                                            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-[#1B6B3A]">
+                                                                <MessageCircle size={14} />
+                                                            </div>
+                                                            Ustadz/ah {r.teacher_name}
+                                                        </div>
                                                     </div>
                                                 ))}
-                                            </div>
                                         </div>
                                     </div>
-                                );
-                            })()}
-
-                            {/* 4. Recent Notes */}
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center px-2">
-                                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">Catatan Asatidz</h3>
-                                    <button onClick={() => setActive('laporan')} className="p-2 text-[#1B6B3A] active:scale-90 transition-transform">
-                                        <ChevronRight size={24} />
-                                    </button>
-                                </div>
-                                <div className="space-y-4">
-                                    {recent_reports
-                                        .filter((r) => r.student_id === selectedChildId)
-                                        .slice(0, 3)
-                                        .map((r) => (
-                                            <div key={r.id} className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm active:scale-[0.98] transition-all">
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div className="flex gap-2">
-                                                        <span className="text-[9px] font-black px-2 py-1 bg-slate-900 text-white rounded-lg uppercase">{r.report_type}</span>
-                                                        <span className="text-[9px] font-black px-2 py-1 bg-[#1B6B3A]/10 text-[#1B6B3A] rounded-lg uppercase">{r.kualitas?.replace('_', ' ')}</span>
-                                                    </div>
-                                                    <span className="text-[10px] font-bold text-slate-300 tracking-tighter">{r.date}</span>
-                                                </div>
-                                                <p className="text-sm font-bold text-slate-600 leading-relaxed italic border-l-4 border-slate-100 pl-4">"{r.teacher_notes}"</p>
-                                                <div className="mt-5 flex items-center gap-3 pt-4 border-t border-slate-50 text-[11px] font-black text-slate-900 uppercase">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-[#1B6B3A]">
-                                                        <MessageCircle size={14} />
-                                                    </div>
-                                                    Ustadz/ah {r.teacher_name}
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
+                                </>
+                            )}
                         </>
                     )}
                 </div>

@@ -46,7 +46,7 @@ export default function ProgramDetail({ program, galleries = [] }: Props) {
                     </div>
 
                     <div className="relative z-10 w-full px-6 text-center text-white mt-12 md:mt-20 animate-in fade-in slide-in-from-bottom-5 duration-1000">
-                        <button onClick={() => window.history.back()} className="absolute top-[-50px] left-4 flex items-center text-white/80 text-sm font-bold md:hidden active:scale-90 transition-transform">
+                        <button onClick={() => window.history.back()} className="absolute top-[-50px] left-4 flex items-center gap-1 text-white/80 text-sm font-bold active:scale-90 transition-all hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/20">
                             <ChevronLeft size={18} /> Kembali
                         </button>
                         <span className="inline-block py-1 px-4 rounded-full bg-white/20 border border-white/30 backdrop-blur-md text-[10px] font-black tracking-[0.2em] mb-4 uppercase">Detail Program</span>

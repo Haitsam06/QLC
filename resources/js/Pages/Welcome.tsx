@@ -252,7 +252,7 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                     </div>
 
                     {/* CONTAINER SCROLL: Menggunakan flex-nowrap dan overflow-x-auto pada mobile */}
-                    <div className="flex lg:grid lg:grid-cols-3 gap-4 md:gap-8 overflow-x-auto pb-8 lg:pb-0 snap-x snap-mandatory scrollbar-hide">
+                    <div className="flex lg:grid lg:grid-cols-3 gap-4 md:gap-8 overflow-x-auto lg:overflow-visible pb-8 lg:pb-0 snap-x snap-mandatory scrollbar-hide">
                         {foundations.map((pilar, idx) => (
                             <div
                                 key={idx}
@@ -286,7 +286,7 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                     </div>
 
                     {/* CONTAINER: Flex di mobile, Grid di desktop */}
-                    <div className="flex lg:grid lg:grid-cols-3 gap-6 lg:gap-10 overflow-x-auto pb-8 lg:pb-0 snap-x snap-mandatory scrollbar-hide pt-4">
+                    <div className="flex lg:grid lg:grid-cols-3 gap-6 lg:gap-10 overflow-x-auto lg:overflow-visible pb-8 lg:pb-4 snap-x snap-mandatory scrollbar-hide pt-4">
                         {programs.map((prog, idx) => (
                             <div
                                 key={idx}
@@ -344,6 +344,54 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                     </div>
                 </div>
             </section>
+            {/* 9. KERJA SAMA */}
+            <section id="kerja-sama" className="py-24 bg-gradient-to-br from-[#1B6B3A] to-[#0a381d] relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#D4A017]/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
+
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                    <div className="reveal opacity-0 translate-y-8">
+                        <span className="inline-block py-2 px-5 rounded-full bg-white/15 border border-white/20 text-white text-sm font-bold tracking-wider mb-6">🤝 KOLABORASI</span>
+                        <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
+                            Jalin Kerja Sama <br className="hidden md:block" />
+                            <span className="text-[#D4A017]">dengan QLC</span>
+                        </h2>
+                        <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
+                            Bergabunglah sebagai mitra QLC dan bersama-sama membangun generasi Qurani yang unggul. Kami terbuka untuk kerja sama dengan sekolah, yayasan, perusahaan, dan instansi lainnya.
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12 text-left">
+                            {[
+                                { icon: '🏫', title: 'Institusi Pendidikan', desc: 'Sekolah & pesantren yang ingin mengintegrasikan program Quran.' },
+                                { icon: '🏢', title: 'Lembaga & Yayasan', desc: 'Organisasi sosial atau keagamaan yang ingin berkolaborasi.' },
+                                { icon: '🤲', title: 'Donatur & Sponsor', desc: 'Pihak yang ingin mendukung program dakwah dan pendidikan.' },
+                            ].map((item, i) => (
+                                <div key={i} className="bg-white/10 border border-white/15 rounded-3xl p-6 text-white">
+                                    <div className="text-3xl mb-3">{item.icon}</div>
+                                    <h3 className="font-extrabold text-base mb-2">{item.title}</h3>
+                                    <p className="text-sm text-white/70 leading-relaxed">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button
+                                onClick={() => router.get('/login?tab=register')}
+                                className="bg-[#D4A017] hover:bg-[#c49115] text-white px-10 py-4 rounded-full font-black text-lg transition-all shadow-xl shadow-black/20 hover:-translate-y-1"
+                            >
+                                Ajukan Kerja Sama
+                            </button>
+                            <a
+                                href="mailto:admin@qlc.sch.id"
+                                className="bg-white/15 hover:bg-white/25 border border-white/30 text-white px-10 py-4 rounded-full font-bold text-lg transition-all hover:-translate-y-0.5"
+                            >
+                                Hubungi via Email
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <Footer />
         </div>
     );

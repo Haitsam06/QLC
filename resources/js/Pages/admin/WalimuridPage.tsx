@@ -96,7 +96,8 @@ function AddModal({ onClose, onSave }: { onClose: () => void; onSave: (d: AddFor
         else if (!/^[a-zA-Z0-9]{4,50}$/.test(f.username)) err.username = 'Min 4 karakter, hanya huruf & angka.';
         if (!f.password) err.password = 'Password wajib diisi.';
         else if (f.password.length < 8) err.password = 'Password minimal 8 karakter.';
-        if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) err.email = 'Format email tidak valid.';
+        if (!f.email.trim()) err.email = 'Email wajib diisi.';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) err.email = 'Format email tidak valid.';
         setE(err);
         return !Object.keys(err).length;
     };
@@ -157,7 +158,7 @@ function AddModal({ onClose, onSave }: { onClose: () => void; onSave: (d: AddFor
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                                Email <span className="font-medium normal-case text-slate-400 ml-1">(opsional)</span>
+                                Email
                             </label>
                             <input
                                 className={`h-11 px-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e.email ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-blue-600 focus:ring-blue-600/15'}`}

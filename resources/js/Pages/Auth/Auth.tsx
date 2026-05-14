@@ -72,6 +72,10 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
 
     const handleRegisterSubmit = (e: FormEvent) => {
         e.preventDefault();
+        if (!registerForm.data.otp.trim() || registerForm.data.otp.trim().length < 6) {
+            registerForm.setError('otp', 'Kode OTP wajib diisi (6 digit).');
+            return;
+        }
         registerForm.post(route('register'), {
             onFinish: () => registerForm.reset('password', 'password_confirmation', 'otp'),
         });
@@ -295,20 +299,30 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        <input
-                                            type="password"
-                                            value={registerForm.data.password}
-                                            onChange={(e) => registerForm.setData('password', e.target.value)}
-                                            placeholder="Buat Kata Sandi"
-                                            className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
-                                        />
-                                        <input
-                                            type="password"
-                                            value={registerForm.data.password_confirmation}
-                                            onChange={(e) => registerForm.setData('password_confirmation', e.target.value)}
-                                            placeholder="Ulangi Sandi"
-                                            className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={registerForm.data.password}
+                                                onChange={(e) => registerForm.setData('password', e.target.value)}
+                                                placeholder="Buat Kata Sandi"
+                                                className="w-full px-6 pr-12 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
+                                            />
+                                            <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#1B6B3A]">
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type={showConfirmPassword ? 'text' : 'password'}
+                                                value={registerForm.data.password_confirmation}
+                                                onChange={(e) => registerForm.setData('password_confirmation', e.target.value)}
+                                                placeholder="Ulangi Sandi"
+                                                className="w-full px-6 pr-12 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:border-[#1B6B3A] transition-all text-sm font-bold"
+                                            />
+                                            <button type="button" onClick={() => setShowConfirmPassword((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#1B6B3A]">
+                                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <button
@@ -332,14 +346,24 @@ export default function Auth({ status, canResetPassword = true, initialTab = 'lo
                                         <Key size={40} className="mx-auto text-[#1B6B3A] mb-4" />
                                         <p className="text-sm font-bold text-[#1B6B3A] leading-relaxed px-2">{registerStatusMessage}</p>
                                     </div>
-                                    <input
-                                        type="text"
-                                        value={registerForm.data.otp}
-                                        onChange={(e) => registerForm.setData('otp', e.target.value)}
-                                        placeholder="000000"
-                                        maxLength={6}
-                                        className="w-full py-7 bg-gray-50 border-transparent rounded-[2.5rem] focus:bg-white focus:border-[#1B6B3A] focus:ring-8 focus:ring-[#1B6B3A]/5 transition-all text-4xl font-black text-center tracking-[0.5em] text-[#1B6B3A]"
-                                    />
+                                    <div className="space-y-2">
+                                        <input
+                                            type="text"
+                                            value={registerForm.data.otp}
+                                            onChange={(e) => {
+                                                registerForm.setData('otp', e.target.value);
+                                                registerForm.clearErrors('otp');
+                                            }}
+                                            placeholder="000000"
+                                            maxLength={6}
+                                            className={`w-full py-7 rounded-[2.5rem] focus:bg-white focus:ring-8 transition-all text-4xl font-black text-center tracking-[0.5em] text-[#1B6B3A] ${registerForm.errors.otp ? 'bg-red-50 border border-red-400 focus:border-red-400 focus:ring-red-50' : 'bg-gray-50 border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/5'}`}
+                                        />
+                                        {registerForm.errors.otp && (
+                                            <p className="text-xs font-bold text-red-500 text-center flex items-center justify-center gap-1">
+                                                <AlertCircle size={14} /> {registerForm.errors.otp}
+                                            </p>
+                                        )}
+                                    </div>
                                     <button type="submit" disabled={registerForm.processing} className="w-full py-5 bg-[#1B6B3A] text-white rounded-[2.5rem] text-lg font-black shadow-xl shadow-[#1B6B3A]/20 hover:bg-[#14522d] active:scale-[0.98] transition-all">
                                         Selesaikan Pendaftaran
                                     </button>

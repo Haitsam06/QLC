@@ -3,10 +3,11 @@ import { Head, router, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
 import {
     BookOpen, LayoutDashboard, CalendarDays, FileText,
-    Settings, LogOut, Bell, CalendarX,
+    Settings, LogOut, CalendarX,
     CheckCircle2, AlertCircle, Plus, Star,
     ChevronRight, Clock, MapPin, Users, Menu, X
 } from 'lucide-react';
+import NotificationBell from '@/Components/NotificationBell';
 
 // ── Sub-pages ─────────────────────────────────────────────
 import JadwalPage from './JadwalPage';
@@ -130,9 +131,9 @@ export default function TeacherDashboard({ stats, today_agendas, recent_reports,
 
                     {/* Profile & Logout */}
                     <div className="flex items-center gap-2">
-                        <button className="hidden sm:flex w-10 h-10 rounded-xl bg-gray-100 items-center justify-center text-gray-500 hover:bg-green-100 hover:text-green-700 transition-colors">
-                            <Bell size={18}/>
-                        </button>
+                        <div className="hidden sm:flex">
+                            <NotificationBell onNavigate={setActive} />
+                        </div>
                         <button
                             onClick={handleLogout}
                             className="h-10 px-3 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center gap-2 text-sm font-bold">
@@ -220,10 +221,24 @@ export default function TeacherDashboard({ stats, today_agendas, recent_reports,
                                     <h1 className="text-2xl md:text-4xl font-black text-white mb-2 tracking-tight">
                                         Ahlan wa Sahlan,<br className="sm:hidden" /> {teacherName}
                                     </h1>
-                                    <p className="text-green-50 text-sm max-w-xl leading-relaxed font-medium">
+                                    <p className="text-green-50 text-sm max-w-xl leading-relaxed font-medium mb-3">
                                         Semoga Allah memberkahi setiap huruf yang diajarkan hari ini. Terdapat{' '}
                                         <b className="text-white">{today_agendas.length} jadwal</b> mengajar yang menanti Anda.
                                     </p>
+                                    {(profile?.email || profile?.bidang) && (
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {profile?.bidang && (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-white text-xs font-bold">
+                                                    🎓 {profile.bidang}
+                                                </span>
+                                            )}
+                                            {profile?.email && (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-white text-xs font-bold">
+                                                    ✉ {profile.email}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-row gap-3 w-full lg:w-auto relative z-10">

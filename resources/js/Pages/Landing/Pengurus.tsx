@@ -4,6 +4,7 @@ import React from 'react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 import { Head } from '@inertiajs/react';
+import { ChevronLeft } from 'lucide-react';
 
 interface Leader {
     id: string;
@@ -34,6 +35,13 @@ export default function Pengurus({ leaders }: Props) {
             <Navbar />
 
             <main className="px-4 pt-36 pb-24 max-w-5xl mx-auto relative">
+                <button 
+                    onClick={() => window.history.back()} 
+                    className="absolute top-20 left-4 flex items-center gap-1 text-gray-600 text-sm font-bold active:scale-90 transition-all hover:text-gray-900 bg-white hover:bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm z-10"
+                >
+                    <ChevronLeft size={18} /> Kembali
+                </button>
+                
                 {/* --- HEADER --- */}
                 <div className="text-center mb-16">
                     <span className="inline-block py-1.5 px-4 rounded-full bg-[#1B6B3A]/10 text-[#1B6B3A] text-xs font-bold tracking-widest mb-4 uppercase">👥 Profil Kami</span>

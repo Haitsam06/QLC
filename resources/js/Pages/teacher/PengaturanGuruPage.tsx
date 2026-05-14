@@ -49,7 +49,6 @@ function UsernameForm() {
 
     const { data, setData, put, processing, errors, recentlySuccessful } = useForm({
         username: (user?.username as string) ?? '',
-        email: (user?.email as string) ?? '',
     });
 
     const submit = (e: FormEvent) => {
@@ -63,7 +62,7 @@ function UsernameForm() {
                 <div className="text-[18px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
                     <KeyRound size={20} className="text-[#1B6B3A] bg-green-50 p-1 rounded-lg" /> Kredensial Akun
                 </div>
-                <div className="text-[13px] text-slate-500 font-bold">Ubah username dan email yang digunakan untuk masuk ke sistem.</div>
+                <div className="text-[13px] text-slate-500 font-bold">Ubah username yang digunakan untuk masuk ke sistem.</div>
             </div>
 
             <div className="px-6 md:px-8 py-7 flex flex-col gap-5">
@@ -90,28 +89,6 @@ function UsernameForm() {
                         {errors.username && (
                             <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
                                 <AlertCircle size={14} /> {errors.username}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex flex-col gap-1.5 max-w-xl">
-                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
-                            Email <span className="font-semibold opacity-70">(opsional)</span>
-                        </label>
-                        <div className="relative flex items-center">
-                            <span className="absolute left-4 text-slate-400 pointer-events-none font-bold text-lg">@</span>
-                            <input
-                                type="email"
-                                value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
-                                placeholder="Alamat email"
-                                autoComplete="email"
-                                className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.email ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
-                            />
-                        </div>
-                        {errors.email && (
-                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
-                                <AlertCircle size={14} /> {errors.email}
                             </div>
                         )}
                     </div>

@@ -151,6 +151,15 @@ export default function AgendaLanding() {
             <Navbar />
             <div className="py-20 px-4 sm:px-6 mt-10">
                 <main className="max-w-7xl mx-auto">
+                    {/* --- TOMBOL KEMBALI --- */}
+                    <div className="mb-8">
+                        <button 
+                            onClick={() => window.history.back()} 
+                            className="flex items-center gap-1 text-gray-600 text-sm font-bold active:scale-90 transition-all hover:text-gray-900 bg-white hover:bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm w-fit"
+                        >
+                            <ChevronLeft size={18} /> Kembali
+                        </button>
+                    </div>
                     <div className="text-center mb-8">
                         <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight">
                             Kalender <span className="text-[#1B6B3A]">Agenda</span>
