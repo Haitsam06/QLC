@@ -34,6 +34,7 @@ class HandleInertiaRequests extends Middleware
 
         // Ambil parent_name dari collection parents jika user login
         $displayName = null;
+        $roleName    = null;
         if ($user) {
             $client   = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
             $db       = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
@@ -51,6 +52,10 @@ class HandleInertiaRequests extends Middleware
             if (!$displayName) {
                 $displayName = $user->username;
             }
+
+            // Muat relasi role agar getDashboardRoute di frontend bisa berjalan
+            $user->load('role');
+            $roleName = $user->getRoleName();
         }
 
         return [
@@ -62,6 +67,7 @@ class HandleInertiaRequests extends Middleware
                     'username' => $user->username,
                     'email'    => $user->email,
                     'role_id'  => (string) $user->role_id,
+                    'role'     => $roleName,           // ← nama role untuk routing navbar
                 ] : null,
             ],
         ];

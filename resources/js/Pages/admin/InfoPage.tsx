@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Building2, BookOpen, Image, Plus, Pencil, Trash2, X, Loader2, CheckCircle2, AlertCircle, Upload, Instagram, Facebook, Youtube, Users, Star, Award } from 'lucide-react';
+import { Building2, BookOpen, Image as ImageIcon, Plus, Pencil, Trash2, X, Loader2, CheckCircle2, AlertCircle, Upload, Instagram, Facebook, Youtube, Users, Star, Award, CreditCard } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -21,6 +21,10 @@ interface Profile {
     social_media: Record<string, string> | null;
     established_year: string | null;
     main_focus: string | null;
+    bank_name: string | null;
+    bank_account: string | null;
+    bank_holder: string | null;
+    bank_nominal: string | null;
 }
 interface Foundation {
     id: string;
@@ -77,17 +81,236 @@ const Fg = ({ label, error, children }: { label: string; error?: string; childre
     </div>
 );
 
-function FileUpload({ accept, preview, onFile, label }: { accept: string; preview: string | null; onFile: (f: File) => void; label: string; themeClass?: string }) {
+/* ═══════════════════════════════════════════════════════════
+   IMAGE CROP MODAL
+═══════════════════════════════════════════════════════════ */
+function ImageCropModal({
+    src,
+    aspect = 1,
+    outputSize = 900,
+    onConfirm,
+    onClose,
+}: {
+    src: string;
+    aspect?: number;
+    outputSize?: number;
+    onConfirm: (file: File) => void;
+    onClose: () => void;
+}) {
+    const C = 400;
+    const cropW = aspect >= 1 ? 320 : Math.round(320 * aspect);
+    const cropH = aspect >= 1 ? Math.round(320 / aspect) : 320;
+    const cropX = Math.floor((C - cropW) / 2);
+    const cropY = Math.floor((C - cropH) / 2);
+
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const imgRef = useRef<HTMLImageElement | null>(null);
+    const dragState = useRef({ active: false, lastX: 0, lastY: 0 });
+    const stateRef = useRef({ zoom: 1, ox: 0, oy: 0 });
+    const [ready, setReady] = useState(false);
+    const [zoom, setZoomState] = useState(1);
+    const [coverZoom, setCoverZoom] = useState(0.1);
+
+    const draw = useCallback(() => {
+        const canvas = canvasRef.current;
+        const img = imgRef.current;
+        if (!canvas || !img) return;
+        const ctx = canvas.getContext('2d')!;
+        const { zoom: z, ox, oy } = stateRef.current;
+        ctx.clearRect(0, 0, C, C);
+        ctx.drawImage(img, ox, oy, img.naturalWidth * z, img.naturalHeight * z);
+    }, []);
+
+    useEffect(() => {
+        const img = new Image();
+        img.onload = () => {
+            imgRef.current = img;
+            const mz = Math.max(cropW / img.naturalWidth, cropH / img.naturalHeight);
+            const ox = cropX - (img.naturalWidth * mz - cropW) / 2;
+            const oy = cropY - (img.naturalHeight * mz - cropH) / 2;
+            stateRef.current = { zoom: mz, ox, oy };
+            setCoverZoom(mz);
+            setZoomState(mz);
+            setReady(true);
+        };
+        img.src = src;
+    }, [src]);
+
+    useEffect(() => {
+        if (ready) draw();
+    }, [ready, zoom, draw]);
+
+    const getXY = (e: React.MouseEvent | React.TouchEvent): [number, number] => {
+        const rect = canvasRef.current!.getBoundingClientRect();
+        const sx = C / rect.width;
+        const sy = C / rect.height;
+        if ('touches' in e) {
+            return [(e.touches[0].clientX - rect.left) * sx, (e.touches[0].clientY - rect.top) * sy];
+        }
+        return [(e.clientX - rect.left) * sx, (e.clientY - rect.top) * sy];
+    };
+
+    const handleZoom = (newZoom: number) => {
+        const { ox, oy, zoom: oldZoom } = stateRef.current;
+        const cx = cropX + cropW / 2;
+        const cy = cropY + cropH / 2;
+        const ratio = newZoom / oldZoom;
+        stateRef.current = { zoom: newZoom, ox: cx - (cx - ox) * ratio, oy: cy - (cy - oy) * ratio };
+        setZoomState(newZoom);
+    };
+
+    const confirm = () => {
+        const img = imgRef.current;
+        if (!img) return;
+        const { zoom: z, ox, oy } = stateRef.current;
+        const outW = aspect >= 1 ? outputSize : Math.round(outputSize * aspect);
+        const outH = aspect >= 1 ? Math.round(outputSize / aspect) : outputSize;
+        const out = document.createElement('canvas');
+        out.width = outW;
+        out.height = outH;
+        const ctx = out.getContext('2d')!;
+        ctx.drawImage(img, (cropX - ox) / z, (cropY - oy) / z, cropW / z, cropH / z, 0, 0, outW, outH);
+        out.toBlob((blob) => {
+            if (!blob) return;
+            onConfirm(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.92);
+    };
+
+    return createPortal(
+        <div className="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[500px] overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+                    <div>
+                        <span className="text-[18px] font-extrabold text-slate-900">Sesuaikan Gambar</span>
+                        <p className="text-[12px] text-slate-400 mt-0.5">Geser & zoom untuk mengatur posisi gambar</p>
+                    </div>
+                    <button className="w-9 h-9 rounded-full flex items-center justify-center border border-slate-200 hover:bg-red-50 hover:text-red-500 transition-colors" onClick={onClose}>
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="p-4">
+                    {!ready ? (
+                        <div className="flex items-center justify-center h-[300px]">
+                            <Loader2 size={36} className="animate-spin text-[#1B6B3A]" />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="relative w-full overflow-hidden rounded-2xl bg-black" style={{ paddingBottom: '100%' }}>
+                                <canvas
+                                    ref={canvasRef}
+                                    width={C}
+                                    height={C}
+                                    className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-none select-none"
+                                    onMouseDown={(e) => { const [x, y] = getXY(e); dragState.current = { active: true, lastX: x, lastY: y }; }}
+                                    onMouseMove={(e) => {
+                                        if (!dragState.current.active) return;
+                                        const [x, y] = getXY(e);
+                                        stateRef.current.ox += x - dragState.current.lastX;
+                                        stateRef.current.oy += y - dragState.current.lastY;
+                                        dragState.current.lastX = x;
+                                        dragState.current.lastY = y;
+                                        draw();
+                                    }}
+                                    onMouseUp={() => { dragState.current.active = false; }}
+                                    onMouseLeave={() => { dragState.current.active = false; }}
+                                    onTouchStart={(e) => { const [x, y] = getXY(e); dragState.current = { active: true, lastX: x, lastY: y }; }}
+                                    onTouchMove={(e) => {
+                                        e.preventDefault();
+                                        if (!dragState.current.active) return;
+                                        const [x, y] = getXY(e);
+                                        stateRef.current.ox += x - dragState.current.lastX;
+                                        stateRef.current.oy += y - dragState.current.lastY;
+                                        dragState.current.lastX = x;
+                                        dragState.current.lastY = y;
+                                        draw();
+                                    }}
+                                    onTouchEnd={() => { dragState.current.active = false; }}
+                                />
+                                {/* Crop overlay */}
+                                <div
+                                    className="absolute pointer-events-none"
+                                    style={{
+                                        left: `${(cropX / C) * 100}%`,
+                                        top: `${(cropY / C) * 100}%`,
+                                        width: `${(cropW / C) * 100}%`,
+                                        height: `${(cropH / C) * 100}%`,
+                                        boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
+                                        border: '2px solid rgba(255,255,255,0.9)',
+                                    }}
+                                >
+                                    {/* Rule of thirds */}
+                                    <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/30" />
+                                    <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/30" />
+                                    <div className="absolute top-1/3 left-0 right-0 h-px bg-white/30" />
+                                    <div className="absolute top-2/3 left-0 right-0 h-px bg-white/30" />
+                                    {/* Corner handles */}
+                                    <div className="absolute top-0 left-0 w-4 h-4 border-t-[3px] border-l-[3px] border-white" />
+                                    <div className="absolute top-0 right-0 w-4 h-4 border-t-[3px] border-r-[3px] border-white" />
+                                    <div className="absolute bottom-0 left-0 w-4 h-4 border-b-[3px] border-l-[3px] border-white" />
+                                    <div className="absolute bottom-0 right-0 w-4 h-4 border-b-[3px] border-r-[3px] border-white" />
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex items-center gap-3 px-1">
+                                <span className="text-[12px] font-bold text-slate-400 shrink-0">🔍</span>
+                                <input
+                                    type="range"
+                                    min={coverZoom}
+                                    max={coverZoom * 5}
+                                    step={0.001}
+                                    value={zoom}
+                                    className="flex-1 h-1.5 accent-[#1B6B3A]"
+                                    onChange={(e) => handleZoom(Number(e.target.value))}
+                                />
+                                <span className="text-[12px] font-bold text-slate-500 w-12 text-right shrink-0">×{(zoom / coverZoom).toFixed(1)}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 text-center mt-2">Geser gambar untuk mengatur posisi · Scroll untuk zoom</p>
+                        </>
+                    )}
+                </div>
+
+                <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button className="px-5 h-10 rounded-full font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-700" onClick={onClose}>Batal</button>
+                    <button className="px-7 h-10 rounded-full font-bold text-sm bg-[#1B6B3A] text-white hover:bg-[#114a27] flex items-center gap-2 shadow-md disabled:opacity-50" onClick={confirm} disabled={!ready}>
+                        <CheckCircle2 size={16} /> Potong & Gunakan
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+function FileUpload({ accept, preview, onFile, label, aspect = 1 }: { accept: string; preview: string | null; onFile: (f: File) => void; label: string; aspect?: number; themeClass?: string }) {
     const ref = useRef<HTMLInputElement>(null);
+    const [cropSrc, setCropSrc] = useState<string | null>(null);
+
+    const handleFile = (file: File) => {
+        if (file.type.startsWith('image/')) {
+            setCropSrc(URL.createObjectURL(file));
+        } else {
+            onFile(file);
+        }
+    };
+
     return (
         <div className="w-full">
-            <div className={`border-2 border-dashed border-slate-300 rounded-[1.5rem] p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all bg-white/50 hover:bg-white hover:border-[#1B6B3A]`} onClick={() => ref.current?.click()}>
+            <div className="border-2 border-dashed border-slate-300 rounded-[1.5rem] p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all bg-white/50 hover:bg-white hover:border-[#1B6B3A]" onClick={() => ref.current?.click()}>
                 <Upload size={28} className="text-[#1B6B3A]" />
                 <div className="text-[13.5px] font-bold text-slate-700">{label}</div>
                 <div className="text-[12px] font-medium text-slate-500">Klik untuk memilih file</div>
-                <input ref={ref} type="file" accept={accept} className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+                <input ref={ref} type="file" accept={accept} className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
             </div>
             {preview && <img src={preview} className="w-full max-h-[200px] object-cover rounded-[1.5rem] mt-3 border border-slate-200 shadow-sm" alt="preview" />}
+            {cropSrc && (
+                <ImageCropModal
+                    src={cropSrc}
+                    aspect={aspect}
+                    onConfirm={(file) => { setCropSrc(null); onFile(file); }}
+                    onClose={() => setCropSrc(null)}
+                />
+            )}
         </div>
     );
 }
@@ -155,9 +378,14 @@ function ProfileTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
         social_media: null,
         established_year: '',
         main_focus: '',
+        bank_name: '',
+        bank_account: '',
+        bank_holder: '',
+        bank_nominal: '',
     });
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [logoCropSrc, setLogoCropSrc] = useState<string | null>(null);
     const [aboutFile, setAboutFile] = useState<File | null>(null);
     const [aboutPreview, setAboutPreview] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
@@ -246,14 +474,23 @@ function ProfileTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
                                         className="hidden"
                                         onChange={(e) => {
                                             const f = e.target.files?.[0];
-                                            if (f) {
-                                                setLogoFile(f);
-                                                setLogoPreview(URL.createObjectURL(f));
-                                            }
+                                            if (f) setLogoCropSrc(URL.createObjectURL(f));
                                         }}
                                     />
                                 </label>
                             </div>
+                            {logoCropSrc && (
+                                <ImageCropModal
+                                    src={logoCropSrc}
+                                    aspect={1}
+                                    onConfirm={(file) => {
+                                        setLogoCropSrc(null);
+                                        setLogoFile(file);
+                                        setLogoPreview(URL.createObjectURL(file));
+                                    }}
+                                    onClose={() => setLogoCropSrc(null)}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -271,6 +508,7 @@ function ProfileTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
                                         accept="image/*"
                                         preview={aboutPreview || prof.about_image}
                                         label="Pilih Foto / Gambar Pendukung"
+                                        aspect={4 / 3}
                                         onFile={(file) => {
                                             setAboutFile(file);
                                             setAboutPreview(URL.createObjectURL(file));
@@ -354,6 +592,68 @@ function ProfileTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
                                         <input className="w-full h-14 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl text-[14px] font-medium focus:border-[#D4A017] focus:ring-4 focus:ring-[#D4A017]/20" value={prof.social_media?.[k] ?? ''} onChange={updSocial(k)} />
                                     </div>
                                 </Fg>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                {/* INFORMASI PEMBAYARAN */}
+                <div className="relative bg-gradient-to-br from-amber-50 to-white p-8 lg:p-12 rounded-[3rem] border border-amber-200/60 shadow-sm">
+                    <div className="relative z-10 flex flex-col gap-6">
+                        <span className="inline-block py-1.5 px-4 rounded-full bg-amber-100 border border-amber-200 shadow-sm text-amber-700 text-xs font-bold tracking-wider w-fit">
+                            4. INFORMASI PEMBAYARAN PENDAFTARAN
+                        </span>
+                        <p className="text-[13px] text-slate-500 -mt-2">
+                            Data ini ditampilkan ke orang tua saat proses pendaftaran anak (langkah pembayaran).
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Fg label="Nama Bank">
+                                <input
+                                    className="w-full h-12 px-5 bg-white border border-slate-200 rounded-2xl text-[14px] font-medium focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20"
+                                    placeholder="Contoh: Bank Syariah Indonesia (BSI)"
+                                    value={prof.bank_name ?? ''}
+                                    onChange={upd('bank_name')}
+                                />
+                            </Fg>
+                            <Fg label="Nomor Rekening">
+                                <input
+                                    className="w-full h-12 px-5 bg-white border border-slate-200 rounded-2xl text-[14px] font-medium font-mono focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20"
+                                    placeholder="Contoh: 7123456789"
+                                    value={prof.bank_account ?? ''}
+                                    onChange={upd('bank_account')}
+                                />
+                            </Fg>
+                            <Fg label="Atas Nama Rekening">
+                                <input
+                                    className="w-full h-12 px-5 bg-white border border-slate-200 rounded-2xl text-[14px] font-medium focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20"
+                                    placeholder="Contoh: Yayasan Pejuang Quran"
+                                    value={prof.bank_holder ?? ''}
+                                    onChange={upd('bank_holder')}
+                                />
+                            </Fg>
+                            <Fg label="Keterangan Nominal">
+                                <input
+                                    className="w-full h-12 px-5 bg-white border border-slate-200 rounded-2xl text-[14px] font-medium focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20"
+                                    placeholder="Contoh: Sesuai program yang dipilih"
+                                    value={prof.bank_nominal ?? ''}
+                                    onChange={upd('bank_nominal')}
+                                />
+                            </Fg>
+                        </div>
+                        {/* Preview */}
+                        <div className="bg-white border border-amber-200 rounded-2xl p-5 flex flex-col gap-2 shadow-sm">
+                            <div className="text-[11px] font-extrabold text-amber-700 uppercase tracking-wider flex items-center gap-2 mb-1">
+                                <CreditCard size={14} /> Preview Tampilan di Form Pendaftaran
+                            </div>
+                            {[
+                                { l: 'Bank', v: prof.bank_name || '—' },
+                                { l: 'No. Rekening', v: prof.bank_account || '—' },
+                                { l: 'Atas Nama', v: prof.bank_holder || '—' },
+                                { l: 'Nominal', v: prof.bank_nominal || '—' },
+                            ].map((r) => (
+                                <div key={r.l} className="flex justify-between text-[13px]">
+                                    <span className="text-slate-500 font-medium">{r.l}</span>
+                                    <span className="font-bold text-slate-800 font-mono text-right">{r.v}</span>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -707,6 +1007,7 @@ function LeaderModal({ mode, init, onClose, onSave }: { mode: 'add' | 'edit'; in
                             accept="image/*"
                             preview={preview}
                             label="Pilih Foto"
+                            aspect={1}
                             onFile={(file) => {
                                 setImgFile(file);
                                 setPreview(URL.createObjectURL(file));
@@ -781,7 +1082,7 @@ function ProgramsTab({ onToast }: { onToast: (msg: string, type: 'success' | 'er
                                         <img src={prog.image_url} alt={prog.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                            <Image size={32} />
+                                            <ImageIcon size={32} />
                                         </div>
                                     )}
                                 </div>
@@ -938,6 +1239,7 @@ function ProgramModal({ mode, init, onClose, onSave }: { mode: 'add' | 'edit'; i
                             label="Thumbnail (Kartu Depan)"
                             preview={previews.main}
                             accept="image/*"
+                            aspect={4 / 3}
                             onFile={(file) => {
                                 setImgFile(file);
                                 setPreviews({ ...previews, main: URL.createObjectURL(file) });
@@ -947,6 +1249,7 @@ function ProgramModal({ mode, init, onClose, onSave }: { mode: 'add' | 'edit'; i
                             label="Background Hero (Atas)"
                             preview={previews.hero}
                             accept="image/*"
+                            aspect={16 / 9}
                             onFile={(file) => {
                                 setHeroFile(file);
                                 setPreviews({ ...previews, hero: URL.createObjectURL(file) });
@@ -956,6 +1259,7 @@ function ProgramModal({ mode, init, onClose, onSave }: { mode: 'add' | 'edit'; i
                             label="Gambar Tentang Program"
                             preview={previews.about}
                             accept="image/*"
+                            aspect={4 / 3}
                             onFile={(file) => {
                                 setAboutFile(file);
                                 setPreviews({ ...previews, about: URL.createObjectURL(file) });
@@ -1187,6 +1491,7 @@ function GalleryModal({ mode, init, onClose, onSave }: { mode: 'add' | 'edit'; i
                                 accept="image/*"
                                 preview={preview}
                                 label="Pilih Gambar"
+                                aspect={4 / 3}
                                 onFile={(f) => {
                                     setImgFile(f);
                                     setPreview(URL.createObjectURL(f));
@@ -1223,7 +1528,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode; colorClass: strin
     { id: 'foundations', label: 'Fondasi Karakter', icon: <Award size={18} />, colorClass: 'bg-emerald-600' },
     { id: 'leaders', label: 'Pimpinan Lembaga', icon: <Users size={18} />, colorClass: 'bg-orange-600' },
     { id: 'programs', label: 'Daftar Program', icon: <BookOpen size={18} />, colorClass: 'bg-blue-600' },
-    { id: 'gallery', label: 'Galeri Landing', icon: <Image size={18} />, colorClass: 'bg-purple-600' },
+    { id: 'gallery', label: 'Galeri Landing', icon: <ImageIcon size={18} />, colorClass: 'bg-purple-600' },
 ];
 
 export default function InfoPage() {

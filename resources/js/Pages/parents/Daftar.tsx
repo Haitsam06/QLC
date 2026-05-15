@@ -31,9 +31,9 @@ interface EnrollForm {
     [key: string]: string | File | null;
 }
 
-// ── Constants ─────────────────────────────────────────────────
-const ADMIN_WA = '6281285723834'; // ← Ganti dengan nomor WA admin QLC
-const BANK_INFO = {
+// ── Constants (fallback jika API belum diisi admin) ───────────────────────────
+const DEFAULT_ADMIN_WA = '6281285723834';
+const DEFAULT_BANK_INFO = {
     bank: 'Bank Syariah Indonesia (BSI)',
     norek: '7123456789',
     atas_nama: 'Yayasan Pejuang Quran',
@@ -56,6 +56,30 @@ export default function Daftar({ programs, flash }: Props) {
     const [previewFile, setPreviewFile] = useState<string | null>(null);
     const [fileType, setFileType] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [adminWa, setAdminWa] = useState(DEFAULT_ADMIN_WA);
+    const [bankInfo, setBankInfo] = useState(DEFAULT_BANK_INFO);
+
+    useEffect(() => {
+        fetch('/api/info/profile')
+            .then((r) => r.json())
+            .then((j) => {
+                if (!j.success || !j.data) return;
+                const d = j.data;
+                if (d.bank_name || d.bank_account) {
+                    setBankInfo({
+                        bank: d.bank_name || DEFAULT_BANK_INFO.bank,
+                        norek: d.bank_account || DEFAULT_BANK_INFO.norek,
+                        atas_nama: d.bank_holder || DEFAULT_BANK_INFO.atas_nama,
+                        nominal: d.bank_nominal || DEFAULT_BANK_INFO.nominal,
+                    });
+                }
+                if (d.whatsapp) {
+                    const digits = d.whatsapp.replace(/\D/g, '');
+                    setAdminWa(digits.startsWith('0') ? '62' + digits.slice(1) : digits || DEFAULT_ADMIN_WA);
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     const { data, setData, post, processing, errors } = useForm<EnrollForm>({
         nama: '',
@@ -93,7 +117,7 @@ export default function Daftar({ programs, flash }: Props) {
                     `Bukti pembayaran sudah saya kirimkan melalui sistem.\n\n` +
                     `Mohon konfirmasinya. Terima kasih 🙏`
             );
-            window.open(`https://wa.me/${ADMIN_WA}?text=${pesan}`, '_blank');
+            window.open(`https://wa.me/${adminWa}?text=${pesan}`, '_blank');
         }
     }, [flash, programs, auth.user.name]);
 
@@ -153,7 +177,7 @@ export default function Daftar({ programs, flash }: Props) {
                         </div>
 
                         {/* Tombol WA */}
-                        <a href={`https://wa.me/${ADMIN_WA}?text=${pesan}`} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-green-500/20 mb-3">
+                        <a href={`https://wa.me/${adminWa}?text=${pesan}`} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-green-500/20 mb-3">
                             <MessageCircle size={16} /> Konfirmasi via WhatsApp
                         </a>
 
@@ -301,10 +325,10 @@ export default function Daftar({ programs, flash }: Props) {
                                             </div>
                                             <div className="space-y-2 text-sm">
                                                 {[
-                                                    { l: 'Bank', v: BANK_INFO.bank },
-                                                    { l: 'No. Rekening', v: BANK_INFO.norek },
-                                                    { l: 'Atas Nama', v: BANK_INFO.atas_nama },
-                                                    { l: 'Nominal', v: BANK_INFO.nominal },
+                                                    { l: 'Bank', v: bankInfo.bank },
+                                                    { l: 'No. Rekening', v: bankInfo.norek },
+                                                    { l: 'Atas Nama', v: bankInfo.atas_nama },
+                                                    { l: 'Nominal', v: bankInfo.nominal },
                                                 ].map((r) => (
                                                     <div key={r.l} className="flex justify-between">
                                                         <span className="text-gray-500 font-medium">{r.l}</span>

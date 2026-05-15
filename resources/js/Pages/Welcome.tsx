@@ -376,7 +376,7 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <button
-                                onClick={() => router.get('/login?tab=register')}
+                                onClick={() => router.get('/kerja-sama')}
                                 className="bg-[#D4A017] hover:bg-[#c49115] text-white px-10 py-4 rounded-full font-black text-lg transition-all shadow-xl shadow-black/20 hover:-translate-y-1"
                             >
                                 Ajukan Kerja Sama

@@ -83,6 +83,10 @@ class InfoController extends Controller
             'social_media' => $socialMedia,
             'established_year' => $request->established_year,
             'main_focus' => $request->main_focus,
+            'bank_name' => $request->bank_name ?? ($existing['bank_name'] ?? null),
+            'bank_account' => $request->bank_account ?? ($existing['bank_account'] ?? null),
+            'bank_holder' => $request->bank_holder ?? ($existing['bank_holder'] ?? null),
+            'bank_nominal' => $request->bank_nominal ?? ($existing['bank_nominal'] ?? null),
             'updated_at' => new \MongoDB\BSON\UTCDateTime(),
         ];
 

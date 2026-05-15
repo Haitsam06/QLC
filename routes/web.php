@@ -92,6 +92,10 @@ Route::get('/galeri', function () {
     ]);
 })->name('landing.galeri');
 
+Route::get('/kerja-sama', function () {
+    return Inertia::render('Landing/KerjaSama');
+})->name('landing.kerjasama');
+
 Route::get('/program-detail/{id}', function ($id) {
     $db = DB::connection('mongodb')->getMongoClient()->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
 
