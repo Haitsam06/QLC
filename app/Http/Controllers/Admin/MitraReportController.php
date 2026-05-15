@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -136,6 +137,18 @@ class MitraReportController extends Controller
 
         $result     = $this->mitraReports->insertOne($doc);
         $doc['_id'] = $result->getInsertedId();
+
+        // Kirim notifikasi ke akun mitra yang bersangkutan
+        $mitraUserId = (string) ($partner['user_id'] ?? '');
+        if ($mitraUserId) {
+            Notification::send(
+                $mitraUserId,
+                'info',
+                'Laporan Kerja Sama Baru',
+                "Admin telah mengunggah laporan: \"{$request->title}\" tertanggal {$request->date}.",
+                'laporan'
+            );
+        }
 
         return response()->json($this->formatReport($doc), 201);
     }

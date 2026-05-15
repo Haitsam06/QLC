@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use MongoDB\Client as MongoClient;
@@ -110,6 +111,18 @@ class StudentController extends Controller
         $result     = $this->students->insertOne($doc);
         $doc['_id'] = $result->getInsertedId();
 
+        // Notifikasi ke semua guru jika siswa langsung berstatus aktif
+        if ($request->enrollment_status === 'active') {
+            $programName = $program['name'] ?? 'program';
+            Notification::sendToRole(
+                'teacher',
+                'pendaftaran',
+                'Santri Baru Aktif',
+                "Santri baru \"{$request->nama}\" telah terdaftar aktif di {$programName}.",
+                null
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Siswa berhasil ditambahkan.',
@@ -151,6 +164,10 @@ class StudentController extends Controller
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
         }
 
+        // Ambil status lama sebelum update untuk deteksi perubahan ke aktif
+        $oldStudent = $this->students->findOne(['_id' => $oid]);
+        $oldStatus  = $oldStudent ? ($oldStudent['enrollment_status'] ?? null) : null;
+
         // Cari parent via user_id
         $parent = $this->parents->findOne(['user_id' => (string) $request->parent_id]);
         if (!$parent) {
@@ -184,6 +201,18 @@ class StudentController extends Controller
         }
 
         $updated = $this->students->findOne(['_id' => $oid]);
+
+        // Notifikasi ke semua guru jika status baru saja berubah menjadi aktif
+        if ($request->enrollment_status === 'active' && $oldStatus !== 'active') {
+            $programName = $program['name'] ?? 'program';
+            Notification::sendToRole(
+                'teacher',
+                'pendaftaran',
+                'Santri Baru Aktif',
+                "Santri \"{$request->nama}\" telah disetujui dan aktif di {$programName}.",
+                null
+            );
+        }
 
         return response()->json([
             'success' => true,
