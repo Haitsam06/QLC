@@ -26,6 +26,7 @@ import {
     FileBadge,
     Download,
     File,
+    KeyRound,
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
@@ -481,6 +482,67 @@ function DeleteModal({ mitra, onClose, onConfirm }: { mitra: Mitra; onClose: () 
 }
 
 /* ═══════════════════════════════════════════════════════════
+   RESET PASSWORD MODAL
+═══════════════════════════════════════════════════════════ */
+function ResetPasswordModal({ mitra, onClose, onConfirm }: { mitra: Mitra; onClose: () => void; onConfirm: () => Promise<void> }) {
+    const [busy, setBusy] = useState(false);
+    const go = async () => {
+        setBusy(true);
+        try {
+            await onConfirm();
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
+            onClick={(ev) => ev.target === ev.currentTarget && onClose()}
+        >
+            <div className="w-full max-w-[420px] bg-white border border-slate-200 rounded-[24px] shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
+                <div className="pt-8 px-7 pb-5 text-center flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-inner">
+                        <KeyRound size={28} />
+                    </div>
+                    <div className="text-[18px] font-extrabold text-slate-900 mt-1">Reset Password Mitra?</div>
+                    <div className="text-[13.5px] text-slate-500 leading-relaxed px-2">
+                        Password akun <b>{mitra.institution_name}</b> akan direset ke password default.
+                    </div>
+                    <div className="mt-1 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[13px] font-semibold text-amber-800 w-full text-center">
+                        Password baru: <span className="font-mono font-bold tracking-wide">mieayambakso</span>
+                    </div>
+                </div>
+                <div className="flex gap-2.5 px-7 pb-7">
+                    <button
+                        className="flex-1 h-11 rounded-xl text-[13px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors focus:outline-none"
+                        onClick={onClose}
+                    >
+                        Batal
+                    </button>
+                    <button
+                        className="flex-1 h-11 rounded-xl text-[13px] font-bold text-white bg-amber-500 shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 transition-all hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+                        onClick={go}
+                        disabled={busy}
+                    >
+                        {busy ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" /> Mereset...
+                            </>
+                        ) : (
+                            <>
+                                <KeyRound size={16} /> Reset Password
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════════════════════════ */
 export default function MitraPage() {
@@ -495,6 +557,7 @@ export default function MitraPage() {
     const [addModal, setAddModal] = useState(false);
     const [editModal, setEditModal] = useState<Mitra | null>(null);
     const [delModal, setDelModal] = useState<Mitra | null>(null);
+    const [resetModal, setResetModal] = useState<Mitra | null>(null);
     const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
 
     const dSearch = useDebounce(search);
@@ -588,6 +651,15 @@ export default function MitraPage() {
             const prevPage = data.length === 1 && meta.page > 1 ? meta.page - 1 : meta.page;
             load(prevPage);
         } else showToast(json.message ?? 'Gagal menghapus.', 'err');
+    };
+
+    const handleReset = async () => {
+        const res = await fetch(`${BASE}/partners/${resetModal!.id}/reset-password`, { method: 'POST' });
+        const json = await res.json();
+        if (json.success) {
+            showToast('Password mitra berhasil direset.');
+            setResetModal(null);
+        } else showToast(json.message ?? 'Gagal mereset password.', 'err');
     };
 
     return (
@@ -800,6 +872,13 @@ export default function MitraPage() {
                                                         <Pencil size={14} />
                                                     </button>
                                                     <button
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-amber-600 shadow-sm transition-colors hover:bg-amber-50 hover:border-amber-200 focus:outline-none"
+                                                        onClick={() => setResetModal(m)}
+                                                        title="Reset Password"
+                                                    >
+                                                        <KeyRound size={14} />
+                                                    </button>
+                                                    <button
                                                         className="w-8 h-8 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-red-600 shadow-sm transition-colors hover:bg-red-50 hover:border-red-200 focus:outline-none"
                                                         onClick={() => setDelModal(m)}
                                                         title="Hapus"
@@ -869,6 +948,7 @@ export default function MitraPage() {
                 />
             )}
             {delModal && <DeleteModal mitra={delModal} onClose={() => setDelModal(null)} onConfirm={handleDelete} />}
+            {resetModal && <ResetPasswordModal mitra={resetModal} onClose={() => setResetModal(null)} onConfirm={handleReset} />}
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
         </>
     );

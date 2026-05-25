@@ -46,90 +46,170 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error';
 function UsernameForm() {
     const { auth } = usePage<PageProps>().props as any;
     const user = auth?.user;
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
 
-    const { data, setData, put, processing, errors, recentlySuccessful } = useForm({
+    const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
         username: (user?.username as string) ?? '',
         email: (user?.email as string) ?? '',
+        parent_name: (user?.parent_name as string) ?? '',
+        phone: (user?.phone as string) ?? '',
+        address: (user?.address as string) ?? '',
+        photo: null as File | null,
     });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        put(route('settings.profile'), { preserveScroll: true });
+        post(route('settings.profile'), { preserveScroll: true });
     };
 
     return (
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col transition-all">
             <div className="px-6 md:px-8 py-6 border-b border-slate-50">
                 <div className="text-[18px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
-                    <KeyRound size={20} className="text-[#1B6B3A] bg-green-50 p-1 rounded-lg" /> Kredensial Akun
+                    <KeyRound size={20} className="text-[#1B6B3A] bg-green-50 p-1 rounded-lg" />
+                    Kredensial Akun
                 </div>
-                <div className="text-[13px] text-slate-500 font-bold">Ubah username dan email yang digunakan untuk masuk ke sistem.</div>
+
+                <div className="text-[13px] text-slate-500 font-bold">Kelola informasi akun, biodata, dan foto profile Anda.</div>
             </div>
 
             <div className="px-6 md:px-8 py-7 flex flex-col gap-5">
                 {recentlySuccessful && (
                     <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-green-50 border border-green-100 text-[13px] font-bold text-green-700 mb-2 animate-[fadeIn_0.3s_ease-out]">
-                        <CheckCircle2 size={16} /> Kredensial akun berhasil diperbarui.
+                        <CheckCircle2 size={16} />
+                        Profil berhasil diperbarui.
                     </div>
                 )}
 
                 <form onSubmit={submit} className="flex flex-col gap-5">
-                    {/* Username */}
+                    {/* FOTO PROFILE */}
+                    <div className="flex items-center gap-5 mb-2">
+                        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 shadow-sm shrink-0">
+                            {photoFile ? (
+                                <img src={URL.createObjectURL(photoFile)} className="w-full h-full object-cover" />
+                            ) : user?.photo ? (
+                                <img src={user.photo} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-[#1B6B3A] text-white flex items-center justify-center text-3xl font-black">{(user?.username || 'P').charAt(0).toUpperCase()}</div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="inline-flex items-center justify-center h-11 px-5 rounded-2xl bg-[#1B6B3A] text-white text-[13px] font-bold cursor-pointer hover:opacity-90 transition">
+                                Upload Foto
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    hidden
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] || null;
+
+                                        setPhotoFile(file);
+
+                                        setData('photo', file);
+                                    }}
+                                />
+                            </label>
+
+                            <span className="text-[11px] text-slate-400">JPG, PNG, WEBP • Maksimal 2MB</span>
+                        </div>
+                    </div>
+
+                    {/* USERNAME */}
                     <div className="flex flex-col gap-1.5 max-w-xl">
                         <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Username Login</label>
+
                         <div className="relative flex items-center">
                             <User className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+
                             <input
                                 type="text"
                                 value={data.username}
                                 onChange={(e) => setData('username', e.target.value)}
                                 placeholder="Username baru"
                                 autoComplete="username"
-                                className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.username ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                                className={`
+                        w-full h-12 pl-12 pr-4
+                        bg-slate-50 border rounded-2xl
+                        text-[14px] font-bold text-slate-900
+                        transition-all outline-none focus:bg-white focus:ring-4
+
+                        ${errors.username ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}
+                    `}
                             />
                         </div>
+
                         {errors.username && (
                             <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
-                                <AlertCircle size={14} /> {errors.username}
+                                <AlertCircle size={14} />
+
+                                {errors.username}
                             </div>
                         )}
                     </div>
 
-                    {/* Email (opsional) */}
+                    {/* EMAIL */}
                     <div className="flex flex-col gap-1.5 max-w-xl">
                         <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">
-                            Email <span className="font-semibold opacity-70">(opsional)</span>
+                            Email
+                            <span className="font-semibold opacity-70"> (opsional)</span>
                         </label>
+
                         <div className="relative flex items-center">
                             <span className="absolute left-4 text-slate-400 pointer-events-none font-bold text-lg">@</span>
+
                             <input
                                 type="email"
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 placeholder="Alamat email"
                                 autoComplete="email"
-                                className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${errors.email ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                                className={`
+                        w-full h-12 pl-12 pr-4
+                        bg-slate-50 border rounded-2xl
+                        text-[14px] font-bold text-slate-900
+                        transition-all outline-none focus:bg-white focus:ring-4
+
+                        ${errors.email ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}
+                    `}
                             />
                         </div>
+
                         {errors.email && (
                             <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
-                                <AlertCircle size={14} /> {errors.email}
+                                <AlertCircle size={14} />
+
+                                {errors.email}
                             </div>
                         )}
                     </div>
 
+                    {/* SUBMIT */}
                     <button
                         type="submit"
-                        className="mt-4 flex items-center justify-center gap-2 h-12 px-8 rounded-2xl bg-[#1B6B3A] text-white text-[14px] font-black shadow-lg shadow-green-900/20 transition-all hover:bg-[#14522d] active:scale-95 focus:outline-none disabled:opacity-60 w-full sm:w-max"
+                        className="
+                mt-4 flex items-center justify-center gap-2
+                h-12 px-8 rounded-2xl
+                bg-[#1B6B3A] text-white
+                text-[14px] font-black
+                shadow-lg shadow-green-900/20
+                transition-all hover:bg-[#14522d]
+                active:scale-95
+                focus:outline-none
+                disabled:opacity-60
+                w-full sm:w-max
+            "
                         disabled={processing}
                     >
                         {processing ? (
                             <>
-                                <Loader2 size={18} className="animate-spin" /> Menyimpan...
+                                <Loader2 size={18} className="animate-spin" />
+                                Menyimpan...
                             </>
                         ) : (
                             <>
-                                <Save size={18} /> Simpan Perubahan
+                                <Save size={18} />
+                                Simpan Perubahan
                             </>
                         )}
                     </button>
@@ -147,7 +227,7 @@ function PasswordForm() {
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const { data, setData, put, processing, errors, reset, recentlySuccessful } = useForm({
+    const { data, setData, post, processing, errors, reset, recentlySuccessful } = useForm({
         current_password: '',
         password: '',
         password_confirmation: '',
@@ -155,7 +235,7 @@ function PasswordForm() {
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        put(route('settings.password'), {
+        post(route('settings.password'), {
             preserveScroll: true,
             onSuccess: () => reset(),
         });

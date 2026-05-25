@@ -2,33 +2,7 @@ import { useState, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
 import axios from 'axios';
-import {
-    LayoutDashboard,
-    BookOpen,
-    Users,
-    CalendarDays,
-    Bell,
-    Settings,
-    LogOut,
-    ChevronLeft,
-    ChevronRight,
-    GraduationCap,
-    CheckCircle2,
-    Clock,
-    TrendingUp,
-    Award,
-    Star,
-    Menu,
-    FileText,
-    ShieldUser,
-    Info,
-    Handshake,
-    ArrowUpRight,
-    ArrowRight,
-    UserPlus,
-    Search,
-    Loader2,
-} from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, CalendarDays, Bell, Settings, LogOut, ChevronLeft, ChevronRight, GraduationCap, CheckCircle2, Clock, TrendingUp, Award, Star, Menu, FileText, ShieldUser, Info, Handshake, ArrowUpRight, ArrowRight, UserPlus, Search, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 import GuruPage from './GuruPage';
@@ -91,8 +65,8 @@ const QUAL_LABEL: Record<string, string> = {
 ═══════════════════════════════════════════════ */
 export default function DashboardAdmin() {
     const { auth } = usePage().props as PageProps;
-    const user = auth?.user;
-    const adminName = (user as any)?.name || (user as any)?.username || 'Admin QLC';
+    const user = auth?.user as any;
+    const adminName = user?.name || user?.username || 'Admin QLC';
     const initial = adminName.substring(0, 2).toUpperCase();
 
     const [col, setCol] = useState(false);
@@ -178,10 +152,7 @@ export default function DashboardAdmin() {
                         </div>
                     </div>
 
-                    <button
-                        className="absolute top-7 -right-2.5 w-5 h-5 rounded-full bg-white border border-slate-200 items-center justify-center text-slate-600 cursor-pointer z-10 shadow-sm transition-colors hover:text-teal-700 hidden md:flex"
-                        onClick={() => setCol(!col)}
-                    >
+                    <button className="absolute top-7 -right-2.5 w-5 h-5 rounded-full bg-white border border-slate-200 items-center justify-center text-slate-600 cursor-pointer z-10 shadow-sm transition-colors hover:text-teal-700 hidden md:flex" onClick={() => setCol(!col)}>
                         {col ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
                     </button>
 
@@ -198,22 +169,13 @@ export default function DashboardAdmin() {
                             >
                                 <n.i size={18} className="shrink-0" />
                                 <span className={`transition-opacity duration-200 ${col ? 'opacity-0 md:hidden' : 'opacity-100 block'}`}>{n.l}</span>
-                                {n.badge > 0 && (
-                                    <span
-                                        className={`ml-auto bg-red-600 text-white font-extrabold rounded-full ${col ? 'absolute top-1.5 right-1.5 w-2 h-2 p-0 text-[0px] md:block hidden' : 'px-1.5 py-[1px] text-[10px]'}`}
-                                    >
-                                        {n.badge}
-                                    </span>
-                                )}
+                                {n.badge > 0 && <span className={`ml-auto bg-red-600 text-white font-extrabold rounded-full ${col ? 'absolute top-1.5 right-1.5 w-2 h-2 p-0 text-[0px] md:block hidden' : 'px-1.5 py-[1px] text-[10px]'}`}>{n.badge}</span>}
                             </div>
                         ))}
                     </div>
 
                     <div className="py-3 px-2.5 border-t border-white/10">
-                        <div
-                            className="flex items-center gap-3 py-2 px-2.5 rounded-lg text-[13px] font-semibold text-red-300 hover:text-red-200 hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
-                            onClick={handleLogout}
-                        >
+                        <div className="flex items-center gap-3 py-2 px-2.5 rounded-lg text-[13px] font-semibold text-red-300 hover:text-red-200 hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap" onClick={handleLogout}>
                             <LogOut size={18} className="shrink-0" />
                             <span className={`transition-opacity duration-200 ${col ? 'opacity-0 md:hidden' : 'opacity-100 block'}`}>Keluar</span>
                         </div>
@@ -228,10 +190,7 @@ export default function DashboardAdmin() {
                     {/* Topbar */}
                     <header className="flex items-center justify-between py-3 px-4 md:px-5 sticky top-0 z-40 bg-slate-50 border-b border-slate-200/60 md:border-none">
                         <div className="flex items-center gap-3">
-                            <button
-                                className="flex md:hidden items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 hover:text-teal-700"
-                                onClick={() => setMobOpen(true)}
-                            >
+                            <button className="flex md:hidden items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 hover:text-teal-700" onClick={() => setMobOpen(true)}>
                                 <Menu size={17} />
                             </button>
                         </div>
@@ -241,11 +200,10 @@ export default function DashboardAdmin() {
                             <NotificationBell onNavigate={(tab) => setActive(tab)} />
 
                             {/* Profile */}
-                            <div
-                                className="flex items-center gap-2 bg-white p-1 pr-3.5 rounded-full border border-slate-300 cursor-pointer transition-colors hover:bg-slate-100"
-                                onClick={() => setActive('pengaturan')}
-                            >
-                                <div className="w-8 h-8 rounded-full bg-teal-700 text-white flex items-center justify-center text-[11px] font-extrabold shrink-0">{initial}</div>
+                            <div className="flex items-center gap-2 bg-white p-1 pr-3.5 rounded-full border border-slate-300 cursor-pointer transition-colors hover:bg-slate-100" onClick={() => setActive('pengaturan')}>
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-teal-700 shrink-0">
+                                    {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white text-[11px] font-extrabold">{initial}</div>}
+                                </div>
                                 <div className="hidden md:block">
                                     <div className="text-[12.5px] font-bold text-slate-900 leading-tight truncate max-w-[120px]">{adminName}</div>
                                     <div className="text-[10px] text-slate-400 font-semibold">Administrator</div>
@@ -323,18 +281,10 @@ export default function DashboardAdmin() {
                                             tab: 'mitra',
                                         },
                                     ].map(({ val, lbl, icon, bgClass, textClass, tab }) => (
-                                        <div
-                                            key={lbl}
-                                            className="bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5 p-4 cursor-pointer transition-colors hover:bg-slate-50"
-                                            onClick={() => setActive(tab)}
-                                        >
+                                        <div key={lbl} className="bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5 p-4 cursor-pointer transition-colors hover:bg-slate-50" onClick={() => setActive(tab)}>
                                             <div className={`w-11 h-11 rounded-xl shrink-0 flex items-center justify-center ${bgClass} ${textClass}`}>{icon}</div>
                                             <div className="flex-1 min-w-0">
-                                                {loading ? (
-                                                    <div className="h-6 w-12 bg-slate-200 rounded-md animate-pulse" />
-                                                ) : (
-                                                    <div className="text-[22px] font-black text-slate-900 leading-tight">{val ?? 0}</div>
-                                                )}
+                                                {loading ? <div className="h-6 w-12 bg-slate-200 rounded-md animate-pulse" /> : <div className="text-[22px] font-black text-slate-900 leading-tight">{val ?? 0}</div>}
                                                 <div className="text-[11px] text-slate-400 font-semibold mt-0.5 uppercase tracking-wide truncate">{lbl}</div>
                                             </div>
                                         </div>
@@ -380,10 +330,7 @@ export default function DashboardAdmin() {
                                             <div className="text-[14.5px] font-extrabold text-slate-900 flex items-center gap-2">
                                                 <CalendarDays size={18} className="text-blue-600" /> Agenda Terdekat
                                             </div>
-                                            <button
-                                                className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap"
-                                                onClick={() => setActive('agenda')}
-                                            >
+                                            <button className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap" onClick={() => setActive('agenda')}>
                                                 Lihat Semua <ArrowRight size={14} />
                                             </button>
                                         </div>
@@ -396,16 +343,9 @@ export default function DashboardAdmin() {
                                         ) : (
                                             <div className="flex flex-col gap-2">
                                                 {agendas.map((a) => (
-                                                    <div
-                                                        key={a.id}
-                                                        className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100"
-                                                    >
+                                                    <div key={a.id} className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100">
                                                         <div className="flex items-center gap-2.5 min-w-0">
-                                                            <div
-                                                                className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] ${a.type === 'urgent' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}
-                                                            >
-                                                                {a.date.split(' ')[0]}
-                                                            </div>
+                                                            <div className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] ${a.type === 'urgent' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{a.date.split(' ')[0]}</div>
                                                             <div className="min-w-0">
                                                                 <div className="text-[13px] font-bold text-slate-900 mb-0.5 truncate">{a.title}</div>
                                                                 <div className="text-[11.5px] text-slate-500 font-medium flex items-center gap-1">
@@ -427,14 +367,9 @@ export default function DashboardAdmin() {
                                         <div className="flex justify-between items-center mb-4">
                                             <div className="text-[14.5px] font-extrabold text-slate-900 flex items-center gap-2">
                                                 <UserPlus size={18} className="text-yellow-600" /> Perlu Persetujuan
-                                                {stats && stats.total_pending > 0 && (
-                                                    <span className="bg-amber-100 text-amber-600 text-[11px] font-extrabold px-2 py-0.5 rounded-md ml-1">{stats.total_pending}</span>
-                                                )}
+                                                {stats && stats.total_pending > 0 && <span className="bg-amber-100 text-amber-600 text-[11px] font-extrabold px-2 py-0.5 rounded-md ml-1">{stats.total_pending}</span>}
                                             </div>
-                                            <button
-                                                className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap"
-                                                onClick={() => setActive('siswa')}
-                                            >
+                                            <button className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap" onClick={() => setActive('siswa')}>
                                                 Kelola Siswa <ArrowRight size={14} />
                                             </button>
                                         </div>
@@ -450,14 +385,9 @@ export default function DashboardAdmin() {
                                         ) : (
                                             <div className="flex flex-col gap-2">
                                                 {pending.map((s) => (
-                                                    <div
-                                                        key={s.id}
-                                                        className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100"
-                                                    >
+                                                    <div key={s.id} className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100">
                                                         <div className="flex items-center gap-2.5 min-w-0">
-                                                            <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] bg-teal-700/10 text-teal-700">
-                                                                {s.nama.charAt(0)}
-                                                            </div>
+                                                            <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] bg-teal-700/10 text-teal-700">{s.nama.charAt(0)}</div>
                                                             <div className="min-w-0">
                                                                 <div className="text-[13px] font-bold text-slate-900 mb-0.5 truncate">{s.nama}</div>
                                                                 <div className="text-[11.5px] text-slate-500 font-medium flex items-center gap-1">
@@ -481,10 +411,7 @@ export default function DashboardAdmin() {
                                             <div className="text-[14.5px] font-extrabold text-slate-900 flex items-center gap-2">
                                                 <Star size={18} className="text-purple-600" /> Laporan Terbaik Hari Ini
                                             </div>
-                                            <button
-                                                className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap"
-                                                onClick={() => setActive('progress')}
-                                            >
+                                            <button className="text-[11.5px] font-bold text-teal-700 flex items-center gap-1 transition-colors hover:text-teal-500 whitespace-nowrap" onClick={() => setActive('progress')}>
                                                 Semua Laporan <ArrowRight size={14} />
                                             </button>
                                         </div>
@@ -497,14 +424,9 @@ export default function DashboardAdmin() {
                                         ) : (
                                             <div className="flex flex-col gap-2">
                                                 {topRep.map((r) => (
-                                                    <div
-                                                        key={r.id}
-                                                        className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100"
-                                                    >
+                                                    <div key={r.id} className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl transition-colors hover:bg-slate-100">
                                                         <div className="flex items-center gap-2.5 min-w-0">
-                                                            <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] bg-purple-600/10 text-purple-600">
-                                                                {r.nama.charAt(0)}
-                                                            </div>
+                                                            <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-extrabold text-[13px] bg-purple-600/10 text-purple-600">{r.nama.charAt(0)}</div>
                                                             <div className="min-w-0">
                                                                 <div className="text-[13px] font-bold text-slate-900 mb-0.5 truncate">{r.nama}</div>
                                                                 <div className="text-[11.5px] text-slate-500 font-medium flex items-center gap-1 truncate">
@@ -514,11 +436,7 @@ export default function DashboardAdmin() {
                                                             </div>
                                                         </div>
                                                         <div className="text-right shrink-0 ml-2">
-                                                            <span
-                                                                className={`px-2 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide ${r.kualitas === 'sangat_lancar' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}
-                                                            >
-                                                                {r.kualitas ? QUAL_LABEL[r.kualitas] : '—'}
-                                                            </span>
+                                                            <span className={`px-2 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide ${r.kualitas === 'sangat_lancar' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>{r.kualitas ? QUAL_LABEL[r.kualitas] : '—'}</span>
                                                         </div>
                                                     </div>
                                                 ))}

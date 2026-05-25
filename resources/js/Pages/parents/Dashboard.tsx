@@ -14,8 +14,8 @@ import PengaturanPage, { type ParentProfile } from './PengaturanPage';
 import NotificationBell from '@/Components/NotificationBell';
 
 export default function ParentDashboard({ anakList, stats, bulan, children_stats, recent_reports, profile }: DashboardProps) {
-    const user = usePage<PageProps>().props.auth.user;
-    const displayName = (user as any)?.name || (user as any)?.username || 'Wali Murid';
+    const user = usePage<PageProps>().props.auth.user as { photo?: string; name?: string; username?: string };
+    const displayName = user?.name || user?.username || 'Wali Murid';
     const initials =
         displayName
             .split(' ')
@@ -49,8 +49,6 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
             <div className="min-h-screen bg-[#F8FAFC] font-sans pb-24 md:pb-0">
                 {/* ════ TOPNAV ════ */}
                 <nav className="sticky top-0 z-[100] h-16 bg-white border-b border-slate-100 shadow-sm flex items-center px-4 md:px-7">
-                    
-
                     <div className="flex items-center gap-2.5 shrink-0">
                         <div className="bg-[#1B6B3A] p-2 rounded-xl shadow-lg shadow-green-900/10">
                             <BookOpen size={18} className="text-white" strokeWidth={2.5} />
@@ -81,7 +79,9 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                                 <div className="text-xs font-black text-slate-900 leading-none">{displayName}</div>
                                 <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1">Wali Murid</div>
                             </div>
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#1B6B3A] to-[#34ad62] flex items-center justify-center text-white font-black shadow-md">{initials}</div>
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-green-600 shadow-sm shrink-0">
+                                {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white">{initials}</div>}
+                            </div>
                         </div>
                     </div>
                 </nav>
@@ -127,40 +127,33 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                                 {anakList.length === 0 ? (
                                     /* ── EMPTY STATE ── */
                                     <div className="flex flex-col items-center justify-center py-16 px-6 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm text-center gap-5">
-                                        <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-[#1B6B3A]/10 to-[#1B6B3A]/5 flex items-center justify-center text-4xl border border-[#1B6B3A]/10">
-                                            👦
-                                        </div>
+                                        <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-[#1B6B3A]/10 to-[#1B6B3A]/5 flex items-center justify-center text-4xl border border-[#1B6B3A]/10">👦</div>
                                         <div>
                                             <h2 className="text-xl font-black text-slate-900 mb-2">Belum Ada Ananda Terdaftar</h2>
-                                            <p className="text-sm font-bold text-slate-400 leading-relaxed max-w-xs mx-auto">
-                                                Daftarkan putra/putri Anda ke program QLC untuk mulai memantau perkembangan belajar mereka.
-                                            </p>
+                                            <p className="text-sm font-bold text-slate-400 leading-relaxed max-w-xs mx-auto">Daftarkan putra/putri Anda ke program QLC untuk mulai memantau perkembangan belajar mereka.</p>
                                         </div>
-                                        <button
-                                            onClick={() => setActive('anak')}
-                                            className="bg-[#1B6B3A] text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-lg shadow-green-900/20 hover:bg-[#14522d] active:scale-95 transition-all flex items-center gap-2"
-                                        >
+                                        <button onClick={() => setActive('anak')} className="bg-[#1B6B3A] text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-lg shadow-green-900/20 hover:bg-[#14522d] active:scale-95 transition-all flex items-center gap-2">
                                             <Users size={16} /> Daftarkan Ananda Sekarang
                                         </button>
                                     </div>
                                 ) : (
-                                /* GRID 4 UNTUK MOBILE & DESKTOP */
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    {[
-                                        { label: 'Ananda', val: stats.total_anak, icon: Users, bg: 'bg-blue-50', text: 'text-blue-600' },
-                                        { label: 'Hadir', val: stats.total_hadir, icon: CheckCircle2, bg: 'bg-green-50', text: 'text-green-600' },
-                                        { label: 'Laporan', val: stats.total_laporan, icon: FileText, bg: 'bg-purple-50', text: 'text-purple-600' },
-                                        { label: 'Aktivitas', val: recent_reports.length, icon: Activity, bg: 'bg-orange-50', text: 'text-orange-600' },
-                                    ].map((s, i) => (
-                                        <div key={i} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center text-center active:scale-95 transition-transform">
-                                            <div className={`${s.bg} ${s.text} p-2.5 rounded-2xl mb-2`}>
-                                                <s.icon size={20} />
+                                    /* GRID 4 UNTUK MOBILE & DESKTOP */
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        {[
+                                            { label: 'Ananda', val: stats.total_anak, icon: Users, bg: 'bg-blue-50', text: 'text-blue-600' },
+                                            { label: 'Hadir', val: stats.total_hadir, icon: CheckCircle2, bg: 'bg-green-50', text: 'text-green-600' },
+                                            { label: 'Laporan', val: stats.total_laporan, icon: FileText, bg: 'bg-purple-50', text: 'text-purple-600' },
+                                            { label: 'Aktivitas', val: recent_reports.length, icon: Activity, bg: 'bg-orange-50', text: 'text-orange-600' },
+                                        ].map((s, i) => (
+                                            <div key={i} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center text-center active:scale-95 transition-transform">
+                                                <div className={`${s.bg} ${s.text} p-2.5 rounded-2xl mb-2`}>
+                                                    <s.icon size={20} />
+                                                </div>
+                                                <b className="text-xl font-black text-slate-900">{s.val}</b>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase mt-1 tracking-tighter">{s.label}</span>
                                             </div>
-                                            <b className="text-xl font-black text-slate-900">{s.val}</b>
-                                            <span className="text-[10px] font-black text-slate-400 uppercase mt-1 tracking-tighter">{s.label}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
 

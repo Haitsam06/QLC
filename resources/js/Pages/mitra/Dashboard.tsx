@@ -5,13 +5,14 @@ import type { PageProps } from '@/types';
 import {
     Briefcase, CalendarDays, FileCheck, LayoutDashboard,
     LogOut, Download, MapPin, Eye, Loader2,
-    FileBadge, ShieldCheck, Menu, X
+    FileBadge, ShieldCheck, Menu, X, Settings
 } from 'lucide-react';
 import NotificationBell from '@/Components/NotificationBell';
 
 // ── Sub-pages ─────────────────────────────────────────────
 import JadwalMitra from './JadwalMitra';
 import LaporanMitra from './LaporanMitra';
+import PengaturanMitraPage from './PengaturanMitraPage';
 
 /* ═══════════════════════════════════════════════════════════
    HELPERS & TYPES
@@ -32,9 +33,10 @@ const formatDate = (dateString: string) => {
 
 /* ════ DATA MENU NAVBAR ════ */
 const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
-    { icon: CalendarDays,    label: 'Jadwal',    id: 'jadwal'    },
-    { icon: FileCheck,       label: 'Laporan',   id: 'laporan'   },
+    { icon: LayoutDashboard, label: 'Dashboard',  id: 'dashboard'  },
+    { icon: CalendarDays,    label: 'Jadwal',     id: 'jadwal'     },
+    { icon: FileCheck,       label: 'Laporan',    id: 'laporan'    },
+    { icon: Settings,        label: 'Pengaturan', id: 'pengaturan' },
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -147,13 +149,20 @@ export default function MitraDashboard() {
                         <div className="hidden sm:flex">
                             <NotificationBell onNavigate={setActive} />
                         </div>
-                        <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
+                        <div
+                            className="flex items-center gap-3 pl-3 border-l border-gray-200 cursor-pointer"
+                            onClick={() => setActive('pengaturan')}
+                            title="Pengaturan Akun"
+                        >
                             <div className="text-right hidden lg:block">
                                 <div className="text-sm font-bold text-gray-900 leading-tight">{displayName}</div>
                                 <div className="text-xs text-green-600 font-semibold">{roleText}</div>
                             </div>
-                            <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white shadow-sm shrink-0">
-                                {initials}
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center text-sm font-bold text-white shadow-sm shrink-0">
+                                {user?.photo
+                                    ? <img src={user.photo} className="w-full h-full object-cover" />
+                                    : <span>{initials}</span>
+                                }
                             </div>
                         </div>
                     </div>
@@ -198,9 +207,15 @@ export default function MitraDashboard() {
                             </div>
 
                             {/* Info user di bawah menu mobile */}
-                            <div className="p-5 border-t border-gray-100 bg-gray-50 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white shadow-sm shrink-0">
-                                    {initials}
+                            <div
+                                className="p-5 border-t border-gray-100 bg-gray-50 flex items-center gap-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                                onClick={() => setActive('pengaturan')}
+                            >
+                                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center text-sm font-bold text-white shadow-sm shrink-0">
+                                    {user?.photo
+                                        ? <img src={user.photo} className="w-full h-full object-cover" />
+                                        : <span>{initials}</span>
+                                    }
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="text-sm font-bold text-gray-900 truncate">{displayName}</div>
@@ -213,8 +228,9 @@ export default function MitraDashboard() {
 
                 {/* ════ CONTENT ════ */}
                 <div className="w-full px-4 md:px-8 lg:px-12 pt-8 pb-12 mx-auto">
-                    {activeTab === 'jadwal'  ? <JadwalMitra /> :
-                     activeTab === 'laporan' ? <LaporanMitra /> :
+                    {activeTab === 'jadwal'      ? <JadwalMitra /> :
+                     activeTab === 'laporan'     ? <LaporanMitra /> :
+                     activeTab === 'pengaturan'  ? <PengaturanMitraPage /> :
                     (
                         <div className="flex flex-col gap-6">
 

@@ -84,19 +84,7 @@ const Fg = ({ label, error, children }: { label: string; error?: string; childre
 /* ═══════════════════════════════════════════════════════════
    IMAGE CROP MODAL
 ═══════════════════════════════════════════════════════════ */
-function ImageCropModal({
-    src,
-    aspect = 1,
-    outputSize = 900,
-    onConfirm,
-    onClose,
-}: {
-    src: string;
-    aspect?: number;
-    outputSize?: number;
-    onConfirm: (file: File) => void;
-    onClose: () => void;
-}) {
+function ImageCropModal({ src, aspect = 1, outputSize = 900, onConfirm, onClose }: { src: string; aspect?: number; outputSize?: number; onConfirm: (file: File) => void; onClose: () => void }) {
     const C = 400;
     const cropW = aspect >= 1 ? 320 : Math.round(320 * aspect);
     const cropH = aspect >= 1 ? Math.round(320 / aspect) : 320;
@@ -170,10 +158,14 @@ function ImageCropModal({
         out.height = outH;
         const ctx = out.getContext('2d')!;
         ctx.drawImage(img, (cropX - ox) / z, (cropY - oy) / z, cropW / z, cropH / z, 0, 0, outW, outH);
-        out.toBlob((blob) => {
-            if (!blob) return;
-            onConfirm(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }));
-        }, 'image/jpeg', 0.92);
+        out.toBlob(
+            (blob) => {
+                if (!blob) return;
+                onConfirm(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }));
+            },
+            'image/jpeg',
+            0.92
+        );
     };
 
     return createPortal(
@@ -202,7 +194,10 @@ function ImageCropModal({
                                     width={C}
                                     height={C}
                                     className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-none select-none"
-                                    onMouseDown={(e) => { const [x, y] = getXY(e); dragState.current = { active: true, lastX: x, lastY: y }; }}
+                                    onMouseDown={(e) => {
+                                        const [x, y] = getXY(e);
+                                        dragState.current = { active: true, lastX: x, lastY: y };
+                                    }}
                                     onMouseMove={(e) => {
                                         if (!dragState.current.active) return;
                                         const [x, y] = getXY(e);
@@ -212,9 +207,16 @@ function ImageCropModal({
                                         dragState.current.lastY = y;
                                         draw();
                                     }}
-                                    onMouseUp={() => { dragState.current.active = false; }}
-                                    onMouseLeave={() => { dragState.current.active = false; }}
-                                    onTouchStart={(e) => { const [x, y] = getXY(e); dragState.current = { active: true, lastX: x, lastY: y }; }}
+                                    onMouseUp={() => {
+                                        dragState.current.active = false;
+                                    }}
+                                    onMouseLeave={() => {
+                                        dragState.current.active = false;
+                                    }}
+                                    onTouchStart={(e) => {
+                                        const [x, y] = getXY(e);
+                                        dragState.current = { active: true, lastX: x, lastY: y };
+                                    }}
                                     onTouchMove={(e) => {
                                         e.preventDefault();
                                         if (!dragState.current.active) return;
@@ -225,7 +227,9 @@ function ImageCropModal({
                                         dragState.current.lastY = y;
                                         draw();
                                     }}
-                                    onTouchEnd={() => { dragState.current.active = false; }}
+                                    onTouchEnd={() => {
+                                        dragState.current.active = false;
+                                    }}
                                 />
                                 {/* Crop overlay */}
                                 <div
@@ -254,15 +258,7 @@ function ImageCropModal({
 
                             <div className="mt-4 flex items-center gap-3 px-1">
                                 <span className="text-[12px] font-bold text-slate-400 shrink-0">🔍</span>
-                                <input
-                                    type="range"
-                                    min={coverZoom}
-                                    max={coverZoom * 5}
-                                    step={0.001}
-                                    value={zoom}
-                                    className="flex-1 h-1.5 accent-[#1B6B3A]"
-                                    onChange={(e) => handleZoom(Number(e.target.value))}
-                                />
+                                <input type="range" min={coverZoom} max={coverZoom * 5} step={0.001} value={zoom} className="flex-1 h-1.5 accent-[#1B6B3A]" onChange={(e) => handleZoom(Number(e.target.value))} />
                                 <span className="text-[12px] font-bold text-slate-500 w-12 text-right shrink-0">×{(zoom / coverZoom).toFixed(1)}</span>
                             </div>
                             <p className="text-[11px] text-slate-400 text-center mt-2">Geser gambar untuk mengatur posisi · Scroll untuk zoom</p>
@@ -271,7 +267,9 @@ function ImageCropModal({
                 </div>
 
                 <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
-                    <button className="px-5 h-10 rounded-full font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-700" onClick={onClose}>Batal</button>
+                    <button className="px-5 h-10 rounded-full font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-700" onClick={onClose}>
+                        Batal
+                    </button>
                     <button className="px-7 h-10 rounded-full font-bold text-sm bg-[#1B6B3A] text-white hover:bg-[#114a27] flex items-center gap-2 shadow-md disabled:opacity-50" onClick={confirm} disabled={!ready}>
                         <CheckCircle2 size={16} /> Potong & Gunakan
                     </button>
@@ -307,7 +305,10 @@ function FileUpload({ accept, preview, onFile, label, aspect = 1 }: { accept: st
                 <ImageCropModal
                     src={cropSrc}
                     aspect={aspect}
-                    onConfirm={(file) => { setCropSrc(null); onFile(file); }}
+                    onConfirm={(file) => {
+                        setCropSrc(null);
+                        onFile(file);
+                    }}
                     onClose={() => setCropSrc(null)}
                 />
             )}
@@ -418,17 +419,21 @@ function ProfileTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
         try {
             const fd = new FormData();
             Object.entries(prof).forEach(([k, v]) => {
-                if (k === 'logo' || k === 'id' || k === 'updated_at') return;
+                if (['id', 'updated_at', 'logo', 'about_image', 'image', 'hero_image', 'gallery_images'].includes(k)) return;
                 if (k === 'social_media') fd.append(k, JSON.stringify(v ?? {}));
                 else fd.append(k, v ?? '');
             });
             if (logoFile) fd.append('logo', logoFile);
             if (aboutFile) fd.append('about_image', aboutFile);
-            const j = await (await fetch(`${API}/profile`, { method: 'POST', body: fd })).json();
-            if (j.success) {
-                setProf(j.data);
-                onToast('Profil berhasil disimpan.', 'success');
-            } else onToast(j.message ?? 'Gagal menyimpan.', 'error');
+
+            console.log([...fd.entries()]);
+
+            const j = await (
+                await fetch(`${API}/profile`, {
+                    method: 'POST',
+                    body: fd,
+                })
+            ).json();
         } finally {
             setBusy(false);
         }
@@ -599,12 +604,8 @@ function ProfileTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
                 {/* INFORMASI PEMBAYARAN */}
                 <div className="relative bg-gradient-to-br from-amber-50 to-white p-8 lg:p-12 rounded-[3rem] border border-amber-200/60 shadow-sm">
                     <div className="relative z-10 flex flex-col gap-6">
-                        <span className="inline-block py-1.5 px-4 rounded-full bg-amber-100 border border-amber-200 shadow-sm text-amber-700 text-xs font-bold tracking-wider w-fit">
-                            4. INFORMASI PEMBAYARAN PENDAFTARAN
-                        </span>
-                        <p className="text-[13px] text-slate-500 -mt-2">
-                            Data ini ditampilkan ke orang tua saat proses pendaftaran anak (langkah pembayaran).
-                        </p>
+                        <span className="inline-block py-1.5 px-4 rounded-full bg-amber-100 border border-amber-200 shadow-sm text-amber-700 text-xs font-bold tracking-wider w-fit">4. INFORMASI PEMBAYARAN PENDAFTARAN</span>
+                        <p className="text-[13px] text-slate-500 -mt-2">Data ini ditampilkan ke orang tua saat proses pendaftaran anak (langkah pembayaran).</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Fg label="Nama Bank">
                                 <input

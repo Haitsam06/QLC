@@ -103,7 +103,7 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                         <div className="reveal opacity-0 translate-y-8 delay-300 relative animate-in fade-in slide-in-from-right-10 duration-1000 order-first lg:order-last">
                             <div className="absolute inset-0 bg-white/60 rounded-[3rem] border-4 border-white transform rotate-3 z-0 shadow-lg"></div>
                             <div className="relative z-10 p-2 bg-white/40 rounded-[3rem] border border-white shadow-xl aspect-[4/3] lg:aspect-square overflow-hidden group">
-                                <img src={profile?.logo || '/image/landing/hero-image.png'} alt="Santri Pejuang Quran QLC" className="w-full h-full object-cover rounded-[2.5rem] transition-transform duration-700 group-hover:scale-105" />
+                                <img src={profile?.logo ? `${profile.logo}?t=${new Date().getTime()}` : '/image/landing/hero-image.png'} alt="Santri Pejuang Quran QLC" className="w-full h-full object-cover rounded-[2.5rem] transition-transform duration-700 group-hover:scale-105" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-[2.5rem]"></div>
                             </div>
                         </div>
@@ -120,7 +120,7 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                             <div className="relative group">
                                 <div className="absolute inset-0 bg-[#D4A017]/20 rounded-[2.5rem] transform translate-x-4 translate-y-4 group-hover:translate-x-3 group-hover:translate-y-3 transition-transform duration-500 ease-out"></div>
                                 <img
-                                    src={profile?.about_image || '/image/landing/1 (1).png'}
+                                    src={profile?.about_image ? `${profile.about_image}?t=${new Date().getTime()}` : '/image/landing/1 (1).png'}
                                     alt="Tentang QLC"
                                     className="relative z-10 w-full h-auto rounded-[2.5rem] shadow-sm object-cover aspect-[4/3] md:aspect-auto"
                                     onError={(e) => {
@@ -356,15 +356,13 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                             Jalin Kerja Sama <br className="hidden md:block" />
                             <span className="text-[#D4A017]">dengan QLC</span>
                         </h2>
-                        <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
-                            Bergabunglah sebagai mitra QLC dan bersama-sama membangun generasi Qurani yang unggul. Kami terbuka untuk kerja sama dengan sekolah, yayasan, perusahaan, dan instansi lainnya.
-                        </p>
+                        <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">Bergabunglah sebagai mitra QLC dan bersama-sama membangun generasi Qurani yang unggul. Kami terbuka untuk kerja sama dengan sekolah, yayasan, perusahaan, dan instansi lainnya.</p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12 text-left">
                             {[
                                 { icon: '🏫', title: 'Institusi Pendidikan', desc: 'Sekolah & pesantren yang ingin mengintegrasikan program Quran.' },
                                 { icon: '🏢', title: 'Lembaga & Yayasan', desc: 'Organisasi sosial atau keagamaan yang ingin berkolaborasi.' },
-                                { icon: '🤲', title: 'Donatur & Sponsor', desc: 'Pihak yang ingin mendukung program dakwah dan pendidikan.' },
+                                { icon: '🤲', title: 'Sponsor', desc: 'Pihak yang ingin mendukung program dakwah dan pendidikan.' },
                             ].map((item, i) => (
                                 <div key={i} className="bg-white/10 border border-white/15 rounded-3xl p-6 text-white">
                                     <div className="text-3xl mb-3">{item.icon}</div>
@@ -375,16 +373,10 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button
-                                onClick={() => router.get('/kerja-sama')}
-                                className="bg-[#D4A017] hover:bg-[#c49115] text-white px-10 py-4 rounded-full font-black text-lg transition-all shadow-xl shadow-black/20 hover:-translate-y-1"
-                            >
+                            <button onClick={() => router.get('/kerja-sama')} className="bg-[#D4A017] hover:bg-[#c49115] text-white px-10 py-4 rounded-full font-black text-lg transition-all shadow-xl shadow-black/20 hover:-translate-y-1">
                                 Ajukan Kerja Sama
                             </button>
-                            <a
-                                href="mailto:admin@qlc.sch.id"
-                                className="bg-white/15 hover:bg-white/25 border border-white/30 text-white px-10 py-4 rounded-full font-bold text-lg transition-all hover:-translate-y-0.5"
-                            >
+                            <a href="mailto:admin@qlc.sch.id" className="bg-white/15 hover:bg-white/25 border border-white/30 text-white px-10 py-4 rounded-full font-bold text-lg transition-all hover:-translate-y-0.5">
                                 Hubungi via Email
                             </a>
                         </div>

@@ -50,15 +50,22 @@ export default function PengaturanPage() {
     const formProfile = useForm({
         username: user?.username || '',
         email: user?.email || '',
+        photo: null as File | null,
     });
 
     const submitProfile = (e: FormEvent) => {
         e.preventDefault();
-        formProfile.put(route('settings.profile'), {
+        formProfile.post(route('settings.profile'), {
+            forceFormData: true,
             preserveScroll: true,
+
             onSuccess: () => {
                 formProfile.clearErrors();
-                setToastMsg({ msg: 'Profil berhasil diperbarui.', type: 'success' });
+
+                setToastMsg({
+                    msg: 'Profil berhasil diperbarui.',
+                    type: 'success',
+                });
             },
         });
     };
@@ -87,6 +94,7 @@ export default function PengaturanPage() {
     /* ── Preferensi (Mockup UI) ── */
     const [prefEmail, setPrefEmail] = useState(true);
     const [prefWA, setPrefWA] = useState(false);
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
 
     return (
         <>
@@ -120,13 +128,16 @@ export default function PengaturanPage() {
                 <div className="relative bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
                     {/* --- TAB 1: AKUN --- */}
                     {tab === 'account' && (
-                        <form onSubmit={submitProfile} className="flex flex-col">
-                            <div className="px-6 md:px-8 py-6 border-b border-slate-50">
+                        <form onSubmit={submitProfile} className="flex flex-col bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                            {/* Header Section */}
+                            <div className="px-6 md:px-8 py-6 border-b border-slate-100">
                                 <div className="text-[18px] font-extrabold text-slate-900 tracking-tight">Informasi Dasar</div>
-                                <div className="text-[13px] text-slate-500 font-bold mt-1">Perbarui username dan alamat email akun Anda.</div>
+                                <div className="text-[13px] text-slate-500 font-semibold mt-1">Perbarui username dan alamat email akun Anda.</div>
                             </div>
 
-                            <div className="px-6 md:px-8 py-7 flex flex-col gap-5">
+                            {/* Form Inputs Section */}
+                            <div className="px-6 md:px-8 py-7 flex flex-col gap-6">
+                                {/* Username Input */}
                                 <div className="flex flex-col gap-1.5 max-w-xl">
                                     <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Username Login</label>
                                     <div className="relative flex items-center">
@@ -135,7 +146,9 @@ export default function PengaturanPage() {
                                             type="text"
                                             value={formProfile.data.username}
                                             onChange={(e) => formProfile.setData('username', e.target.value)}
-                                            className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${formProfile.errors.username ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                                            className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
+                                                formProfile.errors.username ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'
+                                            }`}
                                         />
                                     </div>
                                     {formProfile.errors.username && (
@@ -145,6 +158,7 @@ export default function PengaturanPage() {
                                     )}
                                 </div>
 
+                                {/* Email Input */}
                                 <div className="flex flex-col gap-1.5 max-w-xl">
                                     <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Alamat Email</label>
                                     <div className="relative flex items-center">
@@ -153,7 +167,9 @@ export default function PengaturanPage() {
                                             type="email"
                                             value={formProfile.data.email}
                                             onChange={(e) => formProfile.setData('email', e.target.value)}
-                                            className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${formProfile.errors.email ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                                            className={`w-full h-12 pl-12 pr-4 bg-slate-50 border rounded-2xl text-[14px] font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
+                                                formProfile.errors.email ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'
+                                            }`}
                                         />
                                     </div>
                                     {formProfile.errors.email && (
@@ -162,21 +178,51 @@ export default function PengaturanPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Profile Photo Section */}
+                                <div className="flex flex-col gap-2.5 max-w-xl">
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Foto Profil</label>
+                                    <div className="flex items-center gap-5 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md shrink-0">
+                                            <img src={photoFile ? URL.createObjectURL(photoFile) : user?.photo || '/image/default-avatar.png'} className="w-full h-full object-cover" alt="Preview Foto" />
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="flex items-center justify-center h-9 px-4 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-700 shadow-sm cursor-pointer hover:bg-slate-50 active:scale-98 transition-all">
+                                                <span>Pilih Foto Baru</span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0] || null;
+                                                        setPhotoFile(file);
+                                                        formProfile.setData('photo', file);
+                                                    }}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                            <span className="text-[11px] text-slate-400 ml-1">Maksimal format JPG, PNG, atau WEBP.</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="px-6 md:px-8 py-5 border-t border-slate-50 bg-slate-50/50 flex justify-end">
+                            {/* Footer Section / Action Button */}
+                            <div className="px-6 md:px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
                                 <button
                                     type="submit"
-                                    className="flex items-center gap-2 h-12 px-8 rounded-2xl bg-[#1B6B3A] text-white text-[14px] font-black shadow-lg shadow-green-900/20 transition-all hover:bg-[#14522d] active:scale-95 focus:outline-none disabled:opacity-60"
+                                    className="flex items-center gap-2 h-12 px-8 rounded-2xl bg-[#1B6B3A] text-white text-[14px] font-black shadow-lg shadow-green-900/10 transition-all hover:bg-[#14522d] active:scale-95 focus:outline-none disabled:opacity-60"
                                     disabled={formProfile.processing}
                                 >
                                     {formProfile.processing ? (
                                         <>
-                                            <Loader2 size={18} className="animate-spin" /> Menyimpan...
+                                            <Loader2 size={18} className="animate-spin" />
+                                            <span>Menyimpan...</span>
                                         </>
                                     ) : (
                                         <>
-                                            <Save size={18} /> Simpan Akun
+                                            <Save size={18} />
+                                            <span>Simpan Akun</span>
                                         </>
                                     )}
                                 </button>

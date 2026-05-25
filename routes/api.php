@@ -26,10 +26,12 @@ Route::post('forgot-password/reset', [ForgotPasswordController::class, 'resetPas
 // ── Teachers ──────────────────────────────────────────────────────────────
 Route::prefix('teachers')->group(function () {
     Route::get('spesialisasi', [TeacherController::class, 'spesialisasiList']);
+    Route::post('{id}/reset-password', [TeacherController::class, 'resetPassword']);
     Route::apiResource('/', TeacherController::class)->parameters(['' => 'id']);
 });
 
 // ── Parents ───────────────────────────────────────────────────────────────
+Route::post('parents/{id}/reset-password', [ParentController::class, 'resetPassword']);
 Route::apiResource('parents', ParentController::class)
     ->parameters(['parents' => 'id']);
 
@@ -75,6 +77,7 @@ Route::apiResource('agenda', AgendaController::class)
     ->parameters(['agenda' => 'id']);
 
 // ── Mitra ─────────────────────────────────────────────────────────────────
+Route::post('partners/{id}/reset-password', [MitraController::class, 'resetPassword']);
 Route::apiResource('partners', MitraController::class)
     ->parameters(['partners' => 'id']);
 
@@ -110,6 +113,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('mitra')->group(function () {
         Route::get('dashboard', [MitraDashboardController::class, 'index']);
         Route::get('reports', [MitraReportController::class, 'mitraReports']);
+        Route::get('profile', [MitraController::class, 'ownProfile']);
     });
 
     // Admin mitra report routes

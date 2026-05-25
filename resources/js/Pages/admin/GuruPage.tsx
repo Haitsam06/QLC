@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, GraduationCap, Phone, BookOpen, Loader2, AlertCircle, CheckCircle2, Filter, Eye, EyeOff, ChevronDown, Check } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, GraduationCap, Phone, BookOpen, Loader2, AlertCircle, CheckCircle2, Filter, Eye, EyeOff, ChevronDown, Check, KeyRound } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -372,6 +372,62 @@ function EditModal({ init, specs, onClose, onSave }: { init: EditFormData; specs
     );
 }
 
+/* ── Reset Password Modal ── */
+function ResetPasswordModal({ teacher, onClose, onConfirm }: { teacher: Teacher; onClose: () => void; onConfirm: () => Promise<void> }) {
+    const [busy, setBusy] = useState(false);
+    const go = async () => {
+        setBusy(true);
+        try {
+            await onConfirm();
+        } finally {
+            setBusy(false);
+        }
+    };
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
+            onClick={(ev) => ev.target === ev.currentTarget && onClose()}
+        >
+            <div className="w-full max-w-[400px] bg-white border border-slate-200 rounded-[24px] shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
+                <div className="pt-8 px-7 pb-5 text-center flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-inner">
+                        <KeyRound size={28} />
+                    </div>
+                    <div className="text-[18px] font-extrabold text-slate-900 mt-1">Reset Password?</div>
+                    <div className="text-[13.5px] text-slate-500 leading-relaxed px-2">
+                        Password login <b>{teacher.nama_guru}</b> akan direset ke password default.<br />
+                        <span className="inline-block mt-2 px-3 py-1 rounded-lg bg-slate-100 text-slate-700 font-mono text-[13px] font-bold tracking-wide">mieayambakso</span>
+                    </div>
+                </div>
+                <div className="flex gap-2.5 px-7 pb-7">
+                    <button
+                        className="flex-1 h-11 rounded-xl text-[13px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors focus:outline-none"
+                        onClick={onClose}
+                    >
+                        Batal
+                    </button>
+                    <button
+                        className="flex-1 h-11 rounded-xl text-[13px] font-bold text-white bg-amber-500 shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 transition-all hover:bg-amber-600 hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 focus:outline-none"
+                        onClick={go}
+                        disabled={busy}
+                    >
+                        {busy ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" /> Mereset...
+                            </>
+                        ) : (
+                            <>
+                                <KeyRound size={16} /> Reset Password
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
 /* ── Delete Modal ── */
 function DeleteModal({ teacher, onClose, onConfirm }: { teacher: Teacher; onClose: () => void; onConfirm: () => Promise<void> }) {
     const [busy, setBusy] = useState(false);
@@ -437,7 +493,7 @@ export default function GuruPage() {
     const [search, setSearch] = useState('');
     const [spec, setSpec] = useState('');
     const [specs, setSpecs] = useState<string[]>([]);
-    const [modal, setModal] = useState<'add' | 'edit' | 'delete' | null>(null);
+    const [modal, setModal] = useState<'add' | 'edit' | 'delete' | 'reset' | null>(null);
     const [sel, setSel] = useState<Teacher | null>(null);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -511,6 +567,15 @@ export default function GuruPage() {
             load(data.length === 1 && meta.page > 1 ? meta.page - 1 : meta.page);
             loadSpecs();
         } else setToast({ msg: j.message ?? 'Gagal menghapus.', type: 'error' });
+    };
+
+    const resetPw = async () => {
+        if (!sel) return;
+        const j = await (await fetch(`${API}/${sel.id}/reset-password`, { method: 'POST', headers: { Accept: 'application/json' } })).json();
+        if (j.success) {
+            setToast({ msg: 'Password berhasil direset ke default.', type: 'success' });
+            setModal(null);
+        } else setToast({ msg: j.message ?? 'Gagal mereset password.', type: 'error' });
     };
 
     const pgs = () => {
@@ -683,6 +748,16 @@ export default function GuruPage() {
                                                         <Pencil size={14} />
                                                     </button>
                                                     <button
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-amber-500 shadow-sm transition-colors hover:bg-amber-50 hover:border-amber-200 focus:outline-none"
+                                                        title="Reset Password"
+                                                        onClick={() => {
+                                                            setSel(t);
+                                                            setModal('reset');
+                                                        }}
+                                                    >
+                                                        <KeyRound size={14} />
+                                                    </button>
+                                                    <button
                                                         className="w-8 h-8 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-red-600 shadow-sm transition-colors hover:bg-red-50 hover:border-red-200 focus:outline-none"
                                                         title="Hapus"
                                                         onClick={() => {
@@ -763,6 +838,7 @@ export default function GuruPage() {
             {modal === 'add' && <AddModal specs={specs} onClose={() => setModal(null)} onSave={post} />}
             {modal === 'edit' && sel && <EditModal init={{ nama_guru: sel.nama_guru, phone: sel.phone, spesialisasi: sel.spesialisasi }} specs={specs} onClose={() => setModal(null)} onSave={put} />}
             {modal === 'delete' && sel && <DeleteModal teacher={sel} onClose={() => setModal(null)} onConfirm={del} />}
+            {modal === 'reset' && sel && <ResetPasswordModal teacher={sel} onClose={() => setModal(null)} onConfirm={resetPw} />}
 
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
         </>

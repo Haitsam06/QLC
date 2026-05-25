@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage; // Tambahkan ini untuk handle file
+use Illuminate\Support\Facades\Storage;
 use MongoDB\Client;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
@@ -135,6 +136,7 @@ class MitraController extends Controller
             'username'   => $request->username,
             'password'   => Hash::make($request->password),
             'email'      => $request->email ?? null,
+            'photo'      => null,
             'created_at' => $now,
             'updated_at' => $now,
         ];
@@ -245,6 +247,36 @@ class MitraController extends Controller
         ]);
     }
 
+    public function resetPassword(string $id)
+    {
+        try { $oid = new ObjectId($id); }
+        catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
+        }
+
+        $partner = $this->partners->findOne(['_id' => $oid]);
+        if (!$partner) {
+            return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
+        }
+
+        if (empty($partner['user_id'])) {
+            return response()->json(['success' => false, 'message' => 'Akun mitra tidak ditemukan.'], 404);
+        }
+
+        try { $userId = new ObjectId($partner['user_id']); }
+        catch (\Exception $e) { $userId = $partner['user_id']; }
+
+        $this->users->updateOne(
+            ['_id' => $userId],
+            ['$set' => [
+                'password'   => Hash::make('mieayambakso'),
+                'updated_at' => new UTCDateTime(),
+            ]]
+        );
+
+        return response()->json(['success' => true, 'message' => 'Password mitra berhasil direset ke default.']);
+    }
+
     public function destroy(string $id)
     {
         // (Isi function destroy TETAP SAMA, namun opsional kamu bisa tambahkan logika hapus file dari Storage jika mitra dihapus)
@@ -273,6 +305,129 @@ class MitraController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Mitra dan akun pengguna berhasil dihapus.']);
+    }
+
+    /* ─────────────────────────────────────────────
+       GET /api/mitra/profile  (own profile)
+    ───────────────────────────────────────────── */
+    public function ownProfile()
+    {
+        $userId = (string) Auth::id();
+        $user   = Auth::user();
+
+        $partner = $this->partners->findOne(['user_id' => $userId]);
+
+        if (!$partner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data mitra tidak ditemukan.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'institution_name' => $partner['institution_name'] ?? null,
+                'contact_person'   => $partner['contact_person']   ?? null,
+                'phone'            => $partner['phone']             ?? null,
+                'status'           => $partner['status']            ?? null,
+                'email'            => $user->email                  ?? null,
+            ],
+        ]);
+    }
+
+    /* ─────────────────────────────────────────────
+       POST /mitra/profile  (update username + photo)
+    ───────────────────────────────────────────── */
+    public function updateOwnProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|min:4|max:50',
+            'photo'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator);
+        }
+
+        $user = Auth::user();
+
+        if (!$user) {
+            return back()->withErrors(['auth' => 'User tidak ditemukan.']);
+        }
+
+        try {
+            $userId = new ObjectId((string) $user->_id);
+        } catch (\Exception $e) {
+            $userId = $user->_id;
+        }
+
+        $usernameExists = $this->users->findOne([
+            'username' => $request->username,
+            '_id'      => ['$ne' => $userId],
+        ]);
+
+        if ($usernameExists) {
+            return back()->withErrors(['username' => 'Username sudah digunakan.']);
+        }
+
+        $photoUrl = $user->photo ?? null;
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('profile', 'public');
+            if ($path) {
+                $photoUrl = asset('storage/' . $path);
+            }
+        }
+
+        $this->users->updateOne(
+            ['_id' => $userId],
+            ['$set' => [
+                'username'   => $request->username,
+                'photo'      => $photoUrl,
+                'updated_at' => new UTCDateTime(),
+            ]]
+        );
+
+        $freshUser = \App\Models\User::find((string) $userId);
+        Auth::setUser($freshUser);
+
+        return back()->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    /* ─────────────────────────────────────────────
+       POST /mitra/password  (update password)
+    ───────────────────────────────────────────── */
+    public function updateOwnPassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password'         => 'required|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors([
+                'current_password' => 'Password saat ini salah.',
+            ]);
+        }
+
+        try {
+            $userId = new ObjectId((string) $user->_id);
+        } catch (\Exception $e) {
+            $userId = $user->_id;
+        }
+
+        $this->users->updateOne(
+            ['_id' => $userId],
+            ['$set' => [
+                'password'   => Hash::make($request->password),
+                'updated_at' => new UTCDateTime(),
+            ]]
+        );
+
+        return back()->with('success', 'Password berhasil diperbarui.');
     }
 
     private function format($doc): array

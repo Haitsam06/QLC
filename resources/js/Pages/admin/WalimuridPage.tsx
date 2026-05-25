@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, Users, Phone, MapPin, Loader2, AlertCircle, CheckCircle2, Eye, EyeOff, Home } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, Users, Phone, MapPin, Loader2, AlertCircle, CheckCircle2, Eye, EyeOff, Home, KeyRound } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -436,6 +436,67 @@ function DeleteModal({ parent, onClose, onConfirm }: { parent: Parent; onClose: 
     );
 }
 
+/* ════════════════════════════════════════════════
+   RESET PASSWORD MODAL
+════════════════════════════════════════════════ */
+function ResetPasswordModal({ parent, onClose, onConfirm }: { parent: Parent; onClose: () => void; onConfirm: () => Promise<void> }) {
+    const [busy, setBusy] = useState(false);
+    const go = async () => {
+        setBusy(true);
+        try {
+            await onConfirm();
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
+            onClick={(ev) => ev.target === ev.currentTarget && onClose()}
+        >
+            <div className="w-full max-w-[420px] bg-white border border-slate-200 rounded-[24px] shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
+                <div className="pt-8 px-7 pb-5 text-center flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-inner">
+                        <KeyRound size={28} />
+                    </div>
+                    <div className="text-[18px] font-extrabold text-slate-900 mt-1">Reset Password Wali Murid?</div>
+                    <div className="text-[13.5px] text-slate-500 leading-relaxed px-2">
+                        Password akun <b>{parent.parent_name}</b> akan direset ke password default.
+                    </div>
+                    <div className="mt-1 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[13px] font-semibold text-amber-800 w-full text-center">
+                        Password baru: <span className="font-mono font-bold tracking-wide">mieayambakso</span>
+                    </div>
+                </div>
+                <div className="flex gap-2.5 px-7 pb-7">
+                    <button
+                        className="flex-1 h-11 rounded-xl text-[13px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors focus:outline-none"
+                        onClick={onClose}
+                    >
+                        Batal
+                    </button>
+                    <button
+                        className="flex-1 h-11 rounded-xl text-[13px] font-bold text-white bg-amber-500 shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 transition-all hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+                        onClick={go}
+                        disabled={busy}
+                    >
+                        {busy ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" /> Mereset...
+                            </>
+                        ) : (
+                            <>
+                                <KeyRound size={16} /> Reset Password
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
 /* ═══════════════════════════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════════════════════════ */
@@ -444,7 +505,7 @@ export default function WaliMuridPage() {
     const [meta, setMeta] = useState<Meta>({ total: 0, page: 1, per_page: 10, last_page: 1 });
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [modal, setModal] = useState<'add' | 'edit' | 'delete' | null>(null);
+    const [modal, setModal] = useState<'add' | 'edit' | 'delete' | 'reset' | null>(null);
     const [sel, setSel] = useState<Parent | null>(null);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -513,6 +574,24 @@ export default function WaliMuridPage() {
             load(meta.page);
         } else {
             setToast({ msg: j.message ?? 'Gagal memperbarui.', type: 'error' });
+        }
+    };
+
+    /* ── Reset Password ── */
+    const resetPw = async () => {
+        if (!sel) return;
+        const j = await (
+            await fetch(`${API}/${sel.id}/reset-password`, {
+                method: 'POST',
+                headers: { Accept: 'application/json' },
+            })
+        ).json();
+
+        if (j.success) {
+            setToast({ msg: 'Password berhasil direset ke default.', type: 'success' });
+            setModal(null);
+        } else {
+            setToast({ msg: j.message ?? 'Gagal mereset password.', type: 'error' });
         }
     };
 
@@ -656,6 +735,16 @@ export default function WaliMuridPage() {
                                                         <Pencil size={14} />
                                                     </button>
                                                     <button
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-amber-600 shadow-sm transition-colors hover:bg-amber-50 hover:border-amber-200 focus:outline-none"
+                                                        title="Reset Password"
+                                                        onClick={() => {
+                                                            setSel(p);
+                                                            setModal('reset');
+                                                        }}
+                                                    >
+                                                        <KeyRound size={14} />
+                                                    </button>
+                                                    <button
                                                         className="w-8 h-8 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-red-600 shadow-sm transition-colors hover:bg-red-50 hover:border-red-200 focus:outline-none"
                                                         title="Hapus"
                                                         onClick={() => {
@@ -736,6 +825,7 @@ export default function WaliMuridPage() {
             {modal === 'add' && <AddModal onClose={() => setModal(null)} onSave={post} />}
             {modal === 'edit' && sel && <EditModal init={{ parent_name: sel.parent_name, phone: sel.phone, address: sel.address }} onClose={() => setModal(null)} onSave={put} />}
             {modal === 'delete' && sel && <DeleteModal parent={sel} onClose={() => setModal(null)} onConfirm={del} />}
+            {modal === 'reset' && sel && <ResetPasswordModal parent={sel} onClose={() => setModal(null)} onConfirm={resetPw} />}
 
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
         </>

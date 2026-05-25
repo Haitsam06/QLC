@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use MongoDB\Client as MongoClient;
 use MongoDB\BSON\ObjectId;
@@ -42,24 +42,33 @@ class InfoController extends Controller
 
         // 1. Handle Logo
         $logoUrl = $existing['logo'] ?? null;
+        $request->validate([
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'about_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        ]);
         if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
-            if ($logoUrl) {
-                $oldPath = str_replace('/storage/', '', parse_url($logoUrl, PHP_URL_PATH));
+            $parsedPath = parse_url($logoUrl, PHP_URL_PATH);
+
+            if ($parsedPath) {
+                $oldPath = str_replace('/storage/', '', $parsedPath);
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('logo')->store('info/logos', 'public');
-            $logoUrl = Storage::url($path);
+            $logoUrl = URL::to(Storage::url($path));
         }
 
         // 2. Handle About Image
         $aboutImageUrl = $existing['about_image'] ?? null;
         if ($request->hasFile('about_image') && $request->file('about_image')->isValid()) {
-            if ($aboutImageUrl) {
-                $oldPath = str_replace('/storage/', '', parse_url($aboutImageUrl, PHP_URL_PATH));
+            $parsedPath = parse_url($aboutImageUrl, PHP_URL_PATH);
+
+            if ($parsedPath) {
+                $oldPath = str_replace('/storage/', '', $parsedPath);
+
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('about_image')->store('info/about', 'public');
-            $aboutImageUrl = Storage::url($path);
+            $aboutImageUrl = URL::to(Storage::url($path));
         }
 
         $socialMedia = null;
@@ -168,9 +177,12 @@ class InfoController extends Controller
     public function leaderStore(Request $request)
     {
         $imageUrl = null;
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $path = $request->file('image')->store('info/leaders', 'public');
-            $imageUrl = Storage::url($path);
+            $imageUrl = URL::to(Storage::url($path));
         }
 
         $doc = [
@@ -200,13 +212,16 @@ class InfoController extends Controller
             return response()->json(['success' => false], 404);
 
         $imageUrl = $existing['image_url'] ?? null;
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             if ($imageUrl) {
                 $oldPath = str_replace('/storage/', '', parse_url($imageUrl, PHP_URL_PATH));
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('image')->store('info/leaders', 'public');
-            $imageUrl = Storage::url($path);
+            $imageUrl = URL::to(Storage::url($path));
         }
 
         $this->leaders->updateOne(
@@ -257,23 +272,29 @@ class InfoController extends Controller
     {
         // Thumbnail lama
         $imageUrl = null;
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'hero_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'about_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'gallery_images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        ]);
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $path = $request->file('image')->store('info/programs', 'public');
-            $imageUrl = Storage::url($path);
+            $imageUrl = URL::to(Storage::url($path));
         }
 
         // Hero Image
         $heroImageUrl = null;
         if ($request->hasFile('hero_image') && $request->file('hero_image')->isValid()) {
             $path = $request->file('hero_image')->store('info/programs/hero', 'public');
-            $heroImageUrl = Storage::url($path);
+            $heroImageUrl = URL::to(Storage::url($path));
         }
 
         // About Image
         $aboutImageUrl = null;
         if ($request->hasFile('about_image') && $request->file('about_image')->isValid()) {
             $path = $request->file('about_image')->store('info/programs/about', 'public');
-            $aboutImageUrl = Storage::url($path);
+            $aboutImageUrl = URL::to(Storage::url($path));
         }
 
         // Gallery Images (Multi Upload)
@@ -282,7 +303,7 @@ class InfoController extends Controller
             foreach ($request->file('gallery_images') as $file) {
                 if ($file->isValid()) {
                     $path = $file->store('info/programs/gallery', 'public');
-                    $galleryUrls[] = Storage::url($path);
+                    $galleryUrls[] = URL::to(Storage::url($path));
                 }
             }
         }
@@ -327,13 +348,19 @@ class InfoController extends Controller
 
         // Update Thumbnail Lama
         $imageUrl = $existing['image_url'] ?? null;
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'hero_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'about_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'gallery_images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        ]);
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             if ($imageUrl) {
                 $oldPath = str_replace('/storage/', '', parse_url($imageUrl, PHP_URL_PATH));
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('image')->store('info/programs', 'public');
-            $imageUrl = Storage::url($path);
+            $imageUrl = URL::to(Storage::url($path));
         }
 
         // Update Hero Image
@@ -344,7 +371,7 @@ class InfoController extends Controller
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('hero_image')->store('info/programs/hero', 'public');
-            $heroImageUrl = Storage::url($path);
+            $heroImageUrl = URL::to(Storage::url($path));
         }
 
         // Update About Image
@@ -355,7 +382,7 @@ class InfoController extends Controller
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('about_image')->store('info/programs/about', 'public');
-            $aboutImageUrl = Storage::url($path);
+            $aboutImageUrl = URL::to(Storage::url($path));
         }
 
         // Update Gallery Images
@@ -364,7 +391,7 @@ class InfoController extends Controller
             foreach ($request->file('gallery_images') as $file) {
                 if ($file->isValid()) {
                     $path = $file->store('info/programs/gallery', 'public');
-                    $galleryUrls[] = Storage::url($path);
+                    $galleryUrls[] = URL::to(Storage::url($path));
                 }
             }
         }
@@ -445,9 +472,13 @@ class InfoController extends Controller
     public function galleryStore(Request $request)
     {
         $mediaUrl = $request->media_url ?? null;
+        $request->validate([
+            'media' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'media_url' => 'nullable|url',
+        ]);
         if ($request->type === 'Photo' && $request->hasFile('media') && $request->file('media')->isValid()) {
             $path = $request->file('media')->store('info/gallery', 'public');
-            $mediaUrl = Storage::url($path);
+            $mediaUrl = URL::to(Storage::url($path));
         }
 
         $doc = [
@@ -474,13 +505,19 @@ class InfoController extends Controller
             return response()->json(['success' => false], 404);
 
         $mediaUrl = $existing['media_url'] ?? null;
+        $request->validate([
+            'media' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        ]);
         if ($request->type === 'Photo' && $request->hasFile('media') && $request->file('media')->isValid()) {
-            if ($mediaUrl && !str_starts_with($mediaUrl, 'http')) {
-                $oldPath = str_replace('/storage/', '', parse_url($mediaUrl, PHP_URL_PATH));
-                Storage::disk('public')->delete($oldPath);
+            if ($mediaUrl && str_contains($mediaUrl, '/storage/')) {
+                $parsedPath = parse_url($mediaUrl, PHP_URL_PATH);
+                if ($parsedPath) {
+                    $oldPath = str_replace('/storage/', '', $parsedPath);
+                    Storage::disk('public')->delete($oldPath);
+                }
             }
             $path = $request->file('media')->store('info/gallery', 'public');
-            $mediaUrl = Storage::url($path);
+            $mediaUrl = URL::to(Storage::url($path));
         } elseif ($request->type === 'Video' && $request->filled('media_url')) {
             $mediaUrl = $request->media_url;
         }

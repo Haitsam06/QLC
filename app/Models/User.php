@@ -2,42 +2,66 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
+use MongoDB\Laravel\Auth\User as Authenticatable;
 
-class User extends Model implements Authenticatable
+class User extends Authenticatable
 {
-    use AuthenticatableTrait;
-
     protected $connection = 'mongodb';
+
     protected $collection = 'users';
 
     protected $fillable = [
+
         '_id',
+
         'role_id',
+
         'username',
+
         'email',
+
         'password',
+
+        'photo',
     ];
 
     protected $hidden = [
+
         'password',
     ];
 
-    // ── Relasi ke collection roles ───────────────────────────
+    /*
+    |────────────────────────────────────────────
+    | RELATION ROLE
+    |────────────────────────────────────────────
+    */
     public function role()
     {
-        return $this->belongsTo(Role::class, 'role_id', '_id');
+        return $this->belongsTo(
+
+            Role::class,
+
+            'role_id',
+
+            '_id'
+        );
     }
 
-    // ── Helper: ambil role_name lewat relasi ─────────────────
+    /*
+    |────────────────────────────────────────────
+    | GET ROLE NAME
+    |────────────────────────────────────────────
+    */
     public function getRoleName(): ?string
     {
         return $this->role?->role_name;
     }
 
-    // ── Role checkers ────────────────────────────────────────
+    /*
+    |────────────────────────────────────────────
+    | ROLE CHECKERS
+    |────────────────────────────────────────────
+    */
     public function isAdmin(): bool
     {
         return $this->getRoleName() === 'admin';
@@ -45,12 +69,26 @@ class User extends Model implements Authenticatable
 
     public function isTeacher(): bool
     {
-        return in_array($this->getRoleName(), ['teacher', 'guru'], true);
+        return in_array(
+
+            $this->getRoleName(),
+
+            ['teacher', 'guru'],
+
+            true
+        );
     }
 
     public function isParents(): bool
     {
-        return in_array($this->getRoleName(), ['parents', 'parent'], true);
+        return in_array(
+
+            $this->getRoleName(),
+
+            ['parents', 'parent'],
+
+            true
+        );
     }
 
     public function isMitra(): bool

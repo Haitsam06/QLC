@@ -32,12 +32,19 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        if ($user) {
+
+            $user = \App\Models\User::find(
+                $user->_id
+            );
+        }
+
         // Ambil parent_name dari collection parents jika user login
         $displayName = null;
-        $roleName    = null;
+        $roleName = null;
         if ($user) {
-            $client   = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
-            $db       = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+            $client = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
+            $db = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
 
             // Coba cari di collection parents dulu
             $parent = $db->selectCollection('parents')->findOne([
@@ -62,12 +69,15 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $user ? [
-                    '_id'      => (string) $user->_id,
-                    'name'     => $displayName,        // ← dari collection parents
+                    '_id' => (string) $user->_id,
+                    'name' => $displayName,
                     'username' => $user->username,
-                    'email'    => $user->email,
-                    'role_id'  => (string) $user->role_id,
-                    'role'     => $roleName,           // ← nama role untuk routing navbar
+                    'email' => $user->email,
+                    'photo' => $user->photo
+                        ? $user->photo . '?v=' . time()
+                        : null,
+                    'role_id' => (string) $user->role_id,
+                    'role' => $roleName,
                 ] : null,
             ],
         ];

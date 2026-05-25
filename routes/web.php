@@ -7,6 +7,9 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\Parents\ParentDashboardController;
 use App\Http\Controllers\Parents\EnrollmentController;
 use App\Http\Controllers\Teacher\TeacherDashboardController;
+use App\Http\Controllers\MitraController;
+use App\Http\Controllers\ParentController;
+use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -144,8 +147,33 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::post(
+        '/parents/profile',
+        [ParentController::class, 'updateOwnProfile']
+    )->name('parents.profile.update');
+
+    Route::post(
+        '/teacher/profile',
+        [TeacherController::class, 'updateOwnProfile']
+    )->name('teacher.profile.update');
+
+    Route::post(
+        '/teacher/password',
+        [TeacherController::class, 'updateOwnPassword']
+    )->name('teacher.password.update');
+
+    Route::post(
+        '/mitra/profile',
+        [MitraController::class, 'updateOwnProfile']
+    )->name('mitra.profile.update');
+
+    Route::post(
+        '/mitra/password',
+        [MitraController::class, 'updateOwnPassword']
+    )->name('mitra.password.update');
+
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::post('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
 });
 
