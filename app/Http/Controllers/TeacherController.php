@@ -21,11 +21,11 @@ class TeacherController extends Controller
     public function __construct()
     {
         $client = new MongoClient(
-            env('MONGODB_URI', 'mongodb://localhost:27017')
+            config('database.connections.mongodb.dsn')
         );
 
         $db = $client->selectDatabase(
-            env('MONGODB_DATABASE', 'educonnect')
+            config('database.connections.mongodb.database')
         );
 
         $this->teachers =
@@ -51,7 +51,7 @@ class TeacherController extends Controller
             $request->query('spesialisasi', '');
 
         $perPage =
-            (int) $request->query('per_page', 10);
+            max(1, min(100, (int) $request->query('per_page', 10)));
 
         $page =
             (int) $request->query('page', 1);
@@ -63,25 +63,26 @@ class TeacherController extends Controller
 
         if (!empty($search)) {
 
+            $safeSearch = preg_quote($search, '/');
             $filter['$or'] = [
 
                 [
                     'nama_guru' => [
-                        '$regex' => $search,
+                        '$regex' => $safeSearch,
                         '$options' => 'i'
                     ]
                 ],
 
                 [
                     'phone' => [
-                        '$regex' => $search,
+                        '$regex' => $safeSearch,
                         '$options' => 'i'
                     ]
                 ],
 
                 [
                     'spesialisasi' => [
-                        '$regex' => $search,
+                        '$regex' => $safeSearch,
                         '$options' => 'i'
                     ]
                 ],

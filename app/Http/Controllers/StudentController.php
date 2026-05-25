@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use MongoDB\Client as MongoClient;
 use MongoDB\BSON\ObjectId;
@@ -16,8 +17,8 @@ class StudentController extends Controller
 
     public function __construct()
     {
-        $client         = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
-        $db             = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+        $client         = new MongoClient(config('database.connections.mongodb.dsn'));
+        $db             = $client->selectDatabase(config('database.connections.mongodb.database'));
         $this->students = $db->selectCollection('students');
         $this->parents  = $db->selectCollection('parents');
         $this->programs = $db->selectCollection('programs');
@@ -28,15 +29,16 @@ class StudentController extends Controller
         $search    = $request->query('search', '');
         $status    = $request->query('status', '');
         $programId = $request->query('program_id', '');
-        $perPage   = (int) $request->query('per_page', 10);
+        $perPage   = max(1, min(100, (int) $request->query('per_page', 10)));
         $page      = (int) $request->query('page', 1);
         $skip      = ($page - 1) * $perPage;
 
         $filter = [];
         if (!empty($search)) {
+            $safeSearch = preg_quote($search, '/');
             $filter['$or'] = [
-                ['nama'         => ['$regex' => $search, '$options' => 'i']],
-                ['tempat_lahir' => ['$regex' => $search, '$options' => 'i']],
+                ['nama'         => ['$regex' => $safeSearch, '$options' => 'i']],
+                ['tempat_lahir' => ['$regex' => $safeSearch, '$options' => 'i']],
             ];
         }
         if (!empty($status))    $filter['enrollment_status'] = $status;
@@ -49,9 +51,29 @@ class StudentController extends Controller
             'sort'  => ['nama' => 1],
         ]);
 
-        $data = [];
+        // Collect docs first, then batch-load programs to avoid N+1
+        $docs       = [];
+        $programIds = [];
         foreach ($cursor as $doc) {
-            $data[] = $this->format($doc);
+            $docs[] = $doc;
+            if (!empty($doc['program_id'])) {
+                $programIds[] = $doc['program_id'];
+            }
+        }
+
+        $programMap = [];
+        if (!empty($programIds)) {
+            $oids = array_values(array_filter(array_map(function ($pid) {
+                try { return new ObjectId($pid); } catch (\Exception $e) { return null; }
+            }, array_unique($programIds))));
+            foreach ($this->programs->find(['_id' => ['$in' => $oids]]) as $p) {
+                $programMap[(string) $p['_id']] = $p['name'] ?? null;
+            }
+        }
+
+        $data = [];
+        foreach ($docs as $doc) {
+            $data[] = $this->format($doc, $programMap);
         }
 
         return response()->json([
@@ -228,11 +250,18 @@ class StudentController extends Controller
             return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
         }
 
-        $result = $this->students->deleteOne(['_id' => $oid]);
+        $student = $this->students->findOne(['_id' => $oid]);
 
-        if ($result->getDeletedCount() === 0) {
+        if (!$student) {
             return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan.'], 404);
         }
+
+        // Hapus file bukti pembayaran jika ada
+        if (!empty($student['bukti_pembayaran'])) {
+            Storage::disk('public')->delete($student['bukti_pembayaran']);
+        }
+
+        $this->students->deleteOne(['_id' => $oid]);
 
         return response()->json(['success' => true, 'message' => 'Data siswa berhasil dihapus.']);
     }
@@ -265,10 +294,8 @@ class StudentController extends Controller
         ]);
     }
 
-    private function format($doc): array
+    private function format($doc, array $programMap = []): array
     {
-        // parent_id = users._id — cari lewat field user_id di collection parents
-        // Fallback: ambil langsung dari document jika sudah disimpan oleh EnrollmentController
         $parentName = $doc['parent_name'] ?? null;
         if (!$parentName && !empty($doc['parent_id'])) {
             $p = $this->parents->findOne(['user_id' => (string) $doc['parent_id']]);
@@ -277,10 +304,15 @@ class StudentController extends Controller
 
         $programName = null;
         if (!empty($doc['program_id'])) {
-            try {
-                $p = $this->programs->findOne(['_id' => new ObjectId($doc['program_id'])]);
-                $programName = $p ? ($p['name'] ?? null) : null;
-            } catch (\Exception $e) {}
+            $pid = (string) $doc['program_id'];
+            if (array_key_exists($pid, $programMap)) {
+                $programName = $programMap[$pid];
+            } else {
+                try {
+                    $p = $this->programs->findOne(['_id' => new ObjectId($pid)]);
+                    $programName = $p ? ($p['name'] ?? null) : null;
+                } catch (\Exception $e) {}
+            }
         }
 
         return [

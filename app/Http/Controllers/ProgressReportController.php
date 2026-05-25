@@ -22,8 +22,8 @@ class ProgressReportController extends Controller
 
     public function __construct()
     {
-        $client         = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
-        $db             = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+        $client         = new MongoClient(config('database.connections.mongodb.dsn'));
+        $db             = $client->selectDatabase(config('database.connections.mongodb.database'));
         $this->reports  = $db->selectCollection('progress_reports');
         $this->students = $db->selectCollection('students');
         $this->teachers = $db->selectCollection('teachers');
@@ -57,7 +57,8 @@ class ProgressReportController extends Controller
         }
 
         $programMap    = $this->buildProgramMap($studentList);
-        $lastReportMap = $this->buildLastReportMap($studentIds);
+        // Tampilkan laporan terakhir yang dibuat guru ini saja, bukan laporan guru lain
+        $lastReportMap = $this->buildLastReportMap($studentIds, (string) $teacher['_id']);
 
         $data = [];
         foreach ($studentList as $doc) {
@@ -75,8 +76,32 @@ class ProgressReportController extends Controller
 
     public function teacherStudentReports(string $studentId): JsonResponse
     {
+        $teacher = $this->resolveTeacher();
+        if (!$teacher) {
+            return response()->json(['message' => 'Profil guru tidak ditemukan.'], 404);
+        }
+
+        // Pastikan siswa ada dan sedang aktif
+        try {
+            $student = $this->students->findOne(['_id' => new ObjectId($studentId)]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'ID siswa tidak valid.'], 400);
+        }
+
+        if (!$student) {
+            return response()->json(['message' => 'Siswa tidak ditemukan.'], 404);
+        }
+
+        if (($student['enrollment_status'] ?? '') !== 'active') {
+            return response()->json(['message' => 'Siswa tidak aktif.'], 403);
+        }
+
+        // Hanya tampilkan laporan yang dibuat oleh guru yang sedang login
         $cursor = $this->reports->find(
-            ['student_id' => $studentId],
+            [
+                'student_id' => $studentId,
+                'teacher_id' => (string) $teacher['_id'],
+            ],
             ['sort' => ['date' => -1]]
         );
 
@@ -339,7 +364,7 @@ class ProgressReportController extends Controller
         $programId = trim($request->query('program_id', ''));
 
         $filter = ['enrollment_status' => 'active'];
-        if ($search !== '')    $filter['nama']       = ['$regex' => $search, '$options' => 'i'];
+        if ($search !== '')    $filter['nama']       = ['$regex' => preg_quote($search, '/'), '$options' => 'i'];
         if ($programId !== '') $filter['program_id'] = $programId;
 
         $cursor      = $this->students->find($filter, ['sort' => ['nama' => 1]]);
@@ -392,14 +417,14 @@ class ProgressReportController extends Controller
     {
         $search    = trim($request->query('search', ''));
         $programId = trim($request->query('program_id', ''));
-        $perPage   = (int) $request->query('per_page', 20);
+        $perPage   = max(1, min(100, (int) $request->query('per_page', 20)));
         $page      = max(1, (int) $request->query('page', 1));
         $skip      = ($page - 1) * $perPage;
 
         $studentIdFilter = null;
         if ($search !== '' || $programId !== '') {
             $sFilter = ['enrollment_status' => 'active'];
-            if ($search !== '')    $sFilter['nama']       = ['$regex' => $search, '$options' => 'i'];
+            if ($search !== '')    $sFilter['nama']       = ['$regex' => preg_quote($search, '/'), '$options' => 'i'];
             if ($programId !== '') $sFilter['program_id'] = $programId;
 
             $sCursor         = $this->students->find($sFilter, ['projection' => ['_id' => 1]]);
@@ -634,12 +659,17 @@ class ProgressReportController extends Controller
         return $request->validate($rules);
     }
 
-    private function buildLastReportMap(array $studentIds): array
+    private function buildLastReportMap(array $studentIds, ?string $teacherId = null): array
     {
         if (empty($studentIds)) return [];
 
+        $filter = ['student_id' => ['$in' => $studentIds]];
+        if ($teacherId !== null) {
+            $filter['teacher_id'] = $teacherId;
+        }
+
         $cursor = $this->reports->find(
-            ['student_id' => ['$in' => $studentIds]],
+            $filter,
             ['sort' => ['date' => -1]]
         );
 

@@ -19,8 +19,8 @@ class MitraController extends Controller
 
     public function __construct()
     {
-        $client          = new Client(env('MONGODB_URI', 'mongodb://localhost:27017'));
-        $db              = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+        $client          = new Client(config('database.connections.mongodb.dsn'));
+        $db              = $client->selectDatabase(config('database.connections.mongodb.database'));
         $this->partners  = $db->selectCollection('partners');
         $this->users     = $db->selectCollection('users');
     }
@@ -39,7 +39,7 @@ class MitraController extends Controller
         $filter = [];
 
         if ($search !== '') {
-            $regex = new \MongoDB\BSON\Regex($search, 'i');
+            $regex = new \MongoDB\BSON\Regex(preg_quote($search, '/'), 'i');
             $filter['$or'] = [
                 ['institution_name' => $regex],
                 ['contact_person'   => $regex],

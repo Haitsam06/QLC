@@ -43,8 +43,8 @@ class HandleInertiaRequests extends Middleware
         $displayName = null;
         $roleName = null;
         if ($user) {
-            $client = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
-            $db = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+            $client = new MongoClient(config('database.connections.mongodb.dsn'));
+            $db = $client->selectDatabase(config('database.connections.mongodb.database'));
 
             // Coba cari di collection parents dulu
             $parent = $db->selectCollection('parents')->findOne([

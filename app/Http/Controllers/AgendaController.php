@@ -14,8 +14,8 @@ class AgendaController extends Controller
 
     public function __construct()
     {
-        $client       = new Client(env('MONGODB_URI', 'mongodb://localhost:27017'));
-        $db           = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+        $client       = new Client(config('database.connections.mongodb.dsn'));
+        $db           = $client->selectDatabase(config('database.connections.mongodb.database'));
         $this->agenda = $db->selectCollection('agenda');
     }
 

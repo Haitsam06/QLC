@@ -22,8 +22,8 @@ class EnrollmentController extends Controller
 
     public function __construct()
     {
-        $client         = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
-        $this->db       = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+        $client         = new MongoClient(config('database.connections.mongodb.dsn'));
+        $this->db       = $client->selectDatabase(config('database.connections.mongodb.database'));
         $this->programs = $this->db->selectCollection('programs');
         $this->students = $this->db->selectCollection('students');
     }

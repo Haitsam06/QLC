@@ -22,11 +22,11 @@ class ParentController extends Controller
     public function __construct()
     {
         $client = new MongoClient(
-            env('MONGODB_URI', 'mongodb://localhost:27017')
+            config('database.connections.mongodb.dsn')
         );
 
         $db = $client->selectDatabase(
-            env('MONGODB_DATABASE', 'educonnect')
+            config('database.connections.mongodb.database')
         );
 
         $this->parents = $db->selectCollection('parents');
@@ -39,7 +39,7 @@ class ParentController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search', '');
-        $perPage = (int) $request->query('per_page', 10);
+        $perPage = max(1, min(100, (int) $request->query('per_page', 10)));
         $page = (int) $request->query('page', 1);
 
         $skip = ($page - 1) * $perPage;
@@ -48,24 +48,25 @@ class ParentController extends Controller
 
         if (!empty($search)) {
 
+            $safeSearch = preg_quote($search, '/');
             $filter['$or'] = [
                 [
                     'parent_name' => [
-                        '$regex' => $search,
+                        '$regex' => $safeSearch,
                         '$options' => 'i'
                     ]
                 ],
 
                 [
                     'phone' => [
-                        '$regex' => $search,
+                        '$regex' => $safeSearch,
                         '$options' => 'i'
                     ]
                 ],
 
                 [
                     'address' => [
-                        '$regex' => $search,
+                        '$regex' => $safeSearch,
                         '$options' => 'i'
                     ]
                 ],

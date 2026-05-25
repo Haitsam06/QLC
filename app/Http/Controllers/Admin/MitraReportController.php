@@ -18,8 +18,8 @@ class MitraReportController extends Controller
 
     public function __construct()
     {
-        $client             = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
-        $db                 = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+        $client             = new MongoClient(config('database.connections.mongodb.dsn'));
+        $db                 = $client->selectDatabase(config('database.connections.mongodb.database'));
         $this->partners     = $db->selectCollection('partners');
         $this->mitraReports = $db->selectCollection('mitra_reports');
     }
@@ -34,9 +34,10 @@ class MitraReportController extends Controller
         $search = trim($request->query('search', ''));
         $filter = [];
         if ($search !== '') {
+            $safeSearch = preg_quote($search, '/');
             $filter['$or'] = [
-                ['institution_name' => ['$regex' => $search, '$options' => 'i']],
-                ['contact_person'   => ['$regex' => $search, '$options' => 'i']],
+                ['institution_name' => ['$regex' => $safeSearch, '$options' => 'i']],
+                ['contact_person'   => ['$regex' => $safeSearch, '$options' => 'i']],
             ];
         }
 
@@ -115,10 +116,16 @@ class MitraReportController extends Controller
         }
 
         // Simpan file ke storage/app/public/mitra-reports/
-        $file     = $request->file('file');
-        $fileName = $file->getClientOriginalName();
-        $path     = $file->store('mitra-reports', 'public');
-        $fileUrl  = Storage::url($path);  // /storage/mitra-reports/xxx.pdf
+        $file = $request->file('file');
+        $path = $file->store('mitra-reports', 'public');
+        $fileUrl = Storage::url($path);
+
+        // Sanitasi nama file — hapus karakter di luar huruf, angka, titik, dash, spasi
+        $rawBaseName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeBase    = trim(preg_replace('/[^a-zA-Z0-9._\- ]/', '_', $rawBaseName));
+        $safeBase    = substr($safeBase ?: 'file', 0, 200);
+        $safeExt     = preg_replace('/[^a-zA-Z0-9]/', '', $file->getClientOriginalExtension());
+        $fileName    = $safeBase . ($safeExt ? '.' . $safeExt : '');
 
         $doc = [
             'partner_id'  => $partnerId,
@@ -126,9 +133,9 @@ class MitraReportController extends Controller
             'date'        => $request->date,
             'description' => $request->description ?? null,
             'file_url'    => $fileUrl,
-            'file_path'   => $path,   // untuk keperluan delete
+            'file_path'   => $path,
             'file_name'   => $fileName,
-            'file_type'   => $file->getClientOriginalExtension(),
+            'file_type'   => $safeExt,
             'file_size'   => $file->getSize(),
             'uploaded_by' => (string) auth()->id(),
             'created_at'  => new UTCDateTime(),
@@ -197,13 +204,13 @@ class MitraReportController extends Controller
 
         $partnerId = (string) $partner['_id'];
         $search    = trim($request->query('search', ''));
-        $perPage   = (int) $request->query('per_page', 10);
+        $perPage   = max(1, min(100, (int) $request->query('per_page', 10)));
         $page      = max(1, (int) $request->query('page', 1));
         $skip      = ($page - 1) * $perPage;
 
         $filter = ['partner_id' => $partnerId];
         if ($search !== '') {
-            $filter['title'] = ['$regex' => $search, '$options' => 'i'];
+            $filter['title'] = ['$regex' => preg_quote($search, '/'), '$options' => 'i'];
         }
 
         $total  = $this->mitraReports->countDocuments($filter);

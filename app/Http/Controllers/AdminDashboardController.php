@@ -21,8 +21,8 @@ class AdminDashboardController extends Controller
 
     public function __construct()
     {
-        $client          = new MongoClient(env('MONGODB_URI', 'mongodb://localhost:27017'));
-        $db              = $client->selectDatabase(env('MONGODB_DATABASE', 'educonnect'));
+        $client          = new MongoClient(config('database.connections.mongodb.dsn'));
+        $db              = $client->selectDatabase(config('database.connections.mongodb.database'));
         $this->students  = $db->selectCollection('students');
         $this->teachers  = $db->selectCollection('teachers');
         $this->programs  = $db->selectCollection('programs');
