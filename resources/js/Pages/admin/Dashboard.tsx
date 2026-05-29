@@ -147,7 +147,7 @@ export default function DashboardAdmin() {
                             <BookOpen size={20} color="#fff" />
                         </div>
                         <div className={`transition-opacity duration-200 ${col ? 'opacity-0 md:hidden' : 'opacity-100 block'}`}>
-                            <div className="text-sm font-extrabold tracking-tight leading-tight">EduConnect</div>
+                            <div className="text-sm font-extrabold tracking-tight leading-tight">Pejuang Quran</div>
                             <div className="text-[9.5px] font-medium text-teal-50/80">Admin Portal</div>
                         </div>
                     </div>

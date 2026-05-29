@@ -31,7 +31,7 @@ interface FormState {
     visibility:        Visibility;
 }
 
-const BASE = 'http://127.0.0.1:8000/api';
+const BASE = '/api';
 
 const MONTH_NAMES = [
     'Januari','Februari','Maret','April','Mei','Juni',

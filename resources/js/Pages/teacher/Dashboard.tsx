@@ -60,7 +60,7 @@ const navItems = [
 export default function TeacherDashboard({ stats, today_agendas, recent_reports, profile }: TeacherDashboardProps) {
     const user = usePage<PageProps>().props.auth.user as any;
     const { auth } = usePage().props as any;
-    const teacherName = profile?.username || user?.name || user?.username || 'Ustadz/Ustadzah';
+    const teacherName = profile?.nama_guru || user?.name || user?.username || 'Ustadz/Ustadzah';
     const initials =
         teacherName
             .split(' ')
@@ -163,7 +163,7 @@ export default function TeacherDashboard({ stats, today_agendas, recent_reports,
 
                             {/* Avatar */}
                             <div className="w-10 h-10 rounded-full overflow-hidden bg-green-600 shadow-sm shrink-0">
-                                {auth?.user?.photo ? <img src={`${auth.user.photo}?t=${Date.now()}`} alt="Profile" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white">{initials}</div>}
+                                {auth?.user?.photo ? <img src={auth.user.photo} alt="Profile" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white">{initials}</div>}
                             </div>
                         </div>
                     </div>
@@ -324,7 +324,7 @@ export default function TeacherDashboard({ stats, today_agendas, recent_reports,
                                     ) : (
                                         <div className="flex flex-col gap-3 flex-1">
                                             {recent_reports.map((report) => {
-                                                const conf = kualitasConfig[report.kualitas];
+                                                const conf = kualitasConfig[report.kualitas] ?? kualitasConfig['lancar'];
                                                 const Icon = conf.icon;
                                                 return (
                                                     <div

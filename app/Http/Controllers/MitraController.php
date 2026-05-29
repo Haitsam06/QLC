@@ -2,71 +2,51 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MitraReport;
+use App\Models\Partner;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use MongoDB\Client;
-use MongoDB\BSON\ObjectId;
-use MongoDB\BSON\UTCDateTime;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use MongoDB\BSON\Regex;
 
 class MitraController extends Controller
 {
-    private $partners;
-    private $users;
     private const ROLE_MITRA = 'RL04';
 
-    public function __construct()
-    {
-        $client          = new Client(config('database.connections.mongodb.dsn'));
-        $db              = $client->selectDatabase(config('database.connections.mongodb.database'));
-        $this->partners  = $db->selectCollection('partners');
-        $this->users     = $db->selectCollection('users');
-    }
-
-    /* ─────────────────────────────────────────────
-       GET /api/partners?page=&per_page=&search=&status=
-    ───────────────────────────────────────────── */
     public function index(Request $request)
     {
-        // (Isi function index TETAP SAMA seperti sebelumnya)
-        $page     = max(1, (int) $request->query('page', 1));
-        $perPage  = max(1, min(50, (int) $request->query('per_page', 10)));
-        $search   = trim($request->query('search', ''));
-        $status   = trim($request->query('status', ''));
+        $page    = max(1, (int) $request->query('page', 1));
+        $perPage = max(1, min(50, (int) $request->query('per_page', 10)));
+        $search  = trim($request->query('search', ''));
+        $status  = trim($request->query('status', ''));
+        $skip    = ($page - 1) * $perPage;
 
-        $filter = [];
+        $query = Partner::query();
 
         if ($search !== '') {
-            $regex = new \MongoDB\BSON\Regex(preg_quote($search, '/'), 'i');
-            $filter['$or'] = [
-                ['institution_name' => $regex],
-                ['contact_person'   => $regex],
-                ['phone'            => $regex],
-            ];
+            $regex = new Regex(preg_quote($search, '/'), 'i');
+            $query->where(function ($q) use ($regex) {
+                $q->where('institution_name', $regex)
+                  ->orWhere('contact_person', $regex)
+                  ->orWhere('phone', $regex);
+            });
         }
 
         if (in_array($status, ['Active', 'Inactive'], true)) {
-            $filter['status'] = $status;
+            $query->where('status', $status);
         }
 
-        $total    = $this->partners->countDocuments($filter);
-        $skip     = ($page - 1) * $perPage;
-        $cursor   = $this->partners->find($filter, [
-            'sort'  => ['institution_name' => 1],
-            'skip'  => $skip,
-            'limit' => $perPage,
-        ]);
-
-        $data = [];
-        foreach ($cursor as $doc) {
-            $data[] = $this->format($doc);
-        }
+        $total    = $query->count();
+        $partners = $query->orderBy('institution_name')->skip($skip)->take($perPage)->get();
 
         return response()->json([
             'success' => true,
-            'data'    => $data,
+            'data'    => $partners->map(fn($p) => $this->format($p)),
             'meta'    => [
                 'total'     => $total,
                 'page'      => $page,
@@ -78,30 +58,22 @@ class MitraController extends Controller
 
     public function show(string $id)
     {
-        // (Isi function show TETAP SAMA seperti sebelumnya)
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
+        $partner = Partner::find($id);
 
-        $doc = $this->partners->findOne(['_id' => $oid]);
-        if (!$doc) {
+        if (!$partner) {
             return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
         }
 
-        return response()->json(['success' => true, 'data' => $this->format($doc)]);
+        return response()->json(['success' => true, 'data' => $this->format($partner)]);
     }
 
-    /* ─────────────────────────────────────────────
-       POST /api/partners
-    ───────────────────────────────────────────── */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'institution_name' => 'required|string|max:200',
             'contact_person'   => 'required|string|max:150',
             'phone'            => 'required|string|max:20',
-            'mou_file'         => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120', // Ubah validasi jadi file, max 5MB
+            'mou_file'         => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120',
             'status'           => 'required|in:Active,Inactive',
             'username'         => 'required|string|min:4|max:50|alpha_num',
             'password'         => 'required|string|min:8|max:100',
@@ -112,55 +84,43 @@ class MitraController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        if ($this->users->findOne(['username' => $request->username])) {
+        if (User::where('username', $request->username)->exists()) {
             return response()->json(['success' => false, 'message' => 'Username sudah digunakan.'], 409);
         }
-        if ($request->email && $this->users->findOne(['email' => $request->email])) {
+
+        if ($request->email && User::where('email', $request->email)->exists()) {
             return response()->json(['success' => false, 'message' => 'Email sudah digunakan.'], 409);
         }
-        if ($this->partners->findOne(['phone' => $request->phone])) {
+
+        if (Partner::where('phone', $request->phone)->exists()) {
             return response()->json(['success' => false, 'message' => 'Nomor telepon sudah terdaftar.'], 409);
         }
 
-        // ── Proses Upload File ──
         $mouFileUrl = null;
         if ($request->hasFile('mou_file')) {
-            $path = $request->file('mou_file')->store('mous', 'public'); // Simpan di folder storage/app/public/mous
+            $path       = $request->file('mou_file')->store('mous', 'public');
             $mouFileUrl = url('storage/' . $path);
         }
 
-        $now = new UTCDateTime();
-
-        $userDoc = [
-            'role_id'    => self::ROLE_MITRA,
-            'username'   => $request->username,
-            'password'   => Hash::make($request->password),
-            'email'      => $request->email ?? null,
-            'photo'      => null,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ];
-
-        $userResult = $this->users->insertOne($userDoc);
-        $userId     = (string) $userResult->getInsertedId();
+        $user = User::create([
+            'role_id'  => self::ROLE_MITRA,
+            'username' => $request->username,
+            'password' => Hash::make($request->password),
+            'email'    => $request->email ?? null,
+            'photo'    => null,
+        ]);
 
         try {
-            $partnerDoc = [
-                'user_id'          => $userId,
+            $partner = Partner::create([
+                'user_id'          => (string) $user->_id,
                 'institution_name' => $request->institution_name,
                 'contact_person'   => $request->contact_person,
                 'phone'            => $request->phone,
-                'mou_file_url'     => $mouFileUrl, // Simpan URL hasil upload
+                'mou_file_url'     => $mouFileUrl,
                 'status'           => $request->status,
-                'created_at'       => $now,
-                'updated_at'       => $now,
-            ];
-
-            $result            = $this->partners->insertOne($partnerDoc);
-            $partnerDoc['_id'] = $result->getInsertedId();
-
+            ]);
         } catch (\Exception $e) {
-            $this->users->deleteOne(['_id' => new ObjectId($userId)]);
+            $user->delete();
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan data mitra. Akun telah di-rollback.',
@@ -170,20 +130,17 @@ class MitraController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Mitra berhasil ditambahkan beserta akun.',
-            'data'    => $this->format($partnerDoc),
+            'data'    => $this->format($partner),
         ], 201);
     }
 
-    /* ─────────────────────────────────────────────
-       PUT /api/partners/{id}
-    ───────────────────────────────────────────── */
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
             'institution_name' => 'required|string|max:200',
             'contact_person'   => 'required|string|max:150',
             'phone'            => 'required|string|max:20',
-            'mou_file'         => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120', // Ubah validasi jadi file
+            'mou_file'         => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120',
             'status'           => 'required|in:Active,Inactive',
         ]);
 
@@ -191,158 +148,138 @@ class MitraController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
-
-        $exists = $this->partners->findOne([
-            'phone' => $request->phone,
-            '_id'   => ['$ne' => $oid],
-        ]);
-        if ($exists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Nomor telepon sudah digunakan mitra lain.',
-            ], 409);
-        }
-
-        $existingPartner = $this->partners->findOne(['_id' => $oid]);
-        if (!$existingPartner) {
+        $partner = Partner::find($id);
+        if (!$partner) {
             return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
         }
 
-        // ── Proses Upload File untuk Update ──
-        $mouFileUrl = $existingPartner['mou_file_url'] ?? null;
-        
+        if (Partner::where('phone', $request->phone)->where('_id', '!=', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Nomor telepon sudah digunakan mitra lain.'], 409);
+        }
+
+        $mouFileUrl = $partner->mou_file_url ?? null;
         if ($request->hasFile('mou_file')) {
-            // Opsional: Hapus file lama jika ada
             if ($mouFileUrl) {
-                $oldPath = str_replace(url('storage/') . '/', '', $mouFileUrl);
-                Storage::disk('public')->delete($oldPath);
+                $parsed = parse_url($mouFileUrl, PHP_URL_PATH);
+                if ($parsed) {
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
+                }
             }
-            
-            $path = $request->file('mou_file')->store('mous', 'public');
+            $path       = $request->file('mou_file')->store('mous', 'public');
             $mouFileUrl = url('storage/' . $path);
         }
 
-        $result = $this->partners->updateOne(
-            ['_id' => $oid],
-            ['$set' => [
-                'institution_name' => $request->institution_name,
-                'contact_person'   => $request->contact_person,
-                'phone'            => $request->phone,
-                'mou_file_url'     => $mouFileUrl, // Update dengan URL baru atau tetap yang lama
-                'status'           => $request->status,
-                'updated_at'       => new UTCDateTime(),
-            ]]
-        );
-
-        $updated = $this->partners->findOne(['_id' => $oid]);
+        $partner->update([
+            'institution_name' => $request->institution_name,
+            'contact_person'   => $request->contact_person,
+            'phone'            => $request->phone,
+            'mou_file_url'     => $mouFileUrl,
+            'status'           => $request->status,
+        ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Data mitra berhasil diperbarui.',
-            'data'    => $this->format($updated),
+            'data'    => $this->format($partner->fresh()),
         ]);
     }
 
     public function resetPassword(string $id)
     {
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
-
-        $partner = $this->partners->findOne(['_id' => $oid]);
+        $partner = Partner::find($id);
         if (!$partner) {
             return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
         }
 
-        if (empty($partner['user_id'])) {
+        if (empty($partner->user_id)) {
             return response()->json(['success' => false, 'message' => 'Akun mitra tidak ditemukan.'], 404);
         }
 
-        try { $userId = new ObjectId($partner['user_id']); }
-        catch (\Exception $e) { $userId = $partner['user_id']; }
+        $user = User::find($partner->user_id);
+        if ($user) {
+            $newPassword = Str::random(12);
+            $user->update(['password' => Hash::make($newPassword)]);
+        }
 
-        $this->users->updateOne(
-            ['_id' => $userId],
-            ['$set' => [
-                'password'   => Hash::make('mieayambakso'),
-                'updated_at' => new UTCDateTime(),
-            ]]
-        );
+        Log::info('audit.password_reset', [
+            'target'    => 'mitra',
+            'target_id' => (string) $partner->_id,
+            'user_id'   => $partner->user_id ?? null,
+            'by_admin'  => auth()->id(),
+            'ip'        => request()->ip(),
+        ]);
 
-        return response()->json(['success' => true, 'message' => 'Password mitra berhasil direset ke default.']);
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Password mitra berhasil direset.',
+            'new_password' => $newPassword ?? null,
+        ]);
     }
 
     public function destroy(string $id)
     {
-        // (Isi function destroy TETAP SAMA, namun opsional kamu bisa tambahkan logika hapus file dari Storage jika mitra dihapus)
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
-
-        $partner = $this->partners->findOne(['_id' => $oid]);
-
+        $partner = Partner::find($id);
         if (!$partner) {
             return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
         }
 
-        // Hapus file MOU fisik saat data mitra dihapus (Opsional tapi direkomendasikan)
-        if (isset($partner['mou_file_url'])) {
-             $oldPath = str_replace(url('storage/') . '/', '', $partner['mou_file_url']);
-             Storage::disk('public')->delete($oldPath);
+        if (!empty($partner->mou_file_url)) {
+            $parsed = parse_url($partner->mou_file_url, PHP_URL_PATH);
+            if ($parsed) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
+            }
         }
 
-        $this->partners->deleteOne(['_id' => $oid]);
+        // Cascade: hapus semua laporan mitra beserta file-nya
+        MitraReport::where('partner_id', (string) $partner->_id)->each(function ($report) {
+            if (!empty($report->file_path)) {
+                Storage::disk('public')->delete($report->file_path);
+            }
+            $report->delete();
+        });
 
-        if (!empty($partner['user_id'])) {
-            try { $this->users->deleteOne(['_id' => new ObjectId($partner['user_id'])]); } 
-            catch (\Exception $e) { $this->users->deleteOne(['_id' => $partner['user_id']]); }
+        $partner->delete();
+
+        if (!empty($partner->user_id)) {
+            User::find($partner->user_id)?->delete();
         }
+
+        Log::info('audit.mitra_deleted', [
+            'partner_id'       => (string) $partner->_id,
+            'institution_name' => $partner->institution_name ?? '—',
+            'by_admin'         => auth()->id(),
+            'ip'               => request()->ip(),
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Mitra dan akun pengguna berhasil dihapus.']);
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/mitra/profile  (own profile)
-    ───────────────────────────────────────────── */
     public function ownProfile()
     {
-        $userId = (string) Auth::id();
-        $user   = Auth::user();
-
-        $partner = $this->partners->findOne(['user_id' => $userId]);
+        $userId  = (string) Auth::id();
+        $user    = Auth::user();
+        $partner = Partner::where('user_id', $userId)->first();
 
         if (!$partner) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data mitra tidak ditemukan.',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Data mitra tidak ditemukan.'], 404);
         }
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'institution_name' => $partner['institution_name'] ?? null,
-                'contact_person'   => $partner['contact_person']   ?? null,
-                'phone'            => $partner['phone']             ?? null,
-                'status'           => $partner['status']            ?? null,
-                'email'            => $user->email                  ?? null,
+                'institution_name' => $partner->institution_name ?? null,
+                'contact_person'   => $partner->contact_person   ?? null,
+                'phone'            => $partner->phone             ?? null,
+                'status'           => $partner->status            ?? null,
+                'email'            => $user->email                ?? null,
             ],
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       POST /mitra/profile  (update username + photo)
-    ───────────────────────────────────────────── */
     public function updateOwnProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'username' => 'required|string|min:4|max:50',
+            'username' => 'required|string|min:4|max:50|alpha_num',
             'photo'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
@@ -351,53 +288,36 @@ class MitraController extends Controller
         }
 
         $user = Auth::user();
-
         if (!$user) {
             return back()->withErrors(['auth' => 'User tidak ditemukan.']);
         }
 
-        try {
-            $userId = new ObjectId((string) $user->_id);
-        } catch (\Exception $e) {
-            $userId = $user->_id;
-        }
-
-        $usernameExists = $this->users->findOne([
-            'username' => $request->username,
-            '_id'      => ['$ne' => $userId],
-        ]);
-
-        if ($usernameExists) {
+        if (User::where('username', $request->username)->where('_id', '!=', (string) $user->_id)->exists()) {
             return back()->withErrors(['username' => 'Username sudah digunakan.']);
         }
 
         $photoUrl = $user->photo ?? null;
-
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('profile', 'public');
-            if ($path) {
-                $photoUrl = asset('storage/' . $path);
+            if ($photoUrl && str_contains($photoUrl, '/storage/')) {
+                $parsedPath = parse_url($photoUrl, PHP_URL_PATH);
+                if ($parsedPath) {
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
+                }
             }
+            $path     = $request->file('photo')->store('profile', 'public');
+            $photoUrl = url('storage/' . $path);
         }
 
-        $this->users->updateOne(
-            ['_id' => $userId],
-            ['$set' => [
-                'username'   => $request->username,
-                'photo'      => $photoUrl,
-                'updated_at' => new UTCDateTime(),
-            ]]
-        );
+        $user->update([
+            'username' => $request->username,
+            'photo'    => $photoUrl,
+        ]);
 
-        $freshUser = \App\Models\User::find((string) $userId);
-        Auth::setUser($freshUser);
+        Auth::setUser($user->fresh());
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }
 
-    /* ─────────────────────────────────────────────
-       POST /mitra/password  (update password)
-    ───────────────────────────────────────────── */
     public function updateOwnPassword(Request $request)
     {
         $request->validate([
@@ -408,42 +328,25 @@ class MitraController extends Controller
         $user = Auth::user();
 
         if (!Hash::check($request->current_password, $user->password)) {
-            return back()->withErrors([
-                'current_password' => 'Password saat ini salah.',
-            ]);
+            return back()->withErrors(['current_password' => 'Password saat ini salah.']);
         }
 
-        try {
-            $userId = new ObjectId((string) $user->_id);
-        } catch (\Exception $e) {
-            $userId = $user->_id;
-        }
-
-        $this->users->updateOne(
-            ['_id' => $userId],
-            ['$set' => [
-                'password'   => Hash::make($request->password),
-                'updated_at' => new UTCDateTime(),
-            ]]
-        );
+        $user->update(['password' => Hash::make($request->password)]);
 
         return back()->with('success', 'Password berhasil diperbarui.');
     }
 
     private function format($doc): array
     {
-        // (Isi function format TETAP SAMA)
         return [
-            'id'               => (string) $doc['_id'],
-            'user_id'          => $doc['user_id'] ?? null,
-            'institution_name' => $doc['institution_name'],
-            'contact_person'   => $doc['contact_person'],
-            'phone'            => $doc['phone'],
-            'mou_file_url'     => $doc['mou_file_url'] ?? null,
-            'status'           => $doc['status'],
-            'created_at'       => isset($doc['created_at'])
-                ? $doc['created_at']->toDateTime()->format('Y-m-d H:i:s')
-                : null,
+            'id'               => (string) $doc->_id,
+            'user_id'          => $doc->user_id ?? null,
+            'institution_name' => $doc->institution_name,
+            'contact_person'   => $doc->contact_person,
+            'phone'            => $doc->phone,
+            'mou_file_url'     => $doc->mou_file_url ?? null,
+            'status'           => $doc->status,
+            'created_at'       => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }
 }

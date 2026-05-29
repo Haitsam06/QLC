@@ -73,7 +73,7 @@ class Notification extends Model
         ]);
     }
 
-    // ── Helper statis: broadcast ke semua admin ──────────────
+    // ── Helper statis: broadcast ke semua user dengan role tertentu ──
     public static function sendToRole(
         string $roleName,
         string $type,
@@ -81,16 +81,24 @@ class Notification extends Model
         string $message,
         ?string $link = null
     ): void {
-        // Step 1: Cari role_id berdasarkan role_name
         $role = \App\Models\Role::where('role_name', $roleName)->first();
-
         if (! $role) return;
 
-        // Step 2: Cari semua user dengan role_id itu
-        $users = \App\Models\User::where('role_id', (string) $role->_id)->get();
+        $users = \App\Models\User::where('role_id', (string) $role->_id)->get(['_id']);
+        if ($users->isEmpty()) return;
 
-        foreach ($users as $user) {
-            self::send((string) $user->_id, $type, $title, $message, $link);
-        }
+        $now     = now();
+        $inserts = $users->map(fn($u) => [
+            'user_id'    => (string) $u->_id,
+            'type'       => $type,
+            'title'      => $title,
+            'message'    => $message,
+            'link'       => $link,
+            'is_read'    => false,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ])->toArray();
+
+        self::insert($inserts);
     }
 }

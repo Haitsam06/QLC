@@ -421,19 +421,30 @@ function ProfileTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
             Object.entries(prof).forEach(([k, v]) => {
                 if (['id', 'updated_at', 'logo', 'about_image', 'image', 'hero_image', 'gallery_images'].includes(k)) return;
                 if (k === 'social_media') fd.append(k, JSON.stringify(v ?? {}));
-                else fd.append(k, v ?? '');
+                else if (v !== null && v !== undefined) fd.append(k, String(v));
             });
             if (logoFile) fd.append('logo', logoFile);
             if (aboutFile) fd.append('about_image', aboutFile);
 
-            console.log([...fd.entries()]);
+            const res = await fetch(`${API}/profile`, { method: 'POST', body: fd });
+            const j = await res.json();
 
-            const j = await (
-                await fetch(`${API}/profile`, {
-                    method: 'POST',
-                    body: fd,
-                })
-            ).json();
+            if (j.success) {
+                onToast('Landing page berhasil dipublikasikan.', 'success');
+                if (j.data) setProf(j.data);
+                setLogoFile(null);
+                setAboutFile(null);
+                setLogoPreview(null);
+                setAboutPreview(null);
+            } else {
+                const errDetail =
+                    j.message ??
+                    Object.values(j.errors ?? {}).flat().join(' | ') ??
+                    'Gagal menyimpan.';
+                onToast(String(errDetail), 'error');
+            }
+        } catch {
+            onToast('Terjadi kesalahan jaringan. Coba lagi.', 'error');
         } finally {
             setBusy(false);
         }

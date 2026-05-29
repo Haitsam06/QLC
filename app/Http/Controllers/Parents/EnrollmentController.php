@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Parents;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Models\Parents;
+use App\Models\Program;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -11,40 +14,19 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Inertia\Response;
-use MongoDB\Client as MongoClient;
-use MongoDB\BSON\UTCDateTime;
 
 class EnrollmentController extends Controller
 {
-    private $programs;
-    private $students;
-    private $db;
-
-    public function __construct()
-    {
-        $client         = new MongoClient(config('database.connections.mongodb.dsn'));
-        $this->db       = $client->selectDatabase(config('database.connections.mongodb.database'));
-        $this->programs = $this->db->selectCollection('programs');
-        $this->students = $this->db->selectCollection('students');
-    }
-
-    /**
-     * GET /parents/daftar
-     */
     public function create(): Response
     {
-        $cursor   = $this->programs->find([], ['sort' => ['name' => 1]]);
-        $programs = [];
-        foreach ($cursor as $doc) {
-            $programs[] = [
-                'id'              => (string) $doc['_id'],
-                'name'            => $doc['name']            ?? '',
-                'description'     => $doc['description']     ?? '',
-                'target_audience' => $doc['target_audience'] ?? '',
-                'duration'        => $doc['duration']        ?? '',
-                'image_url'       => $doc['image_url']       ?? null,
-            ];
-        }
+        $programs = Program::orderBy('name')->get()->map(fn($doc) => [
+            'id'              => (string) $doc->_id,
+            'name'            => $doc->name            ?? '',
+            'description'     => $doc->description     ?? '',
+            'target_audience' => $doc->target_audience ?? '',
+            'duration'        => $doc->duration        ?? '',
+            'image_url'       => $doc->image_url       ?? null,
+        ])->values()->toArray();
 
         return Inertia::render('parents/Daftar', [
             'programs' => $programs,
@@ -56,9 +38,6 @@ class EnrollmentController extends Controller
         ]);
     }
 
-    /**
-     * POST /parents/daftar
-     */
     public function store(Request $request): RedirectResponse
     {
         $validator = Validator::make($request->all(), [
@@ -83,20 +62,32 @@ class EnrollmentController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        $path    = $request->file('bukti_pembayaran')->store('enrollments/payments', 'public');
-        $fileUrl = Storage::url($path);
+        $program = Program::find($request->program_id);
+        if (!$program) {
+            return back()->withErrors(['program_id' => 'Program yang dipilih tidak ditemukan.'])->withInput();
+        }
 
-        // Ambil data parent dari collection parents berdasarkan user_id
+        $duplicate = Student::where('parent_id', (string) Auth::id())
+            ->where('nama', $request->nama)
+            ->where('program_id', $request->program_id)
+            ->whereIn('enrollment_status', ['pending', 'active'])
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withErrors(['nama' => 'Anak ini sudah terdaftar atau sedang menunggu verifikasi untuk program yang sama.'])->withInput();
+        }
+
+        $path    = $request->file('bukti_pembayaran')->store('enrollments/payments', 'public');
+        $fileUrl = url('storage/' . $path);
+
         $user       = Auth::user();
         $userId     = (string) $user->_id;
-        $parentDoc  = $this->db->selectCollection('parents')->findOne(['user_id' => $userId]);
-        $parentName = $parentDoc['parent_name'] ?? $user->username;
+        $parentDoc  = Parents::where('user_id', $userId)->first();
+        $parentName = $parentDoc?->parent_name ?? $user->username;
 
-        // Ambil nama program
-        $programDoc  = $this->programs->findOne(['_id' => new \MongoDB\BSON\ObjectId($request->program_id)]);
-        $programName = $programDoc['name'] ?? 'Program tidak diketahui';
+        $programName = $program->name;
 
-        $this->students->insertOne([
+        Student::create([
             'parent_id'         => $userId,
             'parent_name'       => $parentName,
             'program_id'        => $request->program_id,
@@ -106,11 +97,8 @@ class EnrollmentController extends Controller
             'usia'              => (int) $request->usia,
             'enrollment_status' => 'pending',
             'bukti_pembayaran'  => $fileUrl,
-            'created_at'        => new UTCDateTime(),
-            'updated_at'        => new UTCDateTime(),
         ]);
 
-        // Kirim notifikasi ke semua admin
         Notification::sendToRole(
             roleName: 'admin',
             type:     'pendaftaran',

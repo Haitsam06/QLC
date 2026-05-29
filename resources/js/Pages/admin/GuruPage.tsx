@@ -8,8 +8,10 @@ import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, GraduationC
 interface Teacher {
     id: string;
     user_id: string | null;
+    username: string | null;
     nama_guru: string;
     phone: string;
+    email: string | null;
     spesialisasi: string;
     created_at: string | null;
 }
@@ -254,7 +256,7 @@ function AddModal({ specs, onClose, onSave }: { specs: string[]; onClose: () => 
 }
 
 /* ── Edit Modal ── */
-function EditModal({ init, specs, onClose, onSave }: { init: EditFormData; specs: string[]; onClose: () => void; onSave: (d: EditFormData) => Promise<void> }) {
+function EditModal({ init, username, email, specs, onClose, onSave }: { init: EditFormData; username: string | null; email: string | null; specs: string[]; onClose: () => void; onSave: (d: EditFormData) => Promise<void> }) {
     const [f, setF] = useState<EditFormData>(init);
     const [e, setE] = useState<Partial<Record<keyof EditFormData, string>>>({});
     const [busy, setBusy] = useState(false);
@@ -336,11 +338,23 @@ function EditModal({ init, specs, onClose, onSave }: { init: EditFormData; specs
                         </div>
                     </div>
 
-                    <div className="flex flex-start gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100 mt-2">
-                        <CheckCircle2 size={18} className="text-blue-600 shrink-0 mt-0.5" />
-                        <span className="text-[12.5px] text-blue-700 font-semibold leading-relaxed">
-                            Username & password login guru tidak berubah. Hubungi administrator untuk melakukan reset kata sandi.
-                        </span>
+                    {/* AKUN LOGIN — VIEW ONLY */}
+                    <div className="pt-3 border-t border-slate-100">
+                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-3">Akun Login</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Username</label>
+                                <div className="h-11 px-4 bg-slate-100 border border-slate-200 rounded-xl text-[13px] font-medium text-slate-500 flex items-center select-none cursor-default">
+                                    {username ?? '—'}
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Email</label>
+                                <div className="h-11 px-4 bg-slate-100 border border-slate-200 rounded-xl text-[13px] font-medium text-slate-500 flex items-center select-none cursor-default overflow-hidden">
+                                    <span className="truncate">{email ?? '—'}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className="flex justify-end gap-2.5 px-7 py-4 border-t border-slate-100 bg-slate-50 rounded-b-[24px]">
@@ -555,6 +569,9 @@ export default function GuruPage() {
             setModal(null);
             load(meta.page);
             loadSpecs();
+        } else if (j.errors) {
+            const firstErr = Object.values(j.errors as Record<string, string[]>)[0]?.[0];
+            setToast({ msg: firstErr ?? 'Validasi gagal.', type: 'error' });
         } else setToast({ msg: j.message ?? 'Gagal memperbarui.', type: 'error' });
     };
 
@@ -836,7 +853,7 @@ export default function GuruPage() {
 
             {/* Modals */}
             {modal === 'add' && <AddModal specs={specs} onClose={() => setModal(null)} onSave={post} />}
-            {modal === 'edit' && sel && <EditModal init={{ nama_guru: sel.nama_guru, phone: sel.phone, spesialisasi: sel.spesialisasi }} specs={specs} onClose={() => setModal(null)} onSave={put} />}
+            {modal === 'edit' && sel && <EditModal init={{ nama_guru: sel.nama_guru ?? '', phone: sel.phone ?? '', spesialisasi: sel.spesialisasi ?? '' }} username={sel.username ?? null} email={sel.email ?? null} specs={specs} onClose={() => setModal(null)} onSave={put} />}
             {modal === 'delete' && sel && <DeleteModal teacher={sel} onClose={() => setModal(null)} onConfirm={del} />}
             {modal === 'reset' && sel && <ResetPasswordModal teacher={sel} onClose={() => setModal(null)} onConfirm={resetPw} />}
 

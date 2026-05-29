@@ -11,15 +11,10 @@ class Teacher extends Model
     protected $collection = 'teachers';
 
     protected $fillable = [
-
         'user_id',
-
         'nama_guru',
-
         'phone',
-
-        'spesialisasi',
+        'email',
+        'bidang',
     ];
-
-    public $timestamps = false;
 }

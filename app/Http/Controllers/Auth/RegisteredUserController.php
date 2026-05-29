@@ -47,16 +47,16 @@ class RegisteredUserController extends Controller
         ]);
 
         $email = $request->email;
-        $otp = (string) rand(100000, 999999);
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         // Hapus token lama jika ada (kita pinjam tabel password_reset_tokens agar praktis)
         DB::table('password_reset_tokens')->where('email', $email)->delete();
 
-        // Simpan OTP baru (Sebagai string untuk MongoDB)
+        // Simpan OTP sebagai hash — jangan simpan plaintext
         DB::table('password_reset_tokens')->insert([
-            'email' => $email,
-            'token' => $otp,
-            'created_at' => Carbon::now()->toDateTimeString()
+            'email'      => $email,
+            'token'      => Hash::make($otp),
+            'created_at' => Carbon::now()->toDateTimeString(),
         ]);
 
         // Kirim email
@@ -81,13 +81,12 @@ class RegisteredUserController extends Controller
             'otp' => 'required|string',
         ]);
 
-        // Cek OTP di database
+        // Cek OTP di database — bandingkan via Hash::check (token disimpan sebagai hash)
         $tokenRecord = DB::table('password_reset_tokens')
             ->where('email', $request->email)
-            ->where('token', $request->otp)
             ->first();
 
-        if (!$tokenRecord) {
+        if (!$tokenRecord || !Hash::check($request->otp, is_array($tokenRecord) ? ($tokenRecord['token'] ?? '') : ($tokenRecord->token ?? ''))) {
             return back()->withErrors(['otp' => 'Kode OTP salah atau tidak ditemukan.']);
         }
 
@@ -106,12 +105,17 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        Parents::create([
-            'user_id' => $user->_id,
-            'parent_name' => $request->parent_name,
-            'phone' => $request->phone,
-            'address' => $request->address,
-        ]);
+        try {
+            Parents::create([
+                'user_id'     => (string) $user->_id,
+                'parent_name' => $request->parent_name,
+                'phone'       => $request->phone,
+                'address'     => $request->address,
+            ]);
+        } catch (\Exception $e) {
+            $user->delete();
+            return back()->withErrors(['general' => 'Pendaftaran gagal. Silakan coba lagi.']);
+        }
 
         // Hapus OTP yang terpakai
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();

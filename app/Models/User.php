@@ -69,26 +69,12 @@ class User extends Authenticatable
 
     public function isTeacher(): bool
     {
-        return in_array(
-
-            $this->getRoleName(),
-
-            ['teacher', 'guru'],
-
-            true
-        );
+        return $this->getRoleName() === 'teacher';
     }
 
     public function isParents(): bool
     {
-        return in_array(
-
-            $this->getRoleName(),
-
-            ['parents', 'parent'],
-
-            true
-        );
+        return $this->getRoleName() === 'parents';
     }
 
     public function isMitra(): bool

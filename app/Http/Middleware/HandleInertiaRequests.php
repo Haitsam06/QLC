@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Parents;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use MongoDB\Client as MongoClient;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -32,52 +32,34 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        if ($user) {
-
-            $user = \App\Models\User::find(
-                $user->_id
-            );
-        }
-
-        // Ambil parent_name dari collection parents jika user login
         $displayName = null;
-        $roleName = null;
+        $roleName    = null;
         if ($user) {
-            $client = new MongoClient(config('database.connections.mongodb.dsn'));
-            $db = $client->selectDatabase(config('database.connections.mongodb.database'));
-
-            // Coba cari di collection parents dulu
-            $parent = $db->selectCollection('parents')->findOne([
-                'user_id' => (string) $user->_id,
-            ]);
-
-            if ($parent) {
-                $displayName = $parent['parent_name'] ?? null;
-            }
-
-            // Fallback ke username jika tidak ada di parents
-            if (!$displayName) {
-                $displayName = $user->username;
-            }
-
-            // Muat relasi role agar getDashboardRoute di frontend bisa berjalan
             $user->load('role');
             $roleName = $user->getRoleName();
+
+            // Query parent hanya untuk role parents — tidak untuk admin/teacher/mitra
+            if ($roleName === 'parents') {
+                $parent      = Parents::where('user_id', (string) $user->_id)->first();
+                $displayName = $parent?->parent_name ?? $user->username;
+            } else {
+                $displayName = $user->username;
+            }
         }
 
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $user ? [
-                    '_id' => (string) $user->_id,
-                    'name' => $displayName,
+                    '_id'     => (string) $user->_id,
+                    'name'    => $displayName,
                     'username' => $user->username,
-                    'email' => $user->email,
-                    'photo' => $user->photo
-                        ? $user->photo . '?v=' . time()
+                    'email'   => $user->email,
+                    'photo'   => $user->photo
+                        ? $user->photo . '?v=' . md5($user->photo)
                         : null,
                     'role_id' => (string) $user->role_id,
-                    'role' => $roleName,
+                    'role'    => $roleName,
                 ] : null,
             ],
         ];

@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 
 class SettingsController extends Controller
 {
@@ -47,7 +46,7 @@ class SettingsController extends Controller
 
             $path = $request->file('photo')->store('profile', 'public');
 
-            $photoUrl = URL::to(Storage::url($path));
+            $photoUrl = url('storage/' . $path);
         }
 
         $user->update([

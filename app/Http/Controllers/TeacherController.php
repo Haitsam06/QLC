@@ -2,936 +2,335 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProgressReport;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-
-use MongoDB\Client as MongoClient;
-use MongoDB\BSON\ObjectId;
-use MongoDB\BSON\UTCDateTime;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use MongoDB\BSON\Regex;
 
 class TeacherController extends Controller
 {
-    private $teachers;
-    private $users;
-
     private const ROLE_TEACHER = 'RL02';
 
-    public function __construct()
-    {
-        $client = new MongoClient(
-            config('database.connections.mongodb.dsn')
-        );
-
-        $db = $client->selectDatabase(
-            config('database.connections.mongodb.database')
-        );
-
-        $this->teachers =
-            $db->selectCollection('teachers');
-
-        $this->users =
-            $db->selectCollection('users');
-
-        // backward compatibility
-        $this->collection =
-            $this->teachers;
-    }
-
-    /* ─────────────────────────────────────────────
-       GET /api/teachers
-    ───────────────────────────────────────────── */
     public function index(Request $request)
     {
-        $search =
-            $request->query('search', '');
+        $search       = $request->query('search', '');
+        $spesialisasi = $request->query('spesialisasi', '');
+        $perPage      = max(1, min(100, (int) $request->query('per_page', 10)));
+        $page         = (int) $request->query('page', 1);
+        $skip         = ($page - 1) * $perPage;
 
-        $spesialisasi =
-            $request->query('spesialisasi', '');
-
-        $perPage =
-            max(1, min(100, (int) $request->query('per_page', 10)));
-
-        $page =
-            (int) $request->query('page', 1);
-
-        $skip =
-            ($page - 1) * $perPage;
-
-        $filter = [];
+        $query = Teacher::query();
 
         if (!empty($search)) {
-
-            $safeSearch = preg_quote($search, '/');
-            $filter['$or'] = [
-
-                [
-                    'nama_guru' => [
-                        '$regex' => $safeSearch,
-                        '$options' => 'i'
-                    ]
-                ],
-
-                [
-                    'phone' => [
-                        '$regex' => $safeSearch,
-                        '$options' => 'i'
-                    ]
-                ],
-
-                [
-                    'spesialisasi' => [
-                        '$regex' => $safeSearch,
-                        '$options' => 'i'
-                    ]
-                ],
-            ];
+            $regex = new Regex(preg_quote($search, '/'), 'i');
+            $query->where(function ($q) use ($regex) {
+                $q->where('nama_guru', $regex)
+                  ->orWhere('phone', $regex)
+                  ->orWhere('bidang', $regex);
+            });
         }
 
         if (!empty($spesialisasi)) {
-
-            $filter['spesialisasi'] =
-                $spesialisasi;
+            $query->where('bidang', $spesialisasi);
         }
 
-        $total =
-            $this->collection
-                ->countDocuments($filter);
+        $total    = $query->count();
+        $teachers = $query->orderBy('nama_guru')->skip($skip)->take($perPage)->get();
 
-        $cursor =
-            $this->collection->find(
-
-                $filter,
-
-                [
-                    'skip' => $skip,
-
-                    'limit' => $perPage,
-
-                    'sort' => [
-                        'nama_guru' => 1
-                    ],
-                ]
-            );
-
-        $teachers = [];
-
-        foreach ($cursor as $doc) {
-
-            $teachers[] =
-                $this->formatTeacher($doc);
-        }
+        // Batch load usernames — hindari N+1
+        $userIds = $teachers->pluck('user_id')->filter()->unique()->values()->toArray();
+        $userMap = empty($userIds) ? collect() : User::whereIn('_id', $userIds)
+            ->get(['_id', 'username'])
+            ->keyBy(fn($u) => (string) $u->_id);
 
         return response()->json([
-
             'success' => true,
-
-            'data' => $teachers,
-
-            'meta' => [
-
-                'total' => $total,
-
-                'page' => $page,
-
-                'per_page' => $perPage,
-
-                'last_page' =>
-                    (int) ceil(
-                        $total / $perPage
-                    ),
+            'data'    => $teachers->map(fn($t) => $this->formatTeacher($t, $userMap->get((string) ($t->user_id ?? '')))),
+            'meta'    => [
+                'total'     => $total,
+                'page'      => $page,
+                'per_page'  => $perPage,
+                'last_page' => (int) ceil($total / $perPage),
             ],
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       POST /api/teachers
-    ───────────────────────────────────────────── */
     public function store(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-
-                'nama_guru' =>
-                    'nullable|string|max:100',
-
-                'phone' =>
-                    'nullable|string|max:20',
-
-                'spesialisasi' =>
-                    'nullable|string|max:100',
-
-                'username' =>
-                    'required|string|min:4|max:50|alpha_num',
-
-                'password' =>
-                    'required|string|min:8|max:100',
-
-                'email' =>
-                    'nullable|email|max:100',
-            ]
-        );
+        $validator = Validator::make($request->all(), [
+            'nama_guru'    => 'nullable|string|max:100',
+            'phone'        => 'nullable|string|max:20',
+            'spesialisasi' => 'nullable|string|max:100',
+            'username'     => 'required|string|min:4|max:50|alpha_num',
+            'password'     => 'required|string|min:8|max:100',
+            'email'        => 'nullable|email|max:100',
+        ]);
 
         if ($validator->fails()) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'errors' =>
-                    $validator->errors(),
-            ], 422);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        // duplicate username
-        if (
-            $this->users->findOne([
-                'username' =>
-                    $request->username
-            ])
-        ) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'Username sudah digunakan.',
-            ], 409);
+        if (User::where('username', $request->username)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Username sudah digunakan.'], 409);
         }
 
-        // duplicate email
-        if (
-            $request->email &&
-            $this->users->findOne([
-                'email' =>
-                    $request->email
-            ])
-        ) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'Email sudah digunakan.',
-            ], 409);
+        if ($request->email && User::where('email', $request->email)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Email sudah digunakan.'], 409);
         }
 
-        // duplicate phone
-        if (
-            $request->phone &&
-            $this->teachers->findOne([
-                'phone' =>
-                    $request->phone
-            ])
-        ) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'Nomor telepon sudah terdaftar.',
-            ], 409);
+        if ($request->phone && Teacher::where('phone', $request->phone)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Nomor telepon sudah terdaftar.'], 409);
         }
 
-        // insert users
-        $userDoc = [
-
-            'role_id' =>
-                self::ROLE_TEACHER,
-
-            'username' =>
-                $request->username,
-
-            'password' =>
-                Hash::make(
-                    $request->password
-                ),
-
-            'email' =>
-                $request->email ?? null,
-
-            'photo' => null,
-
-            'created_at' =>
-                new UTCDateTime(),
-
-            'updated_at' =>
-                new UTCDateTime(),
-        ];
-
-        $userResult =
-            $this->users->insertOne(
-                $userDoc
-            );
-
-        $userId =
-            (string) 
-            $userResult->getInsertedId();
+        $user = User::create([
+            'role_id'  => self::ROLE_TEACHER,
+            'username' => $request->username,
+            'password' => Hash::make($request->password),
+            'email'    => $request->email ?? null,
+            'photo'    => null,
+        ]);
 
         try {
-
-            $teacherDoc = [
-
-                'user_id' =>
-                    $userId,
-
-                'nama_guru' =>
-                    $request->nama_guru,
-
-                'phone' =>
-                    $request->phone,
-
-                'spesialisasi' =>
-                    $request->spesialisasi,
-
-                'created_at' =>
-                    new UTCDateTime(),
-
-                'updated_at' =>
-                    new UTCDateTime(),
-            ];
-
-            $teacherResult =
-                $this->teachers->insertOne(
-                    $teacherDoc
-                );
-
-            $teacherDoc['_id'] =
-                $teacherResult->getInsertedId();
-
-        } catch (\Exception $e) {
-
-            $this->users->deleteOne([
-                '_id' =>
-                    new ObjectId($userId)
+            $teacher = Teacher::create([
+                'user_id'  => (string) $user->_id,
+                'nama_guru' => $request->nama_guru,
+                'phone'     => $request->phone,
+                'email'     => $request->email ?? null,
+                'bidang'    => $request->spesialisasi,
             ]);
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'Gagal menyimpan data guru.',
-            ], 500);
+        } catch (\Exception $e) {
+            $user->delete();
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan data guru.'], 500);
         }
 
         return response()->json([
-
             'success' => true,
-
-            'message' =>
-                'Guru berhasil ditambahkan.',
-
-            'data' =>
-                $this->formatTeacher(
-                    $teacherDoc
-                ),
+            'message' => 'Guru berhasil ditambahkan.',
+            'data'    => $this->formatTeacher($teacher, $user),
         ], 201);
     }
 
-    /* ─────────────────────────────────────────────
-       UPDATE PROFILE GURU SENDIRI
-    ───────────────────────────────────────────── */
-    public function updateOwnProfile(Request $request)
+    public function show(string $id)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
+        $teacher = Teacher::find($id);
 
-                'username' =>
-                    'required|string|min:4|max:50',
+        if (!$teacher) {
+            return response()->json(['success' => false, 'message' => 'Guru tidak ditemukan.'], 404);
+        }
 
-                'photo' =>
-                    'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            ]
-        );
+        $user = !empty($teacher->user_id) ? User::find($teacher->user_id) : null;
+        return response()->json(['success' => true, 'data' => $this->formatTeacher($teacher, $user)]);
+    }
+
+    public function update(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'nama_guru'    => 'nullable|string|max:100',
+            'phone'        => 'nullable|string|max:20',
+            'spesialisasi' => 'nullable|string|max:100',
+            'username'     => 'nullable|string|min:4|max:50|alpha_num',
+            'email'        => 'nullable|email|max:100',
+        ]);
 
         if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
 
-            return back()->withErrors(
-                $validator
-            );
+        $teacher = Teacher::find($id);
+
+        if (!$teacher) {
+            return response()->json(['success' => false, 'message' => 'Guru tidak ditemukan.'], 404);
+        }
+
+        if ($request->phone && Teacher::where('phone', $request->phone)->where('_id', '!=', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Nomor telepon sudah digunakan.'], 409);
+        }
+
+        // Cek keunikan username/email sebelum update
+        $userId = $teacher->user_id ?? null;
+        if ($userId) {
+            if ($request->filled('username') && User::where('username', $request->username)->where('_id', '!=', $userId)->exists()) {
+                return response()->json(['success' => false, 'message' => 'Username sudah digunakan akun lain.'], 409);
+            }
+            if ($request->filled('email') && User::where('email', $request->email)->where('_id', '!=', $userId)->exists()) {
+                return response()->json(['success' => false, 'message' => 'Email sudah digunakan akun lain.'], 409);
+            }
+        }
+
+        $teacher->update([
+            'nama_guru' => $request->nama_guru,
+            'phone'     => $request->phone,
+            'bidang'    => $request->spesialisasi,
+        ]);
+
+        // Update akun login (username/email) jika diisi
+        $user = null;
+        if ($userId) {
+            $user = User::find($userId);
+            if ($user) {
+                $userUpdate = [];
+                if ($request->filled('username')) $userUpdate['username'] = $request->username;
+                if ($request->filled('email'))    $userUpdate['email']    = $request->email;
+                if (!empty($userUpdate)) $user->update($userUpdate);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data guru berhasil diperbarui.',
+            'data'    => $this->formatTeacher($teacher->fresh(), $user),
+        ]);
+    }
+
+    public function destroy(string $id)
+    {
+        $teacher = Teacher::find($id);
+
+        if (!$teacher) {
+            return response()->json(['success' => false, 'message' => 'Guru tidak ditemukan.'], 404);
+        }
+
+        $teacherId = (string) $teacher->_id;
+
+        // Preserve data akademik: nullkan teacher_id agar riwayat siswa tidak hilang
+        ProgressReport::where('teacher_id', $teacherId)->update(['teacher_id' => null]);
+
+        $teacher->delete();
+
+        if (!empty($teacher->user_id)) {
+            User::find($teacher->user_id)?->delete();
+        }
+
+        Log::info('audit.teacher_deleted', [
+            'teacher_id' => $teacherId,
+            'nama_guru'  => $teacher->nama_guru ?? '—',
+            'by_admin'   => auth()->id(),
+            'ip'         => request()->ip(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Guru berhasil dihapus.']);
+    }
+
+    public function resetPassword(string $id)
+    {
+        $teacher = Teacher::find($id);
+
+        if (!$teacher) {
+            return response()->json(['success' => false, 'message' => 'Guru tidak ditemukan.'], 404);
+        }
+
+        if (empty($teacher->user_id)) {
+            return response()->json(['success' => false, 'message' => 'Guru tidak memiliki akun login.'], 400);
+        }
+
+        $user = User::find($teacher->user_id);
+        if ($user) {
+            $newPassword = Str::random(12);
+            $user->update(['password' => Hash::make($newPassword)]);
+        }
+
+        Log::info('audit.password_reset', [
+            'target'   => 'teacher',
+            'target_id' => (string) $teacher->_id,
+            'user_id'  => $teacher->user_id ?? null,
+            'by_admin' => auth()->id(),
+            'ip'       => request()->ip(),
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Password guru berhasil direset.',
+            'new_password' => $newPassword ?? null,
+        ]);
+    }
+
+    public function updateOwnProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|min:4|max:50|alpha_num',
+            'photo'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator);
         }
 
         $user = Auth::user();
 
         if (!$user) {
-
-            return back()->withErrors([
-
-                'auth' =>
-                    'User tidak ditemukan.',
-            ]);
+            return back()->withErrors(['auth' => 'User tidak ditemukan.']);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | FIX OBJECT ID
-        |--------------------------------------------------------------------------
-        */
-
-        try {
-
-            $userId =
-                new ObjectId(
-                    (string) $user->_id
-                );
-
-        } catch (\Exception $e) {
-
-            $userId =
-                $user->_id;
+        if (User::where('username', $request->username)->where('_id', '!=', (string) $user->_id)->exists()) {
+            return back()->withErrors(['username' => 'Username sudah digunakan.']);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | CHECK DUPLICATE USERNAME
-        |--------------------------------------------------------------------------
-        */
+        $photoUrl = $user->photo ?? null;
 
-        $usernameExists =
-            $this->users->findOne([
-
-                'username' =>
-                    $request->username,
-
-                '_id' => [
-
-                    '$ne' => $userId
-                ]
-            ]);
-
-        if ($usernameExists) {
-
-            return back()->withErrors([
-
-                'username' =>
-                    'Username sudah digunakan.',
-            ]);
+        if ($request->hasFile('photo')) {
+            if ($photoUrl && str_contains($photoUrl, '/storage/')) {
+                $parsedPath = parse_url($photoUrl, PHP_URL_PATH);
+                if ($parsedPath) {
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
+                }
+            }
+            $path     = $request->file('photo')->store('profile', 'public');
+            $photoUrl = url('storage/' . $path);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | PHOTO UPLOAD
-        |--------------------------------------------------------------------------
-        */
+        $user->update([
+            'username' => $request->username,
+            'photo'    => $photoUrl,
+        ]);
 
-        $photoUrl =
-            $user->photo ?? null;
+        Auth::setUser($user->fresh());
 
-        if (
-            $request->hasFile('photo')
-        ) {
-
-            $file =
-                $request->file('photo');
-
-            $path = $file->store(
-                'profile',
-                'public'
-            );
-
-            /*
-            |--------------------------------------------------------------------------
-            | CACHE BUSTER
-            |--------------------------------------------------------------------------
-            */
-
-            $photoUrl =
-                asset(
-                    'storage/' .
-                    $path .
-                    '?v=' .
-                    time()
-                );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE USER
-        |--------------------------------------------------------------------------
-        */
-
-        $this->users->updateOne(
-
-            [
-                '_id' => $userId
-            ],
-
-            [
-                '$set' => [
-
-                    'username' =>
-                        $request->username,
-
-                    'photo' =>
-                        $photoUrl,
-
-                    'updated_at' =>
-                        new UTCDateTime(),
-                ]
-            ]
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | REFRESH AUTH SESSION
-        |--------------------------------------------------------------------------
-        */
-
-        $freshUser =
-            \App\Models\User::find(
-                (string) $userId
-            );
-
-        Auth::setUser($freshUser);
-
-        /*
-        |--------------------------------------------------------------------------
-        | SUCCESS
-        |--------------------------------------------------------------------------
-        */
-
-        return back()->with(
-            'success',
-            'Profil berhasil diperbarui.'
-        );
+        return back()->with('success', 'Profil berhasil diperbarui.');
     }
 
-    /* ─────────────────────────────────────────────
-       UPDATE PASSWORD SENDIRI
-    ───────────────────────────────────────────── */
     public function updateOwnPassword(Request $request)
     {
         $request->validate([
-
-            'current_password' =>
-                'required',
-
-            'password' =>
-                'required|min:8|confirmed',
+            'current_password' => 'required',
+            'password'         => 'required|min:8|confirmed',
         ]);
 
         $user = Auth::user();
 
-        if (
-            !Hash::check(
-                $request->current_password,
-                $user->password
-            )
-        ) {
-
-            return back()->withErrors([
-
-                'current_password' =>
-                    'Password saat ini salah.'
-            ]);
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Password saat ini salah.']);
         }
 
-        try {
-            $userId = new ObjectId((string) $user->_id);
-        } catch (\Exception $e) {
-            $userId = $user->_id;
-        }
+        $user->update(['password' => Hash::make($request->password)]);
 
-        $this->users->updateOne(
-
-            [
-                '_id' => $userId
-            ],
-
-            [
-                '$set' => [
-
-                    'password' =>
-                        Hash::make(
-                            $request->password
-                        ),
-
-                    'updated_at' =>
-                        new UTCDateTime(),
-                ]
-            ]
-        );
-
-        return back()->with(
-            'success',
-            'Password berhasil diperbarui.'
-        );
+        return back()->with('success', 'Password berhasil diperbarui.');
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/teachers/{id}
-    ───────────────────────────────────────────── */
-    public function show(string $id)
-    {
-        try {
-
-            $doc =
-                $this->collection->findOne([
-
-                    '_id' =>
-                        new ObjectId($id)
-                ]);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'ID tidak valid.',
-            ], 400);
-        }
-
-        if (!$doc) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'Guru tidak ditemukan.',
-            ], 404);
-        }
-
-        return response()->json([
-
-            'success' => true,
-
-            'data' =>
-                $this->formatTeacher($doc)
-        ]);
-    }
-
-    /* ─────────────────────────────────────────────
-       UPDATE TEACHER ADMIN
-    ───────────────────────────────────────────── */
-    public function update(
-        Request $request,
-        string $id
-    ) {
-
-        $validator = Validator::make(
-            $request->all(),
-            [
-
-                'user_id' =>
-                    'nullable|string',
-
-                'nama_guru' =>
-                    'nullable|string|max:100',
-
-                'phone' =>
-                    'nullable|string|max:20',
-
-                'spesialisasi' =>
-                    'nullable|string|max:100',
-            ]
-        );
-
-        if ($validator->fails()) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'errors' =>
-                    $validator->errors(),
-            ], 422);
-        }
-
-        try {
-
-            $oid =
-                new ObjectId($id);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'ID tidak valid.',
-            ], 400);
-        }
-
-        // duplicate phone
-        if (
-            $request->phone
-        ) {
-
-            $exists =
-                $this->collection->findOne([
-
-                    'phone' =>
-                        $request->phone,
-
-                    '_id' => [
-                        '$ne' => $oid
-                    ],
-                ]);
-
-            if ($exists) {
-
-                return response()->json([
-
-                    'success' => false,
-
-                    'message' =>
-                        'Nomor telepon sudah digunakan.',
-                ], 409);
-            }
-        }
-
-        $result =
-            $this->collection->updateOne(
-
-                [
-                    '_id' => $oid
-                ],
-
-                [
-                    '$set' => [
-
-                        'user_id' =>
-                            $request->user_id ?? null,
-
-                        'nama_guru' =>
-                            $request->nama_guru,
-
-                        'phone' =>
-                            $request->phone,
-
-                        'spesialisasi' =>
-                            $request->spesialisasi,
-
-                        'updated_at' =>
-                            new UTCDateTime(),
-                    ]
-                ]
-            );
-
-        if (
-            $result->getMatchedCount() === 0
-        ) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'Guru tidak ditemukan.',
-            ], 404);
-        }
-
-        $updated =
-            $this->collection->findOne([
-                '_id' => $oid
-            ]);
-
-        return response()->json([
-
-            'success' => true,
-
-            'message' =>
-                'Data guru berhasil diperbarui.',
-
-            'data' =>
-                $this->formatTeacher(
-                    $updated
-                ),
-        ]);
-    }
-
-    /* ─────────────────────────────────────────────
-       DELETE TEACHER
-    ───────────────────────────────────────────── */
-    public function destroy(string $id)
-    {
-        try {
-
-            $oid =
-                new ObjectId($id);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'ID tidak valid.',
-            ], 400);
-        }
-
-        $teacher =
-            $this->teachers->findOne([
-                '_id' => $oid
-            ]);
-
-        if (!$teacher) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' =>
-                    'Guru tidak ditemukan.',
-            ], 404);
-        }
-
-        $this->teachers->deleteOne([
-            '_id' => $oid
-        ]);
-
-        if (
-            !empty($teacher['user_id'])
-        ) {
-
-            try {
-
-                $this->users->deleteOne([
-
-                    '_id' =>
-                        new ObjectId(
-                            $teacher['user_id']
-                        )
-                ]);
-
-            } catch (\Exception $e) {
-
-                $this->users->deleteOne([
-
-                    '_id' =>
-                        $teacher['user_id']
-                ]);
-            }
-        }
-
-        return response()->json([
-
-            'success' => true,
-
-            'message' =>
-                'Guru berhasil dihapus.',
-        ]);
-    }
-
-    /* ─────────────────────────────────────────────
-       RESET PASSWORD GURU (ADMIN)
-    ───────────────────────────────────────────── */
-    public function resetPassword(string $id)
-    {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'ID tidak valid.',
-            ], 400);
-        }
-
-        $teacher = $this->teachers->findOne(['_id' => $oid]);
-
-        if (!$teacher) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Guru tidak ditemukan.',
-            ], 404);
-        }
-
-        if (empty($teacher['user_id'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Guru tidak memiliki akun login.',
-            ], 400);
-        }
-
-        try {
-            $userId = new ObjectId($teacher['user_id']);
-        } catch (\Exception $e) {
-            $userId = $teacher['user_id'];
-        }
-
-        $this->users->updateOne(
-            ['_id' => $userId],
-            [
-                '$set' => [
-                    'password' => Hash::make('mieayambakso'),
-                    'updated_at' => new UTCDateTime(),
-                ]
-            ]
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Password guru berhasil direset ke default.',
-        ]);
-    }
-
-    /* ─────────────────────────────────────────────
-       LIST SPESIALISASI
-    ───────────────────────────────────────────── */
     public function spesialisasiList()
     {
-        $list =
-            $this->collection->distinct(
-                'spesialisasi',
-                []
-            );
+        $list = Teacher::get(['bidang'])->pluck('bidang')->filter()->unique()->sort()->values()->toArray();
 
-        sort($list);
-
-        return response()->json([
-
-            'success' => true,
-
-            'data' => $list,
-        ]);
+        return response()->json(['success' => true, 'data' => $list]);
     }
 
-    /* ─────────────────────────────────────────────
-       FORMATTER
-    ───────────────────────────────────────────── */
-    private function formatTeacher(
-        $doc
-    ): array {
-
+    private function formatTeacher($doc, $user = null): array
+    {
         return [
-
-            'id' =>
-                (string) $doc['_id'],
-
-            'user_id' =>
-                $doc['user_id'] ?? null,
-
-            'nama_guru' =>
-                $doc['nama_guru'] ?? null,
-
-            'phone' =>
-                $doc['phone'] ?? null,
-
-            'spesialisasi' =>
-                $doc['spesialisasi'] ?? null,
-
-            'created_at' =>
-                isset($doc['created_at'])
-
-                ? $doc['created_at']
-                    ->toDateTime()
-                    ->format(
-                        'Y-m-d H:i:s'
-                    )
-
-                : null,
+            'id'           => (string) $doc->_id,
+            'user_id'      => $doc->user_id ?? null,
+            'username'     => $user?->username ?? null,
+            'nama_guru'    => $doc->nama_guru ?? null,
+            'phone'        => $doc->phone ?? null,
+            'email'        => $doc->email ?? null,
+            'spesialisasi' => $doc->bidang ?? null,
+            'created_at'   => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }
 }

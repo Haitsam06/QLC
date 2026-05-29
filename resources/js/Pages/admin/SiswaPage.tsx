@@ -240,16 +240,15 @@ function FormModal({ mode, init, student, parents, programs, onClose, onSave }: 
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400 ml-1">Usia</label>
+                            <label className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400 ml-1">Usia (Otomatis)</label>
                             <input
                                 type="number"
                                 min={0}
-                                className={`h-12 px-4 bg-slate-50 border rounded-2xl text-sm font-bold focus:bg-white focus:ring-4 transition-all outline-none ${e.usia ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                                readOnly
+                                className="h-12 px-4 bg-slate-100 border border-transparent rounded-2xl text-sm font-bold text-slate-500 cursor-not-allowed outline-none"
                                 value={f.usia}
-                                onChange={upd('usia')}
-                                placeholder="Thn"
+                                placeholder="—"
                             />
-                            {e.usia && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.usia}</span>}
                         </div>
                         <div className="flex flex-col gap-1.5 sm:col-span-2">
                             <label className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400 ml-1">Tempat Lahir</label>
@@ -289,8 +288,22 @@ function FormModal({ mode, init, student, parents, programs, onClose, onSave }: 
 
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400 ml-1">Program</label>
-                            <div className="h-12 w-full px-4 flex items-center bg-slate-100 border border-slate-200 rounded-2xl text-sm font-bold text-slate-500 select-none cursor-not-allowed">{programs.find((p) => p.id === f.program_id)?.label || 'QL - SCHOOL'}</div>
-                            <input type="hidden" name="program_id" value={f.program_id} />
+                            <div className="relative">
+                                <select
+                                    className={`h-12 w-full px-4 pr-10 bg-slate-50 border rounded-2xl text-sm font-bold focus:bg-white focus:ring-4 transition-all outline-none appearance-none ${e.program_id ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}`}
+                                    value={f.program_id}
+                                    onChange={upd('program_id')}
+                                >
+                                    <option value="">— Pilih Program —</option>
+                                    {programs.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
+                            {e.program_id && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.program_id}</span>}
                         </div>
                     </div>
 

@@ -10,6 +10,7 @@ class Profile extends Model
         'name',
         'hero_title',
         'logo',
+        'about_image',
         'tagline',
         'history',
         'vision',
@@ -19,7 +20,11 @@ class Profile extends Model
         'email',
         'social_media',
         'established_year',
-        'main_focus'
+        'main_focus',
+        'bank_name',
+        'bank_account',
+        'bank_holder',
+        'bank_nominal',
     ];
     protected $casts = [
         'social_media' => 'array',

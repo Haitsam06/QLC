@@ -9,7 +9,7 @@ interface Props {
     initialTab?: 'login' | 'register';
 }
 
-export default function Auth({ status, canResetPassword = true, initialTab = 'login' }: Props) {
+export default function Auth({ status, canResetPassword = false, initialTab = 'login' }: Props) {
     const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
     const [registerStep, setRegisterStep] = useState<1 | 2>(1);
     const [registerStatusMessage, setRegisterStatusMessage] = useState('');

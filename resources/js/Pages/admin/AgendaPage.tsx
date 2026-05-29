@@ -19,7 +19,7 @@ interface Agenda {
     created_at?: string;
 }
 
-const BASE = 'http://127.0.0.1:8000/api';
+const BASE = '/api';
 
 const VIS_LABEL: Record<Visibility, string> = {
     umum: 'Umum',

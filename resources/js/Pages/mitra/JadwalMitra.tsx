@@ -14,7 +14,7 @@ type Agenda = {
     visibility:        'umum' | 'mitra' | 'keduanya';
 };
 
-const BASE = 'http://127.0.0.1:8000/api';
+const BASE = '/api';
 
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const DAYS_SHORT  = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];

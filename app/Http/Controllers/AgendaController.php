@@ -2,211 +2,149 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agenda;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use MongoDB\Client;
-use MongoDB\BSON\ObjectId;
-use MongoDB\BSON\UTCDateTime;
 
 class AgendaController extends Controller
 {
-    private $agenda;
-
-    public function __construct()
+    private function validationRules(): array
     {
-        $client       = new Client(config('database.connections.mongodb.dsn'));
-        $db           = $client->selectDatabase(config('database.connections.mongodb.database'));
-        $this->agenda = $db->selectCollection('agenda');
+        return [
+            'title'             => 'required|string|max:200',
+            'event_date'        => 'required|date_format:Y-m-d',
+            'description'       => 'nullable|string|max:3000',
+            'location'          => 'nullable|string|max:300',
+            'registration_link' => 'nullable|url|max:500',
+            'visibility'        => 'required|in:umum,mitra,keduanya',
+        ];
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/agenda?year=&month=&visibility=
-       visibility: all (default, admin) | umum | mitra
-    ───────────────────────────────────────────── */
     public function index(Request $request)
     {
         $year       = (int) $request->query('year',  date('Y'));
         $month      = (int) $request->query('month', date('n'));
         $visibility = $request->query('visibility', 'all');
 
-        $start = sprintf('%04d-%02d-01', $year, $month);
         $last  = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $start = sprintf('%04d-%02d-01', $year, $month);
         $end   = sprintf('%04d-%02d-%02d', $year, $month, $last);
 
-        $filter = ['event_date' => ['$gte' => $start, '$lte' => $end]];
-
-        if ($visibility === 'umum') {
-            $filter['visibility'] = ['$in' => ['umum', 'keduanya']];
-        } elseif ($visibility === 'mitra') {
-            $filter['visibility'] = ['$in' => ['mitra', 'keduanya']];
-        }
-
-        $cursor = $this->agenda->find($filter, ['sort' => ['event_date' => 1]]);
-
-        $data = [];
-        foreach ($cursor as $doc) {
-            $data[] = $this->format($doc);
-        }
+        $data = Agenda::where('event_date', '>=', $start)
+            ->where('event_date', '<=', $end)
+            ->forVisibility($visibility)
+            ->orderBy('event_date')
+            ->get()
+            ->map(fn($a) => $this->format($a));
 
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/agenda/upcoming?visibility=&limit=
-       Untuk side panel "Agenda Terdekat"
-    ───────────────────────────────────────────── */
     public function upcoming(Request $request)
     {
         $visibility = $request->query('visibility', 'all');
-        $limit      = (int) $request->query('limit', 5);
-        $today      = date('Y-m-d');
+        $limit      = max(1, min(50, (int) $request->query('limit', 5)));
 
-        $filter = ['event_date' => ['$gte' => $today]];
-
-        if ($visibility === 'umum') {
-            $filter['visibility'] = ['$in' => ['umum', 'keduanya']];
-        } elseif ($visibility === 'mitra') {
-            $filter['visibility'] = ['$in' => ['mitra', 'keduanya']];
-        }
-
-        $cursor = $this->agenda->find($filter, [
-            'sort'  => ['event_date' => 1],
-            'limit' => $limit,
-        ]);
-
-        $data = [];
-        foreach ($cursor as $doc) {
-            $data[] = $this->format($doc);
-        }
+        $data = Agenda::where('event_date', '>=', date('Y-m-d'))
+            ->forVisibility($visibility)
+            ->orderBy('event_date')
+            ->limit($limit)
+            ->get()
+            ->map(fn($a) => $this->format($a));
 
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-    /* ─────────────────────────────────────────────
-       POST /api/agenda
-    ───────────────────────────────────────────── */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'title'             => 'required|string|max:200',
-            'event_date'        => 'required|date_format:Y-m-d',
-            'description'       => 'nullable|string|max:3000',
-            'location'          => 'nullable|string|max:300',
-            'registration_link' => 'nullable|url|max:500',
-            'visibility'        => 'required|in:umum,mitra,keduanya',
-        ]);
+        $validator = Validator::make($request->all(), $this->validationRules());
 
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $now    = new UTCDateTime();
-        $result = $this->agenda->insertOne([
-            'user_id' => auth()->check() ? (string) auth()->user()->_id : null,
+        $agenda = Agenda::create([
+            'user_id'           => auth()->check() ? (string) auth()->user()->_id : null,
             'title'             => $request->title,
             'event_date'        => $request->event_date,
             'description'       => $request->description ?? '',
             'location'          => $request->location ?? '',
             'registration_link' => $request->registration_link ?? '',
             'visibility'        => $request->visibility,
-            'created_at'        => $now,
-            'updated_at'        => $now,
         ]);
-
-        $inserted = $this->agenda->findOne(['_id' => $result->getInsertedId()]);
 
         return response()->json([
             'success' => true,
             'message' => 'Agenda berhasil ditambahkan.',
-            'data'    => $this->format($inserted),
+            'data'    => $this->format($agenda),
         ], 201);
     }
 
-    /* ─────────────────────────────────────────────
-       PUT /api/agenda/{id}
-    ───────────────────────────────────────────── */
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(), [
-            'title'             => 'required|string|max:200',
-            'event_date'        => 'required|date_format:Y-m-d',
-            'description'       => 'nullable|string|max:3000',
-            'location'          => 'nullable|string|max:300',
-            'registration_link' => 'nullable|url|max:500',
-            'visibility'        => 'required|in:umum,mitra,keduanya',
-        ]);
+        $validator = Validator::make($request->all(), $this->validationRules());
 
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
+        $agenda = Agenda::find($id);
 
-        $result = $this->agenda->updateOne(
-            ['_id' => $oid],
-            ['$set' => [
-                'title'             => $request->title,
-                'event_date'        => $request->event_date,
-                'description'       => $request->description ?? '',
-                'location'          => $request->location ?? '',
-                'registration_link' => $request->registration_link ?? '',
-                'visibility'        => $request->visibility,
-                'updated_at'        => new UTCDateTime(),
-            ]]
-        );
-
-        if ($result->getMatchedCount() === 0) {
+        if (!$agenda) {
             return response()->json(['success' => false, 'message' => 'Agenda tidak ditemukan.'], 404);
         }
 
-        $updated = $this->agenda->findOne(['_id' => $oid]);
+        $user = auth()->user()->loadMissing('role');
+        if ($user->getRoleName() !== 'admin' && (string) ($agenda->user_id ?? '') !== (string) $user->_id) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak berhak mengubah agenda ini.'], 403);
+        }
+
+        $agenda->update([
+            'title'             => $request->title,
+            'event_date'        => $request->event_date,
+            'description'       => $request->description ?? '',
+            'location'          => $request->location ?? '',
+            'registration_link' => $request->registration_link ?? '',
+            'visibility'        => $request->visibility,
+        ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Agenda berhasil diperbarui.',
-            'data'    => $this->format($updated),
+            'data'    => $this->format($agenda->fresh()),
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       DELETE /api/agenda/{id}
-    ───────────────────────────────────────────── */
     public function destroy(string $id)
     {
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
+        $agenda = Agenda::find($id);
 
-        $result = $this->agenda->deleteOne(['_id' => $oid]);
-
-        if ($result->getDeletedCount() === 0) {
+        if (!$agenda) {
             return response()->json(['success' => false, 'message' => 'Agenda tidak ditemukan.'], 404);
         }
+
+        $user = auth()->user()->loadMissing('role');
+        if ($user->getRoleName() !== 'admin' && (string) ($agenda->user_id ?? '') !== (string) $user->_id) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak berhak menghapus agenda ini.'], 403);
+        }
+
+        $agenda->delete();
 
         return response()->json(['success' => true, 'message' => 'Agenda berhasil dihapus.']);
     }
 
-    /* ─────────────────────────────────────────────
-       Helper
-    ───────────────────────────────────────────── */
     private function format($doc): array
     {
         return [
-            'id'                => (string) $doc['_id'],
-            'user_id'           => $doc['user_id'] ?? null,
-            'title'             => $doc['title'],
-            'event_date'        => $doc['event_date'],
-            'description'       => $doc['description'] ?? '',
-            'location'          => $doc['location'] ?? '',
-            'registration_link' => $doc['registration_link'] ?? '',
-            'visibility'        => $doc['visibility'],
-            'created_at'        => isset($doc['created_at'])
-                ? $doc['created_at']->toDateTime()->format('Y-m-d H:i:s')
-                : null,
+            'id'                => (string) $doc->_id,
+            'user_id'           => $doc->user_id ?? null,
+            'title'             => $doc->title,
+            'event_date'        => $doc->event_date,
+            'description'       => $doc->description ?? '',
+            'location'          => $doc->location ?? '',
+            'registration_link' => $doc->registration_link ?? '',
+            'visibility'        => $doc->visibility,
+            'created_at'        => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }
 }

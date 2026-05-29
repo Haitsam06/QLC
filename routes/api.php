@@ -44,8 +44,9 @@ Route::prefix('info')->group(function () {
     Route::get('gallery',          [InfoController::class, 'galleryIndex']);
 });
 
-// Agenda upcoming — widget kalender di landing page
+// Agenda — GET boleh diakses siapapun (landing page & dashboard semua role)
 Route::get('agenda/upcoming', [AgendaController::class, 'upcoming']);
+Route::get('agenda',          [AgendaController::class, 'index']);
 
 
 // ══════════════════════════════════════════════════════════════════════
@@ -82,18 +83,17 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::put('leaders/{id}',           [InfoController::class, 'leaderUpdate']);
         Route::delete('leaders/{id}',        [InfoController::class, 'leaderDestroy']);
 
-        Route::post('programs',              [InfoController::class, 'programStore']);
-        Route::put('programs/{id}',          [InfoController::class, 'programUpdate']);
-        Route::delete('programs/{id}',       [InfoController::class, 'programDestroy']);
+        Route::post('programs',                          [InfoController::class, 'programStore']);
+        Route::put('programs/{id}',                      [InfoController::class, 'programUpdate']);
+        Route::delete('programs/{id}',                   [InfoController::class, 'programDestroy']);
+        Route::delete('programs/{id}/gallery/{index}',   [InfoController::class, 'programGalleryDestroy']);
 
         Route::post('gallery',               [InfoController::class, 'galleryStore']);
         Route::put('gallery/{id}',           [InfoController::class, 'galleryUpdate']);
         Route::delete('gallery/{id}',        [InfoController::class, 'galleryDestroy']);
     });
 
-    // ── Agenda (full CRUD) ─────────────────────────────────────────
-    Route::apiResource('agenda', AgendaController::class)
-        ->parameters(['agenda' => 'id']);
+    // ── Agenda write (admin dapat edit semua, lihat ownership check di controller) ──
 
     // ── Partners (Mitra) ──────────────────────────────────────────
     Route::post('partners/{id}/reset-password', [MitraController::class, 'resetPassword']);
@@ -131,30 +131,39 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
 
 // ══════════════════════════════════════════════════════════════════════
-// AUTH ONLY — Butuh login, semua role yang sudah masuk
+// ADMIN + TEACHER — Agenda write (ownership check ada di controller)
 // ══════════════════════════════════════════════════════════════════════
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'role:admin,teacher'])->group(function () {
+    Route::post('agenda',        [AgendaController::class, 'store']);
+    Route::put('agenda/{id}',    [AgendaController::class, 'update']);
+    Route::delete('agenda/{id}', [AgendaController::class, 'destroy']);
+});
 
-    // ── Teacher: laporan progress ──────────────────────────────────
-    Route::prefix('teacher')->group(function () {
-        Route::get('students',                          [ProgressReportController::class, 'teacherStudents']);
-        Route::get('students/{studentId}/reports',      [ProgressReportController::class, 'teacherStudentReports']);
-        Route::post('reports',                          [ProgressReportController::class, 'teacherStore']);
-        Route::get('reports/{id}',                      [ProgressReportController::class, 'teacherShow']);
-        Route::put('reports/{id}',                      [ProgressReportController::class, 'teacherUpdate']);
-        Route::delete('reports/{id}',                   [ProgressReportController::class, 'teacherDestroy']);
-    });
+// ══════════════════════════════════════════════════════════════════════
+// TEACHER ONLY — Butuh login + role teacher
+// ══════════════════════════════════════════════════════════════════════
+Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->group(function () {
+    Route::get('students',                          [ProgressReportController::class, 'teacherStudents']);
+    Route::get('students/{studentId}/reports',      [ProgressReportController::class, 'teacherStudentReports']);
+    Route::post('reports',                          [ProgressReportController::class, 'teacherStore']);
+    Route::get('reports/{id}',                      [ProgressReportController::class, 'teacherShow']);
+    Route::put('reports/{id}',                      [ProgressReportController::class, 'teacherUpdate']);
+    Route::delete('reports/{id}',                   [ProgressReportController::class, 'teacherDestroy']);
+});
 
-    // ── Parent: data anak & laporan ────────────────────────────────
-    Route::prefix('parent')->group(function () {
-        Route::get('children',                          [ProgressReportController::class, 'parentChildren']);
-        Route::get('children/{studentId}/reports',      [ProgressReportController::class, 'parentChildReports']);
-    });
+// ══════════════════════════════════════════════════════════════════════
+// PARENT ONLY — Butuh login + role parents
+// ══════════════════════════════════════════════════════════════════════
+Route::middleware(['auth', 'role:parents'])->prefix('parent')->group(function () {
+    Route::get('children',                          [ProgressReportController::class, 'parentChildren']);
+    Route::get('children/{studentId}/reports',      [ProgressReportController::class, 'parentChildReports']);
+});
 
-    // ── Mitra: dashboard, laporan, profil ─────────────────────────
-    Route::prefix('mitra')->group(function () {
-        Route::get('dashboard', [MitraDashboardController::class, 'index']);
-        Route::get('reports',   [MitraReportController::class,   'mitraReports']);
-        Route::get('profile',   [MitraController::class,         'ownProfile']);
-    });
+// ══════════════════════════════════════════════════════════════════════
+// MITRA ONLY — Butuh login + role mitra
+// ══════════════════════════════════════════════════════════════════════
+Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->group(function () {
+    Route::get('dashboard', [MitraDashboardController::class, 'index']);
+    Route::get('reports',   [MitraReportController::class,   'mitraReports']);
+    Route::get('profile',   [MitraController::class,         'ownProfile']);
 });

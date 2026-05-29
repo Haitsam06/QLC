@@ -2,646 +2,315 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Parents;
+use App\Models\ProgressReport;
+use App\Models\Student;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
-use MongoDB\Client as MongoClient;
-use MongoDB\BSON\ObjectId;
-use MongoDB\BSON\UTCDateTime;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use MongoDB\BSON\Regex;
 
 class ParentController extends Controller
 {
-    private $parents;
-    private $users;
-
     private const ROLE_PARENT = 'RL03';
 
-    public function __construct()
-    {
-        $client = new MongoClient(
-            config('database.connections.mongodb.dsn')
-        );
-
-        $db = $client->selectDatabase(
-            config('database.connections.mongodb.database')
-        );
-
-        $this->parents = $db->selectCollection('parents');
-        $this->users = $db->selectCollection('users');
-    }
-
-    /* ─────────────────────────────────────────────
-       GET /api/parents
-    ───────────────────────────────────────────── */
     public function index(Request $request)
     {
-        $search = $request->query('search', '');
+        $search  = $request->query('search', '');
         $perPage = max(1, min(100, (int) $request->query('per_page', 10)));
-        $page = (int) $request->query('page', 1);
+        $page    = (int) $request->query('page', 1);
+        $skip    = ($page - 1) * $perPage;
 
-        $skip = ($page - 1) * $perPage;
-
-        $filter = [];
+        $query = Parents::query();
 
         if (!empty($search)) {
-
-            $safeSearch = preg_quote($search, '/');
-            $filter['$or'] = [
-                [
-                    'parent_name' => [
-                        '$regex' => $safeSearch,
-                        '$options' => 'i'
-                    ]
-                ],
-
-                [
-                    'phone' => [
-                        '$regex' => $safeSearch,
-                        '$options' => 'i'
-                    ]
-                ],
-
-                [
-                    'address' => [
-                        '$regex' => $safeSearch,
-                        '$options' => 'i'
-                    ]
-                ],
-            ];
+            $regex = new Regex(preg_quote($search, '/'), 'i');
+            $query->where(function ($q) use ($regex) {
+                $q->where('parent_name', $regex)
+                  ->orWhere('phone', $regex)
+                  ->orWhere('address', $regex);
+            });
         }
 
-        $total = $this->parents->countDocuments($filter);
-
-        $cursor = $this->parents->find(
-            $filter,
-            [
-                'skip' => $skip,
-                'limit' => $perPage,
-                'sort' => [
-                    'parent_name' => 1
-                ],
-            ]
-        );
-
-        $data = [];
-
-        foreach ($cursor as $doc) {
-            $data[] = $this->format($doc);
-        }
+        $total   = $query->count();
+        $parents = $query->orderBy('parent_name')->skip($skip)->take($perPage)->get();
 
         return response()->json([
             'success' => true,
-
-            'data' => $data,
-
-            'meta' => [
-                'total' => $total,
-                'page' => $page,
-                'per_page' => $perPage,
+            'data'    => $parents->map(fn($p) => $this->format($p)),
+            'meta'    => [
+                'total'     => $total,
+                'page'      => $page,
+                'per_page'  => $perPage,
                 'last_page' => (int) ceil($total / $perPage),
             ],
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       POST /api/parents
-    ───────────────────────────────────────────── */
     public function store(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-
-                'parent_name' => 'required|string|max:100',
-                'phone' => 'required|string|max:20',
-                'address' => 'required|string|max:255',
-
-                'username' => 'required|string|min:4|max:50|alpha_num',
-                'password' => 'required|string|min:8|max:100',
-
-                'email' => 'nullable|email|max:100',
-            ]
-        );
+        $validator = Validator::make($request->all(), [
+            'parent_name' => 'required|string|max:100',
+            'phone'       => 'required|string|max:20',
+            'address'     => 'required|string|max:255',
+            'username'    => 'required|string|min:4|max:50|alpha_num',
+            'password'    => 'required|string|min:8|max:100',
+            'email'       => 'nullable|email|max:100',
+        ]);
 
         if ($validator->fails()) {
-
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        // duplicate username
-        if (
-            $this->users->findOne([
-                'username' => $request->username
-            ])
-        ) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Username sudah digunakan.',
-            ], 409);
+        if (User::where('username', $request->username)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Username sudah digunakan.'], 409);
         }
 
-        // duplicate email
-        if (
-            $request->email &&
-            $this->users->findOne([
-                'email' => $request->email
-            ])
-        ) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Email sudah digunakan.',
-            ], 409);
+        if ($request->email && User::where('email', $request->email)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Email sudah digunakan.'], 409);
         }
 
-        // duplicate phone
-        if (
-            $this->parents->findOne([
-                'phone' => $request->phone
-            ])
-        ) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Nomor telepon sudah terdaftar.',
-            ], 409);
+        if (Parents::where('phone', $request->phone)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Nomor telepon sudah terdaftar.'], 409);
         }
 
-        // insert users
-        $userDoc = [
-
-            'role_id' => self::ROLE_PARENT,
-
+        $user = User::create([
+            'role_id'  => self::ROLE_PARENT,
             'username' => $request->username,
-
             'password' => Hash::make($request->password),
+            'email'    => $request->email ?? null,
+            'photo'    => null,
+        ]);
 
-            'email' => $request->email ?? null,
-
-            'photo' => null,
-
-            'created_at' => new \MongoDB\BSON\UTCDateTime(),
-            'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-        ];
-
-        $userResult = $this->users->insertOne($userDoc);
-
-        $userId = (string) $userResult->getInsertedId();
-
-        // insert parents
         try {
-
-            $parentDoc = [
-
-                'user_id' => $userId,
-
+            $parent = Parents::create([
+                'user_id'     => (string) $user->_id,
                 'parent_name' => $request->parent_name,
-                'phone' => $request->phone,
-                'address' => $request->address,
-
-                'created_at' => new \MongoDB\BSON\UTCDateTime(),
-                'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-            ];
-
-            $result = $this->parents->insertOne($parentDoc);
-
-            $parentDoc['_id'] = $result->getInsertedId();
-
-        } catch (\Exception $e) {
-
-            // rollback user
-            $this->users->deleteOne([
-                '_id' => new ObjectId($userId)
+                'phone'       => $request->phone,
+                'address'     => $request->address,
             ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan data wali murid.',
-            ], 500);
+        } catch (\Exception $e) {
+            $user->delete();
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan data wali murid.'], 500);
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Wali murid berhasil ditambahkan.',
-            'data' => $this->format($parentDoc),
+            'data'    => $this->format($parent),
         ], 201);
     }
 
-    /* ─────────────────────────────────────────────
-       GET /api/parents/{id}
-    ───────────────────────────────────────────── */
     public function show(string $id)
     {
-        try {
+        $parent = Parents::find($id);
 
-            $doc = $this->parents->findOne([
-                '_id' => new ObjectId($id)
-            ]);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'ID tidak valid.'
-            ], 400);
+        if (!$parent) {
+            return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
 
-        if (!$doc) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Wali murid tidak ditemukan.'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $this->format($doc),
-        ]);
+        return response()->json(['success' => true, 'data' => $this->format($parent)]);
     }
 
-    /* ─────────────────────────────────────────────
-       PUT /api/parents/{id}
-    ───────────────────────────────────────────── */
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-
-                'parent_name' => 'required|string|max:100',
-                'phone' => 'required|string|max:20',
-                'address' => 'required|string|max:255',
-            ]
-        );
-
-        if ($validator->fails()) {
-
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        try {
-
-            $oid = new ObjectId($id);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'ID tidak valid.'
-            ], 400);
-        }
-
-        // duplicate phone
-        $exists = $this->parents->findOne([
-
-            'phone' => $request->phone,
-
-            '_id' => [
-                '$ne' => $oid
-            ],
+        $validator = Validator::make($request->all(), [
+            'parent_name' => 'required|string|max:100',
+            'phone'       => 'required|string|max:20',
+            'address'     => 'required|string|max:255',
         ]);
 
-        if ($exists) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Nomor telepon sudah digunakan wali murid lain.',
-            ], 409);
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $result = $this->parents->updateOne(
+        $parent = Parents::find($id);
 
-            [
-                '_id' => $oid
-            ],
-
-            [
-                '$set' => [
-
-                    'parent_name' => $request->parent_name,
-                    'phone' => $request->phone,
-                    'address' => $request->address,
-
-                    'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-                ]
-            ]
-        );
-
-        if ($result->getMatchedCount() === 0) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Wali murid tidak ditemukan.'
-            ], 404);
+        if (!$parent) {
+            return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
 
-        $updated = $this->parents->findOne([
-            '_id' => $oid
+        if (Parents::where('phone', $request->phone)->where('_id', '!=', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Nomor telepon sudah digunakan wali murid lain.'], 409);
+        }
+
+        $parent->update([
+            'parent_name' => $request->parent_name,
+            'phone'       => $request->phone,
+            'address'     => $request->address,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Data wali murid berhasil diperbarui.',
-            'data' => $this->format($updated),
+            'data'    => $this->format($parent->fresh()),
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       UPDATE PROFILE SENDIRI (PARENTS)
-    ───────────────────────────────────────────── */
     public function updateOwnProfile(Request $request)
     {
         $user = Auth::user();
 
         if (!$user) {
-
-            return back()->withErrors([
-                'general' => 'Unauthorized'
-            ]);
+            return back()->withErrors(['general' => 'Unauthorized']);
         }
 
-        $validator = Validator::make(
-            $request->all(),
-            [
+        $validator = Validator::make($request->all(), [
+            'parent_name' => 'required|string|max:100',
+            'phone'       => 'required|string|max:20',
+            'address'     => 'required|string|max:255',
+            'username'    => 'required|string|min:4|max:50|alpha_num',
+            'email'       => 'nullable|email|max:100',
+            'photo'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
 
-                // parent
-                'parent_name' => 'required|string|max:100',
-                'phone' => 'required|string|max:20',
-                'address' => 'required|string|max:255',
-
-                // user
-                'username' => 'required|string|min:4|max:50|alpha_num',
-                'email' => 'nullable|email|max:100',
-
-                // photo
-                'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            ]
-        );
-
-        // VALIDATION ERROR
         if ($validator->fails()) {
-
-            return back()
-                ->withErrors($validator)
-                ->withInput();
+            return back()->withErrors($validator)->withInput();
         }
 
-        // DUPLICATE USERNAME
-        $existsUsername = $this->users->findOne([
-
-            'username' => $request->username,
-
-            '_id' => [
-                '$ne' => new ObjectId($user->_id)
-            ],
-        ]);
-
-        if ($existsUsername) {
-
-            return back()->withErrors([
-                'username' => 'Username sudah digunakan.'
-            ]);
+        if (User::where('username', $request->username)->where('_id', '!=', (string) $user->_id)->exists()) {
+            return back()->withErrors(['username' => 'Username sudah digunakan.']);
         }
 
-        // DUPLICATE EMAIL
-        if ($request->email) {
-
-            $existsEmail = $this->users->findOne([
-
-                'email' => $request->email,
-
-                '_id' => [
-                    '$ne' => new ObjectId($user->_id)
-                ],
-            ]);
-
-            if ($existsEmail) {
-
-                return back()->withErrors([
-                    'email' => 'Email sudah digunakan.'
-                ]);
-            }
+        if ($request->email && User::where('email', $request->email)->where('_id', '!=', (string) $user->_id)->exists()) {
+            return back()->withErrors(['email' => 'Email sudah digunakan.']);
         }
 
-        // CARI PARENT
-        $parent = $this->parents->findOne([
-            'user_id' => (string) $user->_id
-        ]);
+        $parent = Parents::where('user_id', (string) $user->_id)->first();
 
         if (!$parent) {
-
-            return back()->withErrors([
-                'general' => 'Data wali murid tidak ditemukan.'
-            ]);
+            return back()->withErrors(['general' => 'Data wali murid tidak ditemukan.']);
         }
 
-        // PHOTO
         $photoUrl = $user->photo ?? null;
 
         if ($request->hasFile('photo')) {
-
-            // DELETE OLD PHOTO
-            if (
-                $photoUrl &&
-                str_contains($photoUrl, '/storage/')
-            ) {
-
-                $parsedPath = parse_url(
-                    $photoUrl,
-                    PHP_URL_PATH
-                );
-
+            if ($photoUrl && str_contains($photoUrl, '/storage/')) {
+                $parsedPath = parse_url($photoUrl, PHP_URL_PATH);
                 if ($parsedPath) {
-
-                    $oldPath = str_replace(
-                        '/storage/',
-                        '',
-                        $parsedPath
-                    );
-
-                    Storage::disk('public')
-                        ->delete($oldPath);
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
                 }
             }
-
-            // STORE NEW PHOTO
-            $path = $request
-                ->file('photo')
-                ->store('profile', 'public');
-
-            $photoUrl = URL::to(
-                Storage::url($path)
-            );
+            $path     = $request->file('photo')->store('profile', 'public');
+            $photoUrl = url('storage/' . $path);
         }
 
-        // UPDATE USERS
-        $this->users->updateOne(
+        $user->update([
+            'username' => $request->username,
+            'email'    => $request->email,
+            'photo'    => $photoUrl,
+        ]);
 
-            [
-                '_id' => new ObjectId($user->_id)
-            ],
+        $parent->update([
+            'parent_name' => $request->parent_name,
+            'phone'       => $request->phone,
+            'address'     => $request->address,
+        ]);
 
-            [
-                '$set' => [
-
-                    'username' => $request->username,
-                    'email' => $request->email,
-                    'photo' => $photoUrl,
-
-                    'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-                ]
-            ]
-        );
-
-        // UPDATE PARENTS
-        $this->parents->updateOne(
-
-            [
-                '_id' => $parent['_id']
-            ],
-
-            [
-                '$set' => [
-
-                    'parent_name' => $request->parent_name,
-                    'phone' => $request->phone,
-                    'address' => $request->address,
-
-                    'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-                ]
-            ]
-        );
-
-        return back()->with(
-            'success',
-            'Profil berhasil diperbarui.'
-        );
-
+        return back()->with('success', 'Profil berhasil diperbarui.');
     }
 
-    /* ─────────────────────────────────────────────
-       POST /api/parents/{id}/reset-password
-    ───────────────────────────────────────────── */
     public function resetPassword(string $id)
     {
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
+        $parent = Parents::find($id);
 
-        $parent = $this->parents->findOne(['_id' => $oid]);
         if (!$parent) {
             return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
 
-        if (empty($parent['user_id'])) {
+        if (empty($parent->user_id)) {
             return response()->json(['success' => false, 'message' => 'Akun wali murid tidak ditemukan.'], 404);
         }
 
-        try { $userId = new ObjectId($parent['user_id']); }
-        catch (\Exception $e) { $userId = $parent['user_id']; }
-
-        $this->users->updateOne(
-            ['_id' => $userId],
-            ['$set' => [
-                'password'   => Hash::make('mieayambakso'),
-                'updated_at' => new UTCDateTime(),
-            ]]
-        );
-
-        return response()->json(['success' => true, 'message' => 'Password wali murid berhasil direset ke default.']);
-    }
-
-    /* ─────────────────────────────────────────────
-       DELETE /api/parents/{id}
-    ───────────────────────────────────────────── */
-    public function destroy(string $id)
-    {
-        try {
-
-            $oid = new ObjectId($id);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'ID tidak valid.'
-            ], 400);
+        $user = User::find($parent->user_id);
+        if ($user) {
+            $newPassword = Str::random(12);
+            $user->update(['password' => Hash::make($newPassword)]);
         }
 
-        $parent = $this->parents->findOne([
-            '_id' => $oid
+        Log::info('audit.password_reset', [
+            'target'    => 'parent',
+            'target_id' => (string) $parent->_id,
+            'user_id'   => $parent->user_id ?? null,
+            'by_admin'  => auth()->id(),
+            'ip'        => request()->ip(),
         ]);
-
-        if (!$parent) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Wali murid tidak ditemukan.'
-            ], 404);
-        }
-
-        // delete parent
-        $this->parents->deleteOne([
-            '_id' => $oid
-        ]);
-
-        // delete user
-        if (!empty($parent['user_id'])) {
-
-            try {
-
-                $this->users->deleteOne([
-                    '_id' => new ObjectId($parent['user_id'])
-                ]);
-
-            } catch (\Exception $e) {
-
-                $this->users->deleteOne([
-                    '_id' => $parent['user_id']
-                ]);
-            }
-        }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Wali murid dan akun berhasil dihapus.',
+            'success'      => true,
+            'message'      => 'Password wali murid berhasil direset.',
+            'new_password' => $newPassword ?? null,
         ]);
     }
 
-    /* ─────────────────────────────────────────────
-       FORMAT DOC
-    ───────────────────────────────────────────── */
+    public function destroy(string $id)
+    {
+        $parent = Parents::find($id);
+
+        if (!$parent) {
+            return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
+        }
+
+        // Cascade: hapus semua student + progress report milik parent ini
+        Student::where('parent_id', (string) $parent->user_id)->each(function ($student) {
+            ProgressReport::where('student_id', (string) $student->_id)->delete();
+            if (!empty($student->bukti_pembayaran)) {
+                $parsed = parse_url($student->bukti_pembayaran, PHP_URL_PATH);
+                if ($parsed) {
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
+                }
+            }
+            $student->delete();
+        });
+
+        $parent->delete();
+
+        if (!empty($parent->user_id)) {
+            User::find($parent->user_id)?->delete();
+        }
+
+        Log::info('audit.parent_deleted', [
+            'parent_id'   => (string) $parent->_id,
+            'parent_name' => $parent->parent_name ?? '—',
+            'by_admin'    => auth()->id(),
+            'ip'          => request()->ip(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Wali murid dan akun berhasil dihapus.']);
+    }
+
+    public function updateOwnPassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password'         => 'required|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Password saat ini salah.']);
+        }
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        return back()->with('success', 'Password berhasil diperbarui.');
+    }
+
     private function format($doc): array
     {
         return [
-
-            'id' => (string) $doc['_id'],
-
-            'user_id' => $doc['user_id'] ?? null,
-
-            'parent_name' => $doc['parent_name'],
-            'phone' => $doc['phone'],
-            'address' => $doc['address'],
-
-            'created_at' => isset($doc['created_at'])
-
-                ? $doc['created_at']
-                    ->toDateTime()
-                    ->format('Y-m-d H:i:s')
-
-                : null,
+            'id'          => (string) $doc->_id,
+            'user_id'     => $doc->user_id ?? null,
+            'parent_name' => $doc->parent_name,
+            'phone'       => $doc->phone,
+            'address'     => $doc->address,
+            'created_at'  => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }
 }

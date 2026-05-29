@@ -9,6 +9,8 @@ class RolesSeeder extends Seeder
 {
     public function run(): void
     {
+        Role::truncate();
+
         Role::create([
             '_id' => 'RL01',
             'role_name' => 'admin'

@@ -2,50 +2,69 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UsersSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command->warn('UsersSeeder dilewati di lingkungan production.');
+            return;
+        }
+
         User::truncate();
 
+        $adminPass   = env('SEED_ADMIN_PASSWORD',  Str::random(16));
+        $guruPass    = env('SEED_GURU_PASSWORD',   Str::random(16));
+        $waliPass    = env('SEED_WALI_PASSWORD',   Str::random(16));
+        $mitraPass   = env('SEED_MITRA_PASSWORD',  Str::random(16));
+
+        // Admin
         User::create([
-            'role_id' => 'RL01',
+            'role_id'  => 'RL01',
             'username' => 'admin',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('admin123'),
-            'created_at' => now(),
-            'updated_at' => now()
+            'email'    => 'admin@qlc.id',
+            'password' => Hash::make($adminPass),
         ]);
 
-        User::create([
-            'role_id' => 'RL02',
-            'username' => 'guru',
-            'email' => 'guru@gmail.com',
-            'password' => Hash::make('guru123'),
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
+        // Guru (5)
+        $teachers = [
+            ['username' => 'guru1', 'email' => 'guru1@qlc.id'],
+            ['username' => 'guru2', 'email' => 'guru2@qlc.id'],
+            ['username' => 'guru3', 'email' => 'guru3@qlc.id'],
+            ['username' => 'guru4', 'email' => 'guru4@qlc.id'],
+            ['username' => 'guru5', 'email' => 'guru5@qlc.id'],
+        ];
+        foreach ($teachers as $t) {
+            User::create(array_merge($t, ['role_id' => 'RL02', 'password' => Hash::make($guruPass)]));
+        }
 
-        User::create([
-            'role_id' => 'RL03',
-            'username' => 'parent',
-            'email' => 'parent@gmail.com',
-            'password' => Hash::make('parent123'),
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
+        // Wali Murid (5)
+        $parents = [
+            ['username' => 'wali1', 'email' => 'wali1@qlc.id'],
+            ['username' => 'wali2', 'email' => 'wali2@qlc.id'],
+            ['username' => 'wali3', 'email' => 'wali3@qlc.id'],
+            ['username' => 'wali4', 'email' => 'wali4@qlc.id'],
+            ['username' => 'wali5', 'email' => 'wali5@qlc.id'],
+        ];
+        foreach ($parents as $p) {
+            User::create(array_merge($p, ['role_id' => 'RL03', 'password' => Hash::make($waliPass)]));
+        }
 
-        User::create([
-            'role_id' => 'RL04',
-            'username' => 'mitra',
-            'email' => 'mitra@gmail.com',
-            'password' => Hash::make('mitra123'),
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
+        // Mitra (3)
+        $mitras = [
+            ['username' => 'mitra1', 'email' => 'mitra1@qlc.id'],
+            ['username' => 'mitra2', 'email' => 'mitra2@qlc.id'],
+            ['username' => 'mitra3', 'email' => 'mitra3@qlc.id'],
+        ];
+        foreach ($mitras as $m) {
+            User::create(array_merge($m, ['role_id' => 'RL04', 'password' => Hash::make($mitraPass)]));
+        }
+
+        $this->command->info("Seeder selesai. Password admin: {$adminPass}");
     }
 }

@@ -294,23 +294,15 @@ export default function Daftar({ programs, flash }: Props) {
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-700 mb-1.5">
-                                                    Usia <span className="text-red-500">*</span>
+                                                    Usia <span className="text-gray-400 font-normal text-xs">(otomatis)</span>
                                                 </label>
                                                 <input
                                                     type="number"
                                                     value={data.usia}
-                                                    onChange={(e) => setData('usia', e.target.value)}
-                                                    placeholder="Tahun"
-                                                    min={1}
-                                                    max={30}
-                                                    className={`w-full px-4 py-3 rounded-xl border text-sm font-medium text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all ${errors.usia ? 'border-red-400' : 'border-gray-200'}`}
+                                                    readOnly
+                                                    placeholder="Isi tanggal lahir"
+                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-500 bg-gray-100 cursor-not-allowed select-none"
                                                 />
-                                                {errors.usia && (
-                                                    <p className="mt-1 text-xs text-red-500 font-semibold flex items-center gap-1">
-                                                        <AlertCircle size={11} />
-                                                        {errors.usia}
-                                                    </p>
-                                                )}
                                             </div>
                                         </div>
                                     </div>

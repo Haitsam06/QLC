@@ -12,7 +12,7 @@ import { User, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Phone, MessageCircl
    TYPES
 ═══════════════════════════════════════════════════════════ */
 export interface TeacherProfile {
-    username: string;
+    nama_guru: string;
 
     phone: string;
 
@@ -405,7 +405,7 @@ export default function PengaturanGuruPage({ profile }: Props) {
                         {[
                             {
                                 label: 'Nama Lengkap',
-                                value: profile?.username ?? '—',
+                                value: profile?.nama_guru ?? '—',
                                 icon: <User size={16} />,
                             },
 

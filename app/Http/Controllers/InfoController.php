@@ -2,114 +2,106 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\URL;
+use App\Models\Foundation;
+use App\Models\Gallery;
+use App\Models\Leader;
+use App\Models\Profile;
+use App\Models\Program;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use MongoDB\Client as MongoClient;
-use MongoDB\BSON\ObjectId;
 
 class InfoController extends Controller
 {
-    private $profiles;
-    private $programs;
-    private $gallery;
-    private $foundations;
-    private $leaders;
-
-    public function __construct()
-    {
-        $client = new MongoClient(config('database.connections.mongodb.dsn'));
-        $db = $client->selectDatabase(config('database.connections.mongodb.database'));
-        $this->profiles = $db->selectCollection('profiles');
-        $this->programs = $db->selectCollection('programs');
-        $this->gallery = $db->selectCollection('gallery');
-        $this->foundations = $db->selectCollection('foundations');
-        $this->leaders = $db->selectCollection('leaders');
-    }
-
     /* ═══════════════════════════════════════════════════════
        PROFILES
     ═══════════════════════════════════════════════════════ */
     public function profileShow()
     {
-        $doc = $this->profiles->findOne([]);
+        $doc = Profile::first();
         return response()->json(['success' => true, 'data' => $doc ? $this->fmtProfile($doc) : null]);
     }
 
     public function profileUpsert(Request $request)
     {
-        $existing = $this->profiles->findOne([]);
+        $existing = Profile::first();
 
-        // 1. Handle Logo
-        $logoUrl = $existing['logo'] ?? null;
         $request->validate([
-            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'about_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'name'             => 'nullable|string|max:200',
+            'hero_title'       => 'nullable|string|max:300',
+            'tagline'          => 'nullable|string|max:500',
+            'history'          => 'nullable|string|max:5000',
+            'vision'           => 'nullable|string|max:2000',
+            'mission'          => 'nullable|string|max:2000',
+            'address'          => 'nullable|string|max:500',
+            'whatsapp'         => 'nullable|string|max:20',
+            'email'            => 'nullable|email|max:150',
+            'established_year' => 'nullable|string|max:100',
+            'main_focus'       => 'nullable|string|max:500',
+            'bank_name'        => 'nullable|string|max:100',
+            'bank_account'     => 'nullable|string|max:30',
+            'bank_holder'      => 'nullable|string|max:150',
+            'bank_nominal'     => 'nullable|string|max:200',
+            'logo'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'about_image'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
+
+        // Handle Logo
+        $logoUrl = $existing?->logo ?? null;
         if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
             $parsedPath = parse_url($logoUrl, PHP_URL_PATH);
-
             if ($parsedPath) {
-                $oldPath = str_replace('/storage/', '', $parsedPath);
-                Storage::disk('public')->delete($oldPath);
+                Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
             }
-            $path = $request->file('logo')->store('info/logos', 'public');
-            $logoUrl = URL::to(Storage::url($path));
+            $path    = $request->file('logo')->store('info/logos', 'public');
+            $logoUrl = url('storage/' . $path);
         }
 
-        // 2. Handle About Image
-        $aboutImageUrl = $existing['about_image'] ?? null;
+        // Handle About Image
+        $aboutImageUrl = $existing?->about_image ?? null;
         if ($request->hasFile('about_image') && $request->file('about_image')->isValid()) {
             $parsedPath = parse_url($aboutImageUrl, PHP_URL_PATH);
-
             if ($parsedPath) {
-                $oldPath = str_replace('/storage/', '', $parsedPath);
-
-                Storage::disk('public')->delete($oldPath);
+                Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
             }
-            $path = $request->file('about_image')->store('info/about', 'public');
-            $aboutImageUrl = URL::to(Storage::url($path));
+            $path          = $request->file('about_image')->store('info/about', 'public');
+            $aboutImageUrl = url('storage/' . $path);
         }
 
         $socialMedia = null;
         if ($request->filled('social_media')) {
-            $decoded = json_decode($request->social_media, true);
+            $decoded     = json_decode($request->social_media, true);
             $socialMedia = is_array($decoded) ? $decoded : null;
         }
 
         $payload = [
-            'name' => $request->name,
-            'hero_title' => $request->hero_title,
-            'logo' => $logoUrl,
-            'about_image' => $aboutImageUrl,
-            'tagline' => $request->tagline,
-            'history' => $request->history,
-            'vision' => $request->vision,
-            'mission' => $request->mission,
-            'address' => $request->address,
-            'whatsapp' => $request->whatsapp,
-            'email' => $request->email,
-            'social_media' => $socialMedia,
+            'name'             => $request->name,
+            'hero_title'       => $request->hero_title,
+            'logo'             => $logoUrl,
+            'about_image'      => $aboutImageUrl,
+            'tagline'          => $request->tagline,
+            'history'          => $request->history,
+            'vision'           => $request->vision,
+            'mission'          => $request->mission,
+            'address'          => $request->address,
+            'whatsapp'         => $request->whatsapp,
+            'email'            => $request->email,
+            'social_media'     => $socialMedia,
             'established_year' => $request->established_year,
-            'main_focus' => $request->main_focus,
-            'bank_name' => $request->bank_name ?? ($existing['bank_name'] ?? null),
-            'bank_account' => $request->bank_account ?? ($existing['bank_account'] ?? null),
-            'bank_holder' => $request->bank_holder ?? ($existing['bank_holder'] ?? null),
-            'bank_nominal' => $request->bank_nominal ?? ($existing['bank_nominal'] ?? null),
-            'updated_at' => new \MongoDB\BSON\UTCDateTime(),
+            'main_focus'       => $request->main_focus,
+            'bank_name'        => $request->bank_name    ?? $existing?->bank_name,
+            'bank_account'     => $request->bank_account ?? $existing?->bank_account,
+            'bank_holder'      => $request->bank_holder  ?? $existing?->bank_holder,
+            'bank_nominal'     => $request->bank_nominal ?? $existing?->bank_nominal,
         ];
 
-        if (!$existing) {
-            $payload['created_at'] = new \MongoDB\BSON\UTCDateTime();
-            $result = $this->profiles->insertOne($payload);
-            $payload['_id'] = $result->getInsertedId();
+        if ($existing) {
+            $existing->update($payload);
+            $profile = $existing->fresh();
         } else {
-            $this->profiles->updateOne(['_id' => $existing['_id']], ['$set' => $payload]);
-            $payload['_id'] = $existing['_id'];
+            $profile = Profile::create($payload);
         }
 
-        $updated = $this->profiles->findOne(['_id' => $payload['_id']]);
-        return response()->json(['success' => true, 'data' => $this->fmtProfile($updated)]);
+        return response()->json(['success' => true, 'data' => $this->fmtProfile($profile)]);
     }
 
     /* ═══════════════════════════════════════════════════════
@@ -117,48 +109,44 @@ class InfoController extends Controller
     ═══════════════════════════════════════════════════════ */
     public function foundationIndex()
     {
-        $cursor = $this->foundations->find([]);
-        $data = [];
-        foreach ($cursor as $doc)
-            $data[] = $this->fmtFoundation($doc);
+        $data = Foundation::all()->map(fn($doc) => $this->fmtFoundation($doc))->values();
         return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function foundationStore(Request $request)
     {
-        $doc = [
-            'title' => $request->title,
-            'description' => $request->description,
-            'created_at' => new \MongoDB\BSON\UTCDateTime(),
-            'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-        ];
-        $result = $this->foundations->insertOne($doc);
-        $doc['_id'] = $result->getInsertedId();
+        $validated = $request->validate([
+            'title'       => 'required|string|max:200',
+            'description' => 'nullable|string|max:2000',
+        ]);
+
+        $doc = Foundation::create($validated);
         return response()->json(['success' => true, 'data' => $this->fmtFoundation($doc)]);
     }
 
     public function foundationUpdate(Request $request, string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false], 400);
+        $doc = Foundation::find($id);
+        if (!$doc) {
+            return response()->json(['success' => false], 404);
         }
-        $this->foundations->updateOne(
-            ['_id' => $oid],
-            ['$set' => ['title' => $request->title, 'description' => $request->description, 'updated_at' => new \MongoDB\BSON\UTCDateTime()]]
-        );
+
+        $validated = $request->validate([
+            'title'       => 'required|string|max:200',
+            'description' => 'nullable|string|max:2000',
+        ]);
+
+        $doc->update($validated);
         return response()->json(['success' => true]);
     }
 
     public function foundationDestroy(string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false], 400);
+        $doc = Foundation::find($id);
+        if (!$doc) {
+            return response()->json(['success' => false], 404);
         }
-        $this->foundations->deleteOne(['_id' => $oid]);
+        $doc->delete();
         return response()->json(['success' => true]);
     }
 
@@ -167,92 +155,84 @@ class InfoController extends Controller
     ═══════════════════════════════════════════════════════ */
     public function leaderIndex()
     {
-        $cursor = $this->leaders->find([]);
-        $data = [];
-        foreach ($cursor as $doc)
-            $data[] = $this->fmtLeader($doc);
+        $data = Leader::all()->map(fn($doc) => $this->fmtLeader($doc))->values();
         return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function leaderStore(Request $request)
     {
-        $imageUrl = null;
         $request->validate([
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'nama'      => 'required|string|max:150',
+            'jabatan'   => 'nullable|string|max:150',
+            'deskripsi' => 'nullable|string|max:1000',
+            'poin'      => 'nullable|integer|min:0|max:9999',
+            'image'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        $imageUrl = null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $path = $request->file('image')->store('info/leaders', 'public');
-            $imageUrl = URL::to(Storage::url($path));
+            $path     = $request->file('image')->store('info/leaders', 'public');
+            $imageUrl = url('storage/' . $path);
         }
 
-        $doc = [
-            'nama' => $request->nama,
-            'jabatan' => $request->jabatan,
+        $doc = Leader::create([
+            'nama'      => $request->nama,
+            'jabatan'   => $request->jabatan,
             'deskripsi' => $request->deskripsi,
-            'poin' => $request->poin,
+            'poin'      => $request->poin ? (int) $request->poin : null,
             'image_url' => $imageUrl,
-            'created_at' => new \MongoDB\BSON\UTCDateTime(),
-            'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-        ];
+        ]);
 
-        $result = $this->leaders->insertOne($doc);
-        $doc['_id'] = $result->getInsertedId();
         return response()->json(['success' => true, 'data' => $this->fmtLeader($doc)]);
     }
 
     public function leaderUpdate(Request $request, string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false], 400);
-        }
-        $existing = $this->leaders->findOne(['_id' => $oid]);
-        if (!$existing)
+        $doc = Leader::find($id);
+        if (!$doc) {
             return response()->json(['success' => false], 404);
+        }
 
-        $imageUrl = $existing['image_url'] ?? null;
         $request->validate([
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'nama'      => 'required|string|max:150',
+            'jabatan'   => 'nullable|string|max:150',
+            'deskripsi' => 'nullable|string|max:1000',
+            'poin'      => 'nullable|integer|min:0|max:9999',
+            'image'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        $imageUrl = $doc->image_url ?? null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             if ($imageUrl) {
                 $oldPath = str_replace('/storage/', '', parse_url($imageUrl, PHP_URL_PATH));
                 Storage::disk('public')->delete($oldPath);
             }
-            $path = $request->file('image')->store('info/leaders', 'public');
-            $imageUrl = URL::to(Storage::url($path));
+            $path     = $request->file('image')->store('info/leaders', 'public');
+            $imageUrl = url('storage/' . $path);
         }
 
-        $this->leaders->updateOne(
-            ['_id' => $oid],
-            [
-                '$set' => [
-                    'nama' => $request->nama,
-                    'jabatan' => $request->jabatan,
-                    'deskripsi' => $request->deskripsi,
-                    'poin' => $request->poin,
-                    'image_url' => $imageUrl,
-                    'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-                ]
-            ]
-        );
+        $doc->update([
+            'nama'      => $request->nama,
+            'jabatan'   => $request->jabatan,
+            'deskripsi' => $request->deskripsi,
+            'poin'      => $request->poin ? (int) $request->poin : null,
+            'image_url' => $imageUrl,
+        ]);
+
         return response()->json(['success' => true]);
     }
 
     public function leaderDestroy(string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false], 400);
+        $doc = Leader::find($id);
+        if (!$doc) {
+            return response()->json(['success' => false], 404);
         }
-        $doc = $this->leaders->findOne(['_id' => $oid]);
-        if ($doc && !empty($doc['image_url'])) {
-            $path = str_replace('/storage/', '', parse_url($doc['image_url'], PHP_URL_PATH));
+        if (!empty($doc->image_url)) {
+            $path = str_replace('/storage/', '', parse_url($doc->image_url, PHP_URL_PATH));
             Storage::disk('public')->delete($path);
         }
-        $this->leaders->deleteOne(['_id' => $oid]);
+        $doc->delete();
         return response()->json(['success' => true]);
     }
 
@@ -261,199 +241,192 @@ class InfoController extends Controller
     ═══════════════════════════════════════════════════════ */
     public function programIndex(Request $request)
     {
-        $cursor = $this->programs->find([], ['sort' => ['name' => 1]]);
-        $data = [];
-        foreach ($cursor as $doc)
-            $data[] = $this->fmtProgram($doc);
+        $data = Program::orderBy('name')->get()->map(fn($doc) => $this->fmtProgram($doc))->values();
         return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function programStore(Request $request)
     {
-        // Thumbnail lama
-        $imageUrl = null;
         $request->validate([
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'hero_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'about_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'name'             => 'required|string|max:200',
+            'description'      => 'nullable|string|max:5000',
+            'target_audience'  => 'nullable|string|max:500',
+            'advantages'       => 'nullable|string',
+            'image'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'hero_image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'about_image'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
             'gallery_images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
+
+        $imageUrl = null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $path = $request->file('image')->store('info/programs', 'public');
-            $imageUrl = URL::to(Storage::url($path));
+            $path     = $request->file('image')->store('info/programs', 'public');
+            $imageUrl = url('storage/' . $path);
         }
 
-        // Hero Image
         $heroImageUrl = null;
         if ($request->hasFile('hero_image') && $request->file('hero_image')->isValid()) {
-            $path = $request->file('hero_image')->store('info/programs/hero', 'public');
-            $heroImageUrl = URL::to(Storage::url($path));
+            $path         = $request->file('hero_image')->store('info/programs/hero', 'public');
+            $heroImageUrl = url('storage/' . $path);
         }
 
-        // About Image
         $aboutImageUrl = null;
         if ($request->hasFile('about_image') && $request->file('about_image')->isValid()) {
-            $path = $request->file('about_image')->store('info/programs/about', 'public');
-            $aboutImageUrl = URL::to(Storage::url($path));
+            $path          = $request->file('about_image')->store('info/programs/about', 'public');
+            $aboutImageUrl = url('storage/' . $path);
         }
 
-        // Gallery Images (Multi Upload)
         $galleryUrls = [];
         if ($request->hasFile('gallery_images')) {
             foreach ($request->file('gallery_images') as $file) {
                 if ($file->isValid()) {
-                    $path = $file->store('info/programs/gallery', 'public');
-                    $galleryUrls[] = URL::to(Storage::url($path));
+                    $path          = $file->store('info/programs/gallery', 'public');
+                    $galleryUrls[] = url('storage/' . $path);
                 }
             }
         }
 
-        // Advantages (Decode JSON)
         $advantages = [];
         if ($request->filled('advantages')) {
-            $decoded = json_decode($request->advantages, true);
+            $decoded    = json_decode($request->advantages, true);
             $advantages = is_array($decoded) ? $decoded : [];
         }
 
-        $doc = [
-            'name' => $request->name,
-            'description' => $request->description,
+        $doc = Program::create([
+            'name'            => $request->name,
+            'description'     => $request->description,
             'target_audience' => $request->target_audience,
-            // 'duration' telah dihapus
-            'image_url' => $imageUrl,
-            'hero_image_url' => $heroImageUrl,
+            'image_url'       => $imageUrl,
+            'hero_image_url'  => $heroImageUrl,
             'about_image_url' => $aboutImageUrl,
-            'advantages' => $advantages,
-            'gallery' => $galleryUrls,
-            'created_at' => new \MongoDB\BSON\UTCDateTime(),
-            'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-        ];
+            'advantages'      => $advantages,
+            'gallery'         => $galleryUrls,
+        ]);
 
-        $result = $this->programs->insertOne($doc);
-        $doc['_id'] = $result->getInsertedId();
         return response()->json(['success' => true, 'data' => $this->fmtProgram($doc)]);
     }
 
     public function programUpdate(Request $request, string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false], 400);
+        $doc = Program::find($id);
+        if (!$doc) {
+            return response()->json(['success' => false], 404);
         }
 
-        $existing = $this->programs->findOne(['_id' => $oid]);
-        if (!$existing)
-            return response()->json(['success' => false], 404);
-
-        // Update Thumbnail Lama
-        $imageUrl = $existing['image_url'] ?? null;
         $request->validate([
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'hero_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'about_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'name'             => 'required|string|max:200',
+            'description'      => 'nullable|string|max:5000',
+            'target_audience'  => 'nullable|string|max:500',
+            'advantages'       => 'nullable|string',
+            'image'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'hero_image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'about_image'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
             'gallery_images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
+
+        $imageUrl = $doc->image_url ?? null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             if ($imageUrl) {
-                $oldPath = str_replace('/storage/', '', parse_url($imageUrl, PHP_URL_PATH));
-                Storage::disk('public')->delete($oldPath);
+                Storage::disk('public')->delete(str_replace('/storage/', '', parse_url($imageUrl, PHP_URL_PATH)));
             }
-            $path = $request->file('image')->store('info/programs', 'public');
-            $imageUrl = URL::to(Storage::url($path));
+            $path     = $request->file('image')->store('info/programs', 'public');
+            $imageUrl = url('storage/' . $path);
         }
 
-        // Update Hero Image
-        $heroImageUrl = $existing['hero_image_url'] ?? null;
+        $heroImageUrl = $doc->hero_image_url ?? null;
         if ($request->hasFile('hero_image') && $request->file('hero_image')->isValid()) {
             if ($heroImageUrl) {
-                $oldPath = str_replace('/storage/', '', parse_url($heroImageUrl, PHP_URL_PATH));
-                Storage::disk('public')->delete($oldPath);
+                Storage::disk('public')->delete(str_replace('/storage/', '', parse_url($heroImageUrl, PHP_URL_PATH)));
             }
-            $path = $request->file('hero_image')->store('info/programs/hero', 'public');
-            $heroImageUrl = URL::to(Storage::url($path));
+            $path         = $request->file('hero_image')->store('info/programs/hero', 'public');
+            $heroImageUrl = url('storage/' . $path);
         }
 
-        // Update About Image
-        $aboutImageUrl = $existing['about_image_url'] ?? null;
+        $aboutImageUrl = $doc->about_image_url ?? null;
         if ($request->hasFile('about_image') && $request->file('about_image')->isValid()) {
             if ($aboutImageUrl) {
-                $oldPath = str_replace('/storage/', '', parse_url($aboutImageUrl, PHP_URL_PATH));
-                Storage::disk('public')->delete($oldPath);
+                Storage::disk('public')->delete(str_replace('/storage/', '', parse_url($aboutImageUrl, PHP_URL_PATH)));
             }
-            $path = $request->file('about_image')->store('info/programs/about', 'public');
-            $aboutImageUrl = URL::to(Storage::url($path));
+            $path          = $request->file('about_image')->store('info/programs/about', 'public');
+            $aboutImageUrl = url('storage/' . $path);
         }
 
-        // Update Gallery Images
-        $galleryUrls = (isset($existing['gallery']) && is_array($existing['gallery'])) ? iterator_to_array($existing['gallery']) : [];
+        $galleryUrls = $doc->gallery ?? [];
         if ($request->hasFile('gallery_images')) {
             foreach ($request->file('gallery_images') as $file) {
                 if ($file->isValid()) {
-                    $path = $file->store('info/programs/gallery', 'public');
-                    $galleryUrls[] = URL::to(Storage::url($path));
+                    $path          = $file->store('info/programs/gallery', 'public');
+                    $galleryUrls[] = url('storage/' . $path);
                 }
             }
         }
 
-        // Update Advantages
-        $advantages = (isset($existing['advantages']) && is_array($existing['advantages'])) ? iterator_to_array($existing['advantages']) : [];
+        $advantages = $doc->advantages ?? [];
         if ($request->filled('advantages')) {
-            $decoded = json_decode($request->advantages, true);
+            $decoded    = json_decode($request->advantages, true);
             $advantages = is_array($decoded) ? $decoded : [];
         }
 
-        $this->programs->updateOne(
-            ['_id' => $oid],
-            [
-                '$set' => [
-                    'name' => $request->name,
-                    'description' => $request->description,
-                    'target_audience' => $request->target_audience,
-                    // 'duration' telah dihapus
-                    'image_url' => $imageUrl,
-                    'hero_image_url' => $heroImageUrl,
-                    'about_image_url' => $aboutImageUrl,
-                    'advantages' => $advantages,
-                    'gallery' => array_values($galleryUrls),
-                    'updated_at' => new \MongoDB\BSON\UTCDateTime(),
-                ]
-            ]
-        );
+        $doc->update([
+            'name'            => $request->name,
+            'description'     => $request->description,
+            'target_audience' => $request->target_audience,
+            'image_url'       => $imageUrl,
+            'hero_image_url'  => $heroImageUrl,
+            'about_image_url' => $aboutImageUrl,
+            'advantages'      => $advantages,
+            'gallery'         => array_values($galleryUrls),
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function programGalleryDestroy(string $id, int $index)
+    {
+        $doc = Program::find($id);
+        if (!$doc) {
+            return response()->json(['success' => false, 'message' => 'Program tidak ditemukan.'], 404);
+        }
+
+        $gallery = array_values($doc->gallery ?? []);
+
+        if (!isset($gallery[$index])) {
+            return response()->json(['success' => false, 'message' => 'Gambar tidak ditemukan.'], 404);
+        }
+
+        $fileUrl = $gallery[$index];
+        $path    = str_replace('/storage/', '', parse_url($fileUrl, PHP_URL_PATH));
+        Storage::disk('public')->delete($path);
+
+        array_splice($gallery, $index, 1);
+        $doc->update(['gallery' => array_values($gallery)]);
+
         return response()->json(['success' => true]);
     }
 
     public function programDestroy(string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false], 400);
-        }
-        $doc = $this->programs->findOne(['_id' => $oid]);
-
-        if ($doc) {
-            $filesToDelete = [];
-            if (!empty($doc['image_url']))
-                $filesToDelete[] = $doc['image_url'];
-            if (!empty($doc['hero_image_url']))
-                $filesToDelete[] = $doc['hero_image_url'];
-            if (!empty($doc['about_image_url']))
-                $filesToDelete[] = $doc['about_image_url'];
-
-            if (!empty($doc['gallery']) && is_array($doc['gallery'])) {
-                foreach ($doc['gallery'] as $g) {
-                    $filesToDelete[] = $g;
-                }
-            }
-
-            foreach ($filesToDelete as $fileUrl) {
-                $path = str_replace('/storage/', '', parse_url($fileUrl, PHP_URL_PATH));
-                Storage::disk('public')->delete($path);
-            }
+        $doc = Program::find($id);
+        if (!$doc) {
+            return response()->json(['success' => false], 404);
         }
 
-        $this->programs->deleteOne(['_id' => $oid]);
+        $filesToDelete = array_filter([
+            $doc->image_url,
+            $doc->hero_image_url,
+            $doc->about_image_url,
+        ]);
+
+        foreach ($doc->gallery ?? [] as $g) {
+            $filesToDelete[] = $g;
+        }
+
+        foreach ($filesToDelete as $fileUrl) {
+            $path = str_replace('/storage/', '', parse_url($fileUrl, PHP_URL_PATH));
+            Storage::disk('public')->delete($path);
+        }
+
+        $doc->delete();
         return response()->json(['success' => true]);
     }
 
@@ -462,86 +435,77 @@ class InfoController extends Controller
     ═══════════════════════════════════════════════════════ */
     public function galleryIndex(Request $request)
     {
-        $cursor = $this->gallery->find([], ['sort' => ['uploaded_at' => -1]]);
-        $data = [];
-        foreach ($cursor as $doc)
-            $data[] = $this->fmtGallery($doc);
+        $data = Gallery::orderBy('uploaded_at', 'desc')->get()->map(fn($doc) => $this->fmtGallery($doc))->values();
         return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function galleryStore(Request $request)
     {
-        $mediaUrl = $request->media_url ?? null;
         $request->validate([
-            'media' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'media_url' => 'nullable|url',
+            'title'     => 'required|string|max:200',
+            'type'      => 'required|in:Photo,Video',
+            'media'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'media_url' => 'nullable|url|max:500',
         ]);
+
+        $mediaUrl = $request->media_url ?? null;
         if ($request->type === 'Photo' && $request->hasFile('media') && $request->file('media')->isValid()) {
-            $path = $request->file('media')->store('info/gallery', 'public');
-            $mediaUrl = URL::to(Storage::url($path));
+            $path     = $request->file('media')->store('info/gallery', 'public');
+            $mediaUrl = url('storage/' . $path);
         }
 
-        $doc = [
-            'title' => $request->title,
+        $doc = Gallery::create([
+            'title'     => $request->title,
             'media_url' => $mediaUrl,
-            'type' => $request->type,
-            'uploaded_at' => new \MongoDB\BSON\UTCDateTime(),
-        ];
+            'type'      => $request->type,
+        ]);
 
-        $result = $this->gallery->insertOne($doc);
-        $doc['_id'] = $result->getInsertedId();
         return response()->json(['success' => true, 'data' => $this->fmtGallery($doc)]);
     }
 
     public function galleryUpdate(Request $request, string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false], 400);
-        }
-        $existing = $this->gallery->findOne(['_id' => $oid]);
-        if (!$existing)
+        $doc = Gallery::find($id);
+        if (!$doc) {
             return response()->json(['success' => false], 404);
+        }
 
-        $mediaUrl = $existing['media_url'] ?? null;
         $request->validate([
-            'media' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'title'     => 'required|string|max:200',
+            'type'      => 'required|in:Photo,Video',
+            'media'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'media_url' => 'nullable|url|max:500',
         ]);
+
+        $mediaUrl = $doc->media_url ?? null;
         if ($request->type === 'Photo' && $request->hasFile('media') && $request->file('media')->isValid()) {
             if ($mediaUrl && str_contains($mediaUrl, '/storage/')) {
                 $parsedPath = parse_url($mediaUrl, PHP_URL_PATH);
                 if ($parsedPath) {
-                    $oldPath = str_replace('/storage/', '', $parsedPath);
-                    Storage::disk('public')->delete($oldPath);
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
                 }
             }
-            $path = $request->file('media')->store('info/gallery', 'public');
-            $mediaUrl = URL::to(Storage::url($path));
+            $path     = $request->file('media')->store('info/gallery', 'public');
+            $mediaUrl = url('storage/' . $path);
         } elseif ($request->type === 'Video' && $request->filled('media_url')) {
             $mediaUrl = $request->media_url;
         }
 
-        $this->gallery->updateOne(
-            ['_id' => $oid],
-            ['$set' => ['title' => $request->title, 'type' => $request->type, 'media_url' => $mediaUrl]]
-        );
+        $doc->update(['title' => $request->title, 'type' => $request->type, 'media_url' => $mediaUrl]);
         return response()->json(['success' => true]);
     }
 
     public function galleryDestroy(string $id)
     {
-        try {
-            $oid = new ObjectId($id);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false], 400);
+        $doc = Gallery::find($id);
+        if (!$doc) {
+            return response()->json(['success' => false], 404);
         }
-        $doc = $this->gallery->findOne(['_id' => $oid]);
-        if ($doc && $doc['type'] === 'Photo' && !empty($doc['media_url'])) {
-            $path = str_replace('/storage/', '', parse_url($doc['media_url'], PHP_URL_PATH));
+        if ($doc->type === 'Photo' && !empty($doc->media_url)) {
+            $path = str_replace('/storage/', '', parse_url($doc->media_url, PHP_URL_PATH));
             Storage::disk('public')->delete($path);
         }
-        $this->gallery->deleteOne(['_id' => $oid]);
+        $doc->delete();
         return response()->json(['success' => true]);
     }
 
@@ -550,48 +514,77 @@ class InfoController extends Controller
     ═══════════════════════════════════════════════════════ */
     private function fmtProfile($doc): array
     {
-        $doc['id'] = (string) $doc['_id'];
-        unset($doc['_id']);
-
-        if (isset($doc['updated_at'])) {
-            $doc['updated_at'] = $doc['updated_at']->toDateTime()->format('Y-m-d H:i:s');
-        }
-        if (isset($doc['created_at'])) {
-            $doc['created_at'] = $doc['created_at']->toDateTime()->format('Y-m-d H:i:s');
-        }
-
-        return (array) $doc;
+        return [
+            'id'               => (string) $doc->_id,
+            'name'             => $doc->name             ?? null,
+            'hero_title'       => $doc->hero_title       ?? null,
+            'logo'             => $doc->logo             ?? null,
+            'about_image'      => $doc->about_image      ?? null,
+            'tagline'          => $doc->tagline          ?? null,
+            'history'          => $doc->history          ?? null,
+            'vision'           => $doc->vision           ?? null,
+            'mission'          => $doc->mission          ?? null,
+            'address'          => $doc->address          ?? null,
+            'whatsapp'         => $doc->whatsapp         ?? null,
+            'email'            => $doc->email            ?? null,
+            'social_media'     => $doc->social_media     ?? null,
+            'established_year' => $doc->established_year ?? null,
+            'main_focus'       => $doc->main_focus       ?? null,
+            'bank_name'        => $doc->bank_name        ?? null,
+            'bank_account'     => $doc->bank_account     ?? null,
+            'bank_holder'      => $doc->bank_holder      ?? null,
+            'bank_nominal'     => $doc->bank_nominal     ?? null,
+            'updated_at'       => $doc->updated_at?->format('Y-m-d H:i:s'),
+            'created_at'       => $doc->created_at?->format('Y-m-d H:i:s'),
+        ];
     }
+
     private function fmtFoundation($doc): array
     {
-        $doc['id'] = (string) $doc['_id'];
-        unset($doc['_id']);
-        return (array) $doc;
+        return [
+            'id'          => (string) $doc->_id,
+            'title'       => $doc->title       ?? null,
+            'description' => $doc->description ?? null,
+            'created_at'  => $doc->created_at?->format('Y-m-d H:i:s'),
+            'updated_at'  => $doc->updated_at?->format('Y-m-d H:i:s'),
+        ];
     }
+
     private function fmtLeader($doc): array
     {
-        $doc['id'] = (string) $doc['_id'];
-        unset($doc['_id']);
-        return (array) $doc;
+        return [
+            'id'        => (string) $doc->_id,
+            'nama'      => $doc->nama      ?? null,
+            'jabatan'   => $doc->jabatan   ?? null,
+            'deskripsi' => $doc->deskripsi ?? null,
+            'poin'      => $doc->poin      ?? null,
+            'image_url' => $doc->image_url ?? null,
+        ];
     }
+
     private function fmtProgram($doc): array
     {
-        $doc['id'] = (string) $doc['_id'];
-        unset($doc['_id']);
-
-        if (isset($doc['advantages']) && is_object($doc['advantages'])) {
-            $doc['advantages'] = iterator_to_array($doc['advantages']);
-        }
-        if (isset($doc['gallery']) && is_object($doc['gallery'])) {
-            $doc['gallery'] = iterator_to_array($doc['gallery']);
-        }
-
-        return (array) $doc;
+        return [
+            'id'              => (string) $doc->_id,
+            'name'            => $doc->name            ?? null,
+            'description'     => $doc->description     ?? null,
+            'target_audience' => $doc->target_audience ?? null,
+            'image_url'       => $doc->image_url       ?? null,
+            'hero_image_url'  => $doc->hero_image_url  ?? null,
+            'about_image_url' => $doc->about_image_url ?? null,
+            'advantages'      => $doc->advantages      ?? [],
+            'gallery'         => $doc->gallery         ?? [],
+        ];
     }
+
     private function fmtGallery($doc): array
     {
-        $doc['id'] = (string) $doc['_id'];
-        unset($doc['_id']);
-        return (array) $doc;
+        return [
+            'id'          => (string) $doc->_id,
+            'title'       => $doc->title     ?? null,
+            'media_url'   => $doc->media_url ?? null,
+            'type'        => $doc->type      ?? null,
+            'uploaded_at' => $doc->uploaded_at?->format('Y-m-d H:i:s'),
+        ];
     }
 }

@@ -3,107 +3,100 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agenda;
+use App\Models\Program;
+use App\Models\ProgressReport;
+use App\Models\Student;
+use App\Models\Teacher;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
-use MongoDB\Client as MongoClient;
-use MongoDB\BSON\ObjectId;
 
 class TeacherDashboardController extends Controller
 {
-    private $db;
-
-    public function __construct()
-    {
-        $client   = new MongoClient(config('database.connections.mongodb.dsn'));
-        $this->db = $client->selectDatabase(config('database.connections.mongodb.database'));
-    }
-
     public function index(): Response
     {
-        $userId   = (string) Auth::user()->_id;
-        $teachers = $this->db->selectCollection('teachers');
-        $students = $this->db->selectCollection('students');
-        $reports  = $this->db->selectCollection('progress_reports');
-        $agendas  = $this->db->selectCollection('agendas');
+        $userId = (string) Auth::user()->_id;
 
-        // ── Profil guru dari collection teachers ─────────────
-        $teacherDoc = $teachers->findOne(['user_id' => $userId]);
-        $teacherId  = $teacherDoc ? (string) $teacherDoc['_id'] : null;
+        // ── Profil guru ───────────────────────────────────────
+        $teacherDoc = Teacher::where('user_id', $userId)->first();
+        $teacherId  = $teacherDoc ? (string) $teacherDoc->_id : null;
 
         $profile = $teacherDoc ? [
-            'nama_guru' => $teacherDoc['nama_guru'] ?? '—',
-            'phone'     => $teacherDoc['phone']     ?? '—',
-            'email'     => $teacherDoc['email']     ?? '—',
-            'bidang'    => $teacherDoc['bidang']    ?? '—',
+            'nama_guru' => $teacherDoc->nama_guru ?? '—',
+            'phone'     => $teacherDoc->phone     ?? '—',
+            'email'     => $teacherDoc->email     ?? '—',
+            'bidang'    => $teacherDoc->bidang    ?? '—',
         ] : null;
 
         // ── Stats: total santri aktif ─────────────────────────
-        $totalSantri = $students->countDocuments(['enrollment_status' => 'active']);
-
-        // Target tercapai: % santri yang laporan terakhirnya sangat_lancar atau lancar
+        $allStudents = Student::where('enrollment_status', 'active')->get(['_id']);
+        $totalSantri = $allStudents->count();
         $targetTercapai = 0;
+
         if ($totalSantri > 0) {
-            $goodCount = 0;
-            $cursor    = $students->find(['enrollment_status' => 'active'], ['projection' => ['_id' => 1]]);
-            foreach ($cursor as $s) {
-                $sid        = (string) $s['_id'];
-                $lastReport = $reports->findOne(['student_id' => $sid], ['sort' => ['date' => -1]]);
-                if ($lastReport && in_array($lastReport['kualitas'] ?? '', ['sangat_lancar', 'lancar'])) {
-                    $goodCount++;
-                }
-            }
+            $studentIds = $allStudents->map(fn($s) => (string) $s->_id)->toArray();
+
+            // Ambil laporan terbaru per siswa dalam satu query (batch — tidak N+1)
+            $latestReports = ProgressReport::whereIn('student_id', $studentIds)
+                ->orderBy('date', 'desc')
+                ->get(['student_id', 'kualitas'])
+                ->unique('student_id');
+
+            $goodCount = $latestReports->filter(
+                fn($r) => in_array($r->kualitas ?? '', ['sangat_lancar', 'lancar'], true)
+            )->count();
+
             $targetTercapai = (int) round(($goodCount / $totalSantri) * 100);
         }
 
-        // ── Agenda hari ini dari collection agendas ───────────
-        $today      = date('Y-m-d');
-        $todayAgendas = [];
-
-        try {
-            $agCursor = $agendas->find(
-                ['event_date' => $today],
-                ['sort' => ['title' => 1], 'limit' => 10]
-            );
-            foreach ($agCursor as $ag) {
-                $todayAgendas[] = [
-                    'id'     => (string) $ag['_id'],
-                    'time'   => $ag['time']        ?? '—',
-                    'class'  => $ag['title']       ?? '—',
-                    'type'   => $ag['description'] ?? '—',
-                    'room'   => $ag['location']    ?? '—',
-                    'status' => $ag['status']      ?? 'Menunggu',
-                ];
-            }
-        } catch (\Exception $e) {}
+        // ── Agenda hari ini ───────────────────────────────────
+        $today        = date('Y-m-d');
+        $todayAgendas = Agenda::where('event_date', $today)
+            ->orderBy('title')
+            ->take(10)
+            ->get()
+            ->map(fn($ag) => [
+                'id'     => (string) $ag->_id,
+                'time'   => '—',
+                'class'  => $ag->title       ?? '—',
+                'type'   => $ag->description ?? '—',
+                'room'   => $ag->location    ?? '—',
+                'status' => 'Menunggu',
+            ])->values()->toArray();
 
         // ── 5 laporan terbaru dari guru ini ───────────────────
         $recentReports = [];
         if ($teacherId) {
-            $rCursor = $reports->find(
-                ['teacher_id' => $teacherId],
-                ['sort' => ['date' => -1], 'limit' => 5]
-            );
+            $reports    = ProgressReport::where('teacher_id', $teacherId)
+                ->orderBy('date', 'desc')
+                ->take(5)
+                ->get();
 
-            foreach ($rCursor as $r) {
-                $sid         = (string) ($r['student_id'] ?? '');
-                $studentDoc  = null;
-                if ($sid) {
-                    try {
-                        $studentDoc = $students->findOne(['_id' => new ObjectId($sid)]);
-                    } catch (\Exception $e) {}
-                }
+            $studentIds = $reports->pluck('student_id')->filter()->unique()->values()->toArray();
+            $students   = Student::whereIn('_id', $studentIds)->get()->keyBy(fn($s) => (string) $s->_id);
 
-                $recentReports[] = [
-                    'id'            => (string) $r['_id'],
-                    'student_name'  => $studentDoc['nama']    ?? 'Santri',
-                    'class_name'    => $studentDoc['program_id'] ?? '—',
-                    'report_type'   => $r['report_type']   ?? 'hafalan',
-                    'surah_or_jilid'=> $r['hafalan_target'] ?? '—',
-                    'ayat_or_hal'   => $r['hafalan_achievement'] ?? '—',
-                    'kualitas'      => $r['kualitas']       ?? 'lancar',
+            $programIds = $students->pluck('program_id')->filter()->unique()->values()->toArray();
+            $programs   = empty($programIds) ? [] : Program::whereIn('_id', $programIds)
+                ->get(['_id', 'name'])
+                ->keyBy(fn($p) => (string) $p->_id)
+                ->map(fn($p) => $p->name ?? '—')
+                ->toArray();
+
+            $recentReports = $reports->map(function ($r) use ($students, $programs) {
+                $sid        = (string) ($r->student_id ?? '');
+                $studentDoc = $students[$sid] ?? null;
+                $pid        = (string) ($studentDoc?->program_id ?? '');
+                return [
+                    'id'             => (string) $r->_id,
+                    'student_name'   => $studentDoc?->nama      ?? 'Santri',
+                    'class_name'     => $programs[$pid]          ?? '—',
+                    'report_type'    => $r->report_type         ?? 'hafalan',
+                    'surah_or_jilid' => $r->hafalan_target      ?? '—',
+                    'ayat_or_hal'    => $r->hafalan_achievement ?? '—',
+                    'kualitas'       => $r->kualitas            ?? 'lancar',
                 ];
-            }
+            })->values()->toArray();
         }
 
         return Inertia::render('teacher/Dashboard', [

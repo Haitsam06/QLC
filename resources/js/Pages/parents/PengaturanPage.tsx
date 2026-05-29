@@ -227,7 +227,7 @@ function PasswordForm() {
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const { data, setData, post, processing, errors, reset, recentlySuccessful } = useForm({
+    const { data, setData, put, processing, errors, reset, recentlySuccessful } = useForm({
         current_password: '',
         password: '',
         password_confirmation: '',
@@ -235,7 +235,7 @@ function PasswordForm() {
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(route('settings.password'), {
+        put(route('settings.password'), {
             preserveScroll: true,
             onSuccess: () => reset(),
         });

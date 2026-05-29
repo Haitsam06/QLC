@@ -3,27 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Models\Parents;
+use App\Models\ProgressReport;
+use App\Models\Program;
+use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use MongoDB\Client as MongoClient;
-use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\Regex;
 
 class StudentController extends Controller
 {
-    private $students;
-    private $parents;
-    private $programs;
-
-    public function __construct()
-    {
-        $client         = new MongoClient(config('database.connections.mongodb.dsn'));
-        $db             = $client->selectDatabase(config('database.connections.mongodb.database'));
-        $this->students = $db->selectCollection('students');
-        $this->parents  = $db->selectCollection('parents');
-        $this->programs = $db->selectCollection('programs');
-    }
-
     public function index(Request $request)
     {
         $search    = $request->query('search', '');
@@ -33,52 +24,30 @@ class StudentController extends Controller
         $page      = (int) $request->query('page', 1);
         $skip      = ($page - 1) * $perPage;
 
-        $filter = [];
+        $query = Student::query();
+
         if (!empty($search)) {
-            $safeSearch = preg_quote($search, '/');
-            $filter['$or'] = [
-                ['nama'         => ['$regex' => $safeSearch, '$options' => 'i']],
-                ['tempat_lahir' => ['$regex' => $safeSearch, '$options' => 'i']],
-            ];
-        }
-        if (!empty($status))    $filter['enrollment_status'] = $status;
-        if (!empty($programId)) $filter['program_id']        = $programId;
-
-        $total  = $this->students->countDocuments($filter);
-        $cursor = $this->students->find($filter, [
-            'skip'  => $skip,
-            'limit' => $perPage,
-            'sort'  => ['nama' => 1],
-        ]);
-
-        // Collect docs first, then batch-load programs to avoid N+1
-        $docs       = [];
-        $programIds = [];
-        foreach ($cursor as $doc) {
-            $docs[] = $doc;
-            if (!empty($doc['program_id'])) {
-                $programIds[] = $doc['program_id'];
-            }
+            $regex = new Regex(preg_quote($search, '/'), 'i');
+            $query->where(function ($q) use ($regex) {
+                $q->where('nama', $regex)
+                  ->orWhere('tempat_lahir', $regex);
+            });
         }
 
-        $programMap = [];
-        if (!empty($programIds)) {
-            $oids = array_values(array_filter(array_map(function ($pid) {
-                try { return new ObjectId($pid); } catch (\Exception $e) { return null; }
-            }, array_unique($programIds))));
-            foreach ($this->programs->find(['_id' => ['$in' => $oids]]) as $p) {
-                $programMap[(string) $p['_id']] = $p['name'] ?? null;
-            }
-        }
+        if (!empty($status))    $query->where('enrollment_status', $status);
+        if (!empty($programId)) $query->where('program_id', $programId);
 
-        $data = [];
-        foreach ($docs as $doc) {
-            $data[] = $this->format($doc, $programMap);
-        }
+        $total    = $query->count();
+        $students = $query->orderBy('nama')->skip($skip)->take($perPage)->get();
+
+        $programIds = $students->pluck('program_id')->filter()->unique()->values();
+        $programs   = Program::whereIn('_id', $programIds->toArray())
+            ->get()
+            ->keyBy(fn($p) => (string) $p->_id);
 
         return response()->json([
             'success' => true,
-            'data'    => $data,
+            'data'    => $students->map(fn($s) => $this->format($s, $programs)),
             'meta'    => [
                 'total'     => $total,
                 'page'      => $page,
@@ -104,43 +73,33 @@ class StudentController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        // Cari parent via user_id (bukan _id) karena students.parent_id = users._id
-        $parent = $this->parents->findOne(['user_id' => (string) $request->parent_id]);
+        $parent = Parents::where('user_id', (string) $request->parent_id)->first();
         if (!$parent) {
             return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
 
-        try {
-            $program = $this->programs->findOne(['_id' => new ObjectId($request->program_id)]);
-        } catch (\Exception $e) { $program = null; }
+        $program = Program::find($request->program_id);
         if (!$program) {
             return response()->json(['success' => false, 'message' => 'Program tidak ditemukan.'], 404);
         }
 
-        $doc = [
+        $student = Student::create([
             'parent_id'         => $request->parent_id,
-            'parent_name'       => $parent['parent_name'] ?? null,
+            'parent_name'       => $parent->parent_name ?? null,
             'program_id'        => $request->program_id,
             'nama'              => $request->nama,
             'usia'              => (int) $request->usia,
             'tempat_lahir'      => $request->tempat_lahir,
             'tanggal_lahir'     => $request->tanggal_lahir,
             'enrollment_status' => $request->enrollment_status,
-            'created_at'        => new \MongoDB\BSON\UTCDateTime(),
-            'updated_at'        => new \MongoDB\BSON\UTCDateTime(),
-        ];
+        ]);
 
-        $result     = $this->students->insertOne($doc);
-        $doc['_id'] = $result->getInsertedId();
-
-        // Notifikasi ke semua guru jika siswa langsung berstatus aktif
         if ($request->enrollment_status === 'active') {
-            $programName = $program['name'] ?? 'program';
             Notification::sendToRole(
                 'teacher',
                 'pendaftaran',
                 'Santri Baru Aktif',
-                "Santri baru \"{$request->nama}\" telah terdaftar aktif di {$programName}.",
+                "Santri baru \"{$request->nama}\" telah terdaftar aktif di {$program->name}.",
                 null
             );
         }
@@ -148,21 +107,27 @@ class StudentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Siswa berhasil ditambahkan.',
-            'data'    => $this->format($doc),
+            'data'    => $this->format($student),
         ], 201);
     }
 
     public function show(string $id)
     {
-        try {
-            $doc = $this->students->findOne(['_id' => new ObjectId($id)]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
-        if (!$doc) {
+        $student = Student::find($id);
+
+        if (!$student) {
             return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan.'], 404);
         }
-        return response()->json(['success' => true, 'data' => $this->format($doc)]);
+
+        // Pre-load relasi agar format() tidak melakukan query individual (N+1)
+        $programs = collect();
+        if (!empty($student->program_id)) {
+            $programs = Program::whereIn('_id', [$student->program_id])
+                ->get()
+                ->keyBy(fn($p) => (string) $p->_id);
+        }
+
+        return response()->json(['success' => true, 'data' => $this->format($student, $programs)]);
     }
 
     public function update(Request $request, string $id)
@@ -181,57 +146,40 @@ class StudentController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
+        $student = Student::find($id);
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan.'], 404);
         }
 
-        // Ambil status lama sebelum update untuk deteksi perubahan ke aktif
-        $oldStudent = $this->students->findOne(['_id' => $oid]);
-        $oldStatus  = $oldStudent ? ($oldStudent['enrollment_status'] ?? null) : null;
+        $oldStatus = $student->enrollment_status;
 
-        // Cari parent via user_id
-        $parent = $this->parents->findOne(['user_id' => (string) $request->parent_id]);
+        $parent = Parents::where('user_id', (string) $request->parent_id)->first();
         if (!$parent) {
             return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
 
-        try {
-            $program = $this->programs->findOne(['_id' => new ObjectId($request->program_id)]);
-        } catch (\Exception $e) { $program = null; }
+        $program = Program::find($request->program_id);
         if (!$program) {
             return response()->json(['success' => false, 'message' => 'Program tidak ditemukan.'], 404);
         }
 
-        $result = $this->students->updateOne(
-            ['_id' => $oid],
-            ['$set' => [
-                'parent_id'         => $request->parent_id,
-                'parent_name'       => $parent['parent_name'] ?? null,
-                'program_id'        => $request->program_id,
-                'nama'              => $request->nama,
-                'usia'              => (int) $request->usia,
-                'tempat_lahir'      => $request->tempat_lahir,
-                'tanggal_lahir'     => $request->tanggal_lahir,
-                'enrollment_status' => $request->enrollment_status,
-                'updated_at'        => new \MongoDB\BSON\UTCDateTime(),
-            ]]
-        );
+        $student->update([
+            'parent_id'         => $request->parent_id,
+            'parent_name'       => $parent->parent_name ?? null,
+            'program_id'        => $request->program_id,
+            'nama'              => $request->nama,
+            'usia'              => (int) $request->usia,
+            'tempat_lahir'      => $request->tempat_lahir,
+            'tanggal_lahir'     => $request->tanggal_lahir,
+            'enrollment_status' => $request->enrollment_status,
+        ]);
 
-        if ($result->getMatchedCount() === 0) {
-            return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan.'], 404);
-        }
-
-        $updated = $this->students->findOne(['_id' => $oid]);
-
-        // Notifikasi ke semua guru jika status baru saja berubah menjadi aktif
         if ($request->enrollment_status === 'active' && $oldStatus !== 'active') {
-            $programName = $program['name'] ?? 'program';
             Notification::sendToRole(
                 'teacher',
                 'pendaftaran',
                 'Santri Baru Aktif',
-                "Santri \"{$request->nama}\" telah disetujui dan aktif di {$programName}.",
+                "Santri \"{$request->nama}\" telah disetujui dan aktif di {$program->name}.",
                 null
             );
         }
@@ -239,53 +187,61 @@ class StudentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Data siswa berhasil diperbarui.',
-            'data'    => $this->format($updated),
+            'data'    => $this->format($student->fresh()),
         ]);
     }
 
     public function destroy(string $id)
     {
-        try { $oid = new ObjectId($id); }
-        catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'ID tidak valid.'], 400);
-        }
-
-        $student = $this->students->findOne(['_id' => $oid]);
+        $student = Student::find($id);
 
         if (!$student) {
             return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan.'], 404);
         }
 
-        // Hapus file bukti pembayaran jika ada
-        if (!empty($student['bukti_pembayaran'])) {
-            Storage::disk('public')->delete($student['bukti_pembayaran']);
+        $studentId = (string) $student->_id;
+
+        // Cascade: hapus semua laporan progress terkait siswa ini
+        ProgressReport::where('student_id', $studentId)->delete();
+
+        if (!empty($student->bukti_pembayaran)) {
+            $parsed = parse_url($student->bukti_pembayaran, PHP_URL_PATH);
+            if ($parsed) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
+            }
         }
 
-        $this->students->deleteOne(['_id' => $oid]);
+        $student->delete();
+
+        Log::info('audit.student_deleted', [
+            'student_id' => $studentId,
+            'nama'       => $student->nama ?? '—',
+            'by_admin'   => auth()->id(),
+            'ip'         => request()->ip(),
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Data siswa berhasil dihapus.']);
     }
 
-    public function options()
+    public function options(Request $request)
     {
-        $parentCursor = $this->parents->find([], ['sort' => ['parent_name' => 1]]);
-        $parents = [];
-        foreach ($parentCursor as $p) {
-            $parents[] = [
-                // Gunakan user_id agar cocok dengan students.parent_id
-                'id'    => (string) $p['user_id'],
-                'label' => $p['parent_name'] . ' — ' . ($p['phone'] ?? ''),
-            ];
+        $search = trim($request->query('search', ''));
+
+        $parentQuery = Parents::orderBy('parent_name');
+        if ($search !== '') {
+            $regex = new Regex(preg_quote($search, '/'), 'i');
+            $parentQuery->where('parent_name', $regex);
         }
 
-        $programCursor = $this->programs->find([], ['sort' => ['name' => 1]]);
-        $programs = [];
-        foreach ($programCursor as $p) {
-            $programs[] = [
-                'id'    => (string) $p['_id'],
-                'label' => $p['name'] ?? (string) $p['_id'],
-            ];
-        }
+        $parents = $parentQuery->limit(50)->get()->map(fn($p) => [
+            'id'    => (string) $p->user_id,
+            'label' => $p->parent_name . ' — ' . ($p->phone ?? ''),
+        ]);
+
+        $programs = Program::orderBy('name')->get(['_id', 'name'])->map(fn($p) => [
+            'id'    => (string) $p->_id,
+            'label' => $p->name ?? (string) $p->_id,
+        ]);
 
         return response()->json([
             'success'  => true,
@@ -294,42 +250,24 @@ class StudentController extends Controller
         ]);
     }
 
-    private function format($doc, array $programMap = []): array
+    private function format($doc, $programs = null): array
     {
-        $parentName = $doc['parent_name'] ?? null;
-        if (!$parentName && !empty($doc['parent_id'])) {
-            $p = $this->parents->findOne(['user_id' => (string) $doc['parent_id']]);
-            $parentName = $p ? ($p['parent_name'] ?? null) : null;
-        }
-
-        $programName = null;
-        if (!empty($doc['program_id'])) {
-            $pid = (string) $doc['program_id'];
-            if (array_key_exists($pid, $programMap)) {
-                $programName = $programMap[$pid];
-            } else {
-                try {
-                    $p = $this->programs->findOne(['_id' => new ObjectId($pid)]);
-                    $programName = $p ? ($p['name'] ?? null) : null;
-                } catch (\Exception $e) {}
-            }
-        }
+        $pid         = (string) ($doc->program_id ?? '');
+        $programName = ($programs && isset($programs[$pid])) ? ($programs[$pid]->name ?? null) : null;
 
         return [
-            'id'                => (string) $doc['_id'],
-            'parent_id'         => $doc['parent_id'] ?? null,
-            'parent_name'       => $parentName,
-            'program_id'        => $doc['program_id'] ?? null,
+            'id'                => (string) $doc->_id,
+            'parent_id'         => $doc->parent_id ?? null,
+            'parent_name'       => $doc->parent_name ?? null,
+            'program_id'        => $doc->program_id ?? null,
             'program_name'      => $programName,
-            'nama'              => $doc['nama'],
-            'usia'              => $doc['usia'] ?? null,
-            'tempat_lahir'      => $doc['tempat_lahir'],
-            'tanggal_lahir'     => $doc['tanggal_lahir'],
-            'enrollment_status' => $doc['enrollment_status'],
-            'bukti_pembayaran'  => $doc['bukti_pembayaran'] ?? null,
-            'created_at'        => isset($doc['created_at'])
-                ? $doc['created_at']->toDateTime()->format('Y-m-d H:i:s')
-                : null,
+            'nama'              => $doc->nama,
+            'usia'              => $doc->usia ?? null,
+            'tempat_lahir'      => $doc->tempat_lahir,
+            'tanggal_lahir'     => $doc->tanggal_lahir,
+            'enrollment_status' => $doc->enrollment_status,
+            'bukti_pembayaran'  => $doc->bukti_pembayaran ?? null,
+            'created_at'        => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }
 }
