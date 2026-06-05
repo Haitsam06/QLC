@@ -1,0 +1,1136 @@
+{
+  "id": "main-frame",
+  "name": "QLC Landing Page – Lo-Fi Wireframe",
+  "type": "FRAME",
+  "x": 0,
+  "y": 0,
+  "width": 1440,
+  "height": 4252,
+  "fills": [{ "type": "SOLID", "color": { "r": 0.937, "g": 0.941, "b": 0.949, "a": 1 } }],
+  "clipsContent": false,
+  "children": [
+
+    {
+      "id": "section-navbar",
+      "name": "01 – Navbar",
+      "type": "FRAME",
+      "x": 0, "y": 0, "width": 1440, "height": 72,
+      "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+      "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+      "strokeWeight": 1,
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "navbar-logo",
+          "name": "Logo",
+          "type": "RECTANGLE",
+          "x": 80, "y": 20, "width": 130, "height": 32,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.749, "g": 0.749, "b": 0.749, "a": 1 } }]
+        },
+        {
+          "id": "nav-link-1", "name": "Nav Link: Beranda",
+          "type": "RECTANGLE", "x": 400, "y": 26, "width": 70, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "nav-link-2", "name": "Nav Link: Tentang",
+          "type": "RECTANGLE", "x": 490, "y": 26, "width": 70, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "nav-link-3", "name": "Nav Link: Program",
+          "type": "RECTANGLE", "x": 580, "y": 26, "width": 70, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "nav-link-4", "name": "Nav Link: Galeri",
+          "type": "RECTANGLE", "x": 670, "y": 26, "width": 70, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "nav-login", "name": "Login Link",
+          "type": "RECTANGLE", "x": 1255, "y": 26, "width": 65, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "nav-cta", "name": "CTA Button: Daftar",
+          "type": "RECTANGLE", "x": 1340, "y": 16, "width": 120, "height": 40,
+          "cornerRadius": 20,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.122, "g": 0.467, "b": 0.706, "a": 1 } }]
+        }
+      ]
+    },
+
+    {
+      "id": "section-hero",
+      "name": "02 – Hero Section",
+      "type": "FRAME",
+      "x": 0, "y": 72, "width": 1440, "height": 620,
+      "fills": [{ "type": "SOLID", "color": { "r": 0.961, "g": 0.973, "b": 0.969, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "hero-badge", "name": "Badge: ERA KEPEMIMPINAN",
+          "type": "RECTANGLE", "x": 80, "y": 90, "width": 248, "height": 36,
+          "cornerRadius": 18,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.937, "g": 0.937, "b": 0.937, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "hero-h1-1", "name": "H1 Line 1: Membangun Generasi",
+          "type": "RECTANGLE", "x": 80, "y": 148, "width": 460, "height": 46,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "hero-h1-2", "name": "H1 Line 2: Rabbani bersama",
+          "type": "RECTANGLE", "x": 80, "y": 202, "width": 380, "height": 46,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "hero-h1-3", "name": "H1 Line 3: Pejuang Quran (brand)",
+          "type": "RECTANGLE", "x": 80, "y": 256, "width": 300, "height": 46,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.247, "g": 0.247, "b": 0.247, "a": 1 } }]
+        },
+        {
+          "id": "hero-tagline-1", "name": "Tagline Line 1",
+          "type": "RECTANGLE", "x": 80, "y": 330, "width": 520, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "hero-tagline-2", "name": "Tagline Line 2",
+          "type": "RECTANGLE", "x": 80, "y": 358, "width": 480, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "hero-tagline-3", "name": "Tagline Line 3",
+          "type": "RECTANGLE", "x": 80, "y": 386, "width": 320, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "hero-btn-primary", "name": "CTA Primary: Pelajari Lebih Lanjut",
+          "type": "RECTANGLE", "x": 80, "y": 444, "width": 210, "height": 52,
+          "cornerRadius": 26,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.122, "g": 0.467, "b": 0.706, "a": 1 } }]
+        },
+        {
+          "id": "hero-btn-secondary", "name": "CTA Secondary: Lihat Agenda",
+          "type": "RECTANGLE", "x": 308, "y": 444, "width": 168, "height": 52,
+          "cornerRadius": 26,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.937, "g": 0.937, "b": 0.937, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.749, "g": 0.749, "b": 0.749, "a": 1 } }],
+          "strokeWeight": 1.5
+        },
+        {
+          "id": "hero-image-bg", "name": "Hero Image Placeholder",
+          "type": "RECTANGLE", "x": 780, "y": 60, "width": 580, "height": 500,
+          "cornerRadius": 48,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "hero-image-icon", "name": "Image Icon Circle",
+          "type": "ELLIPSE", "x": 1030, "y": 270, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        }
+      ]
+    },
+
+    {
+      "id": "section-tentang",
+      "name": "03 – Tentang QLC",
+      "type": "FRAME",
+      "x": 0, "y": 692, "width": 1440, "height": 520,
+      "fills": [{ "type": "SOLID", "color": { "r": 0.992, "g": 0.984, "b": 0.969, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "tentang-image", "name": "Image Placeholder: Tentang",
+          "type": "RECTANGLE", "x": 80, "y": 70, "width": 560, "height": 380,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "tentang-image-icon", "name": "Image Icon Circle",
+          "type": "ELLIPSE", "x": 330, "y": 230, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        },
+        {
+          "id": "tentang-sub-label", "name": "Label: Mengenal Kami",
+          "type": "RECTANGLE", "x": 720, "y": 70, "width": 130, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.749, "g": 0.749, "b": 0.749, "a": 1 } }]
+        },
+        {
+          "id": "tentang-title", "name": "Title: Tentang QLC",
+          "type": "RECTANGLE", "x": 720, "y": 100, "width": 220, "height": 38,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "tentang-divider", "name": "Divider",
+          "type": "RECTANGLE", "x": 720, "y": 152, "width": 80, "height": 6,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "tentang-para-1", "name": "Paragraph Line 1",
+          "type": "RECTANGLE", "x": 720, "y": 176, "width": 580, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "tentang-para-2", "name": "Paragraph Line 2",
+          "type": "RECTANGLE", "x": 720, "y": 202, "width": 560, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "tentang-para-3", "name": "Paragraph Line 3",
+          "type": "RECTANGLE", "x": 720, "y": 228, "width": 580, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "tentang-para-4", "name": "Paragraph Line 4",
+          "type": "RECTANGLE", "x": 720, "y": 254, "width": 540, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "tentang-para-5", "name": "Paragraph Line 5",
+          "type": "RECTANGLE", "x": 720, "y": 280, "width": 460, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "tentang-stat-1", "name": "Stat Card: Tahun Berdiri",
+          "type": "RECTANGLE", "x": 720, "y": 340, "width": 260, "height": 110,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.918, "g": 0.937, "b": 0.922, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.749, "g": 0.827, "b": 0.757, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "tentang-stat-1-icon", "name": "Stat 1 Icon",
+          "type": "ELLIPSE", "x": 752, "y": 360, "width": 44, "height": 44,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.808, "g": 0.878, "b": 0.820, "a": 1 } }]
+        },
+        {
+          "id": "tentang-stat-1-val", "name": "Stat 1 Value",
+          "type": "RECTANGLE", "x": 752, "y": 412, "width": 100, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "tentang-stat-1-label", "name": "Stat 1 Label",
+          "type": "RECTANGLE", "x": 752, "y": 436, "width": 130, "height": 14,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "tentang-stat-2", "name": "Stat Card: Fokus Utama",
+          "type": "RECTANGLE", "x": 1000, "y": 340, "width": 260, "height": 110,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.957, "g": 0.945, "b": 0.918, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.859, "g": 0.827, "b": 0.749, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "tentang-stat-2-icon", "name": "Stat 2 Icon",
+          "type": "ELLIPSE", "x": 1032, "y": 360, "width": 44, "height": 44,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.839, "b": 0.749, "a": 1 } }]
+        },
+        {
+          "id": "tentang-stat-2-val", "name": "Stat 2 Value",
+          "type": "RECTANGLE", "x": 1032, "y": 412, "width": 100, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "tentang-stat-2-label", "name": "Stat 2 Label",
+          "type": "RECTANGLE", "x": 1032, "y": 436, "width": 130, "height": 14,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        }
+      ]
+    },
+
+    {
+      "id": "section-pendiri",
+      "name": "04 – Pendiri",
+      "type": "FRAME",
+      "x": 0, "y": 1212, "width": 1440, "height": 580,
+      "fills": [{ "type": "SOLID", "color": { "r": 0.192, "g": 0.192, "b": 0.192, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "pendiri-badge", "name": "Badge: PEMIMPIN LEMBAGA",
+          "type": "RECTANGLE", "x": 560, "y": 50, "width": 220, "height": 36,
+          "cornerRadius": 18,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.2 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "pendiri-title", "name": "Title: Pendiri + Nama",
+          "type": "RECTANGLE", "x": 420, "y": 100, "width": 600, "height": 44,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.9 } }]
+        },
+        {
+          "id": "pendiri-card-1", "name": "Card: Pendiri 1",
+          "type": "RECTANGLE", "x": 80, "y": 220, "width": 400, "height": 280,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "pendiri-avatar-1", "name": "Avatar 1",
+          "type": "ELLIPSE", "x": 240, "y": 180, "width": 80, "height": 80,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokeWeight": 3
+        },
+        {
+          "id": "pendiri-name-1", "name": "Name 1",
+          "type": "RECTANGLE", "x": 190, "y": 310, "width": 200, "height": 22,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.9 } }]
+        },
+        {
+          "id": "pendiri-jabatan-1", "name": "Jabatan 1",
+          "type": "RECTANGLE", "x": 210, "y": 340, "width": 160, "height": 18,
+          "cornerRadius": 9,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.2 } }]
+        },
+        {
+          "id": "pendiri-divider-1", "name": "Divider 1",
+          "type": "RECTANGLE", "x": 120, "y": 372, "width": 320, "height": 1,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }]
+        },
+        {
+          "id": "pendiri-poin-1a", "name": "Poin 1a",
+          "type": "RECTANGLE", "x": 140, "y": 390, "width": 280, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+        {
+          "id": "pendiri-poin-1b", "name": "Poin 1b",
+          "type": "RECTANGLE", "x": 140, "y": 414, "width": 260, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+        {
+          "id": "pendiri-poin-1c", "name": "Poin 1c",
+          "type": "RECTANGLE", "x": 140, "y": 438, "width": 240, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+
+        {
+          "id": "pendiri-card-2", "name": "Card: Pendiri 2",
+          "type": "RECTANGLE", "x": 520, "y": 220, "width": 400, "height": 280,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "pendiri-avatar-2", "name": "Avatar 2",
+          "type": "ELLIPSE", "x": 680, "y": 180, "width": 80, "height": 80,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokeWeight": 3
+        },
+        {
+          "id": "pendiri-name-2", "name": "Name 2",
+          "type": "RECTANGLE", "x": 630, "y": 310, "width": 200, "height": 22,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.9 } }]
+        },
+        {
+          "id": "pendiri-jabatan-2", "name": "Jabatan 2",
+          "type": "RECTANGLE", "x": 650, "y": 340, "width": 160, "height": 18,
+          "cornerRadius": 9,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.2 } }]
+        },
+        {
+          "id": "pendiri-divider-2", "name": "Divider 2",
+          "type": "RECTANGLE", "x": 560, "y": 372, "width": 320, "height": 1,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }]
+        },
+        {
+          "id": "pendiri-poin-2a", "name": "Poin 2a",
+          "type": "RECTANGLE", "x": 580, "y": 390, "width": 280, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+        {
+          "id": "pendiri-poin-2b", "name": "Poin 2b",
+          "type": "RECTANGLE", "x": 580, "y": 414, "width": 260, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+        {
+          "id": "pendiri-poin-2c", "name": "Poin 2c",
+          "type": "RECTANGLE", "x": 580, "y": 438, "width": 240, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+
+        {
+          "id": "pendiri-card-3", "name": "Card: Pendiri 3",
+          "type": "RECTANGLE", "x": 960, "y": 220, "width": 400, "height": 280,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "pendiri-avatar-3", "name": "Avatar 3",
+          "type": "ELLIPSE", "x": 1120, "y": 180, "width": 80, "height": 80,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokeWeight": 3
+        },
+        {
+          "id": "pendiri-name-3", "name": "Name 3",
+          "type": "RECTANGLE", "x": 1070, "y": 310, "width": 200, "height": 22,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.9 } }]
+        },
+        {
+          "id": "pendiri-jabatan-3", "name": "Jabatan 3",
+          "type": "RECTANGLE", "x": 1090, "y": 340, "width": 160, "height": 18,
+          "cornerRadius": 9,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.2 } }]
+        },
+        {
+          "id": "pendiri-divider-3", "name": "Divider 3",
+          "type": "RECTANGLE", "x": 1000, "y": 372, "width": 320, "height": 1,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }]
+        },
+        {
+          "id": "pendiri-poin-3a", "name": "Poin 3a",
+          "type": "RECTANGLE", "x": 1020, "y": 390, "width": 280, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+        {
+          "id": "pendiri-poin-3b", "name": "Poin 3b",
+          "type": "RECTANGLE", "x": 1020, "y": 414, "width": 260, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+        {
+          "id": "pendiri-poin-3c", "name": "Poin 3c",
+          "type": "RECTANGLE", "x": 1020, "y": 438, "width": 240, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.6 } }]
+        },
+        {
+          "id": "pendiri-see-more-btn", "name": "Button: Lihat Struktur Pengurus",
+          "type": "RECTANGLE", "x": 560, "y": 520, "width": 320, "height": 52,
+          "cornerRadius": 26,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }]
+        }
+      ]
+    },
+
+    {
+      "id": "section-visi-misi",
+      "name": "05 – Visi & Misi",
+      "type": "FRAME",
+      "x": 0, "y": 1792, "width": 1440, "height": 420,
+      "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "visi-card", "name": "Visi Card",
+          "type": "RECTANGLE", "x": 80, "y": 60, "width": 540, "height": 300,
+          "cornerRadius": 48,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.192, "g": 0.192, "b": 0.192, "a": 1 } }]
+        },
+        {
+          "id": "visi-label", "name": "Label: VISI KAMI",
+          "type": "RECTANGLE", "x": 120, "y": 110, "width": 160, "height": 24,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.812, "b": 0.561, "a": 0.8 } }]
+        },
+        {
+          "id": "visi-text-1", "name": "Visi Text Line 1",
+          "type": "RECTANGLE", "x": 120, "y": 158, "width": 460, "height": 24,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.7 } }]
+        },
+        {
+          "id": "visi-text-2", "name": "Visi Text Line 2",
+          "type": "RECTANGLE", "x": 120, "y": 190, "width": 420, "height": 24,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.7 } }]
+        },
+        {
+          "id": "visi-text-3", "name": "Visi Text Line 3",
+          "type": "RECTANGLE", "x": 120, "y": 222, "width": 380, "height": 24,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.7 } }]
+        },
+
+        {
+          "id": "misi-card", "name": "Misi Card",
+          "type": "RECTANGLE", "x": 660, "y": 60, "width": 700, "height": 300,
+          "cornerRadius": 48,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "misi-label", "name": "Label: MISI KAMI",
+          "type": "RECTANGLE", "x": 700, "y": 96, "width": 160, "height": 30,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "misi-divider", "name": "Misi Divider",
+          "type": "RECTANGLE", "x": 700, "y": 140, "width": 620, "height": 1,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }]
+        },
+        {
+          "id": "misi-item-1-num", "name": "Misi 1 Number",
+          "type": "RECTANGLE", "x": 700, "y": 160, "width": 40, "height": 40,
+          "cornerRadius": 12,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.918, "g": 0.918, "b": 0.918, "a": 1 } }]
+        },
+        {
+          "id": "misi-item-1-text", "name": "Misi 1 Text",
+          "type": "RECTANGLE", "x": 756, "y": 170, "width": 520, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "misi-item-2-num", "name": "Misi 2 Number",
+          "type": "RECTANGLE", "x": 700, "y": 212, "width": 40, "height": 40,
+          "cornerRadius": 12,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.918, "g": 0.918, "b": 0.918, "a": 1 } }]
+        },
+        {
+          "id": "misi-item-2-text", "name": "Misi 2 Text",
+          "type": "RECTANGLE", "x": 756, "y": 222, "width": 500, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "misi-item-3-num", "name": "Misi 3 Number",
+          "type": "RECTANGLE", "x": 700, "y": 264, "width": 40, "height": 40,
+          "cornerRadius": 12,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.918, "g": 0.918, "b": 0.918, "a": 1 } }]
+        },
+        {
+          "id": "misi-item-3-text", "name": "Misi 3 Text",
+          "type": "RECTANGLE", "x": 756, "y": 274, "width": 480, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "misi-item-4-num", "name": "Misi 4 Number",
+          "type": "RECTANGLE", "x": 700, "y": 316, "width": 40, "height": 40,
+          "cornerRadius": 12,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.918, "g": 0.918, "b": 0.918, "a": 1 } }]
+        },
+        {
+          "id": "misi-item-4-text", "name": "Misi 4 Text",
+          "type": "RECTANGLE", "x": 756, "y": 326, "width": 460, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        }
+      ]
+    },
+
+    {
+      "id": "section-pilar",
+      "name": "06 – Pilar Inti",
+      "type": "FRAME",
+      "x": 0, "y": 2212, "width": 1440, "height": 440,
+      "fills": [{ "type": "SOLID", "color": { "r": 0.941, "g": 0.969, "b": 0.965, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "pilar-sub-label", "name": "Label: Fondasi Karakter",
+          "type": "RECTANGLE", "x": 580, "y": 50, "width": 280, "height": 16,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "pilar-title", "name": "Title: Pilar Inti",
+          "type": "RECTANGLE", "x": 420, "y": 78, "width": 600, "height": 38,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "pilar-card-1", "name": "Card: Pilar 1",
+          "type": "RECTANGLE", "x": 80, "y": 160, "width": 400, "height": 240,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "pilar-num-1", "name": "Number 1",
+          "type": "RECTANGLE", "x": 120, "y": 195, "width": 56, "height": 56,
+          "cornerRadius": 16,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.741, "b": 0.478, "a": 1 } }]
+        },
+        {
+          "id": "pilar-title-1", "name": "Pilar 1 Title",
+          "type": "RECTANGLE", "x": 120, "y": 271, "width": 300, "height": 22,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-1a", "name": "Pilar 1 Desc 1",
+          "type": "RECTANGLE", "x": 120, "y": 305, "width": 320, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-1b", "name": "Pilar 1 Desc 2",
+          "type": "RECTANGLE", "x": 120, "y": 329, "width": 300, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-1c", "name": "Pilar 1 Desc 3",
+          "type": "RECTANGLE", "x": 120, "y": 353, "width": 260, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+
+        {
+          "id": "pilar-card-2", "name": "Card: Pilar 2",
+          "type": "RECTANGLE", "x": 520, "y": 160, "width": 400, "height": 240,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "pilar-num-2", "name": "Number 2",
+          "type": "RECTANGLE", "x": 560, "y": 195, "width": 56, "height": 56,
+          "cornerRadius": 16,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.741, "b": 0.478, "a": 1 } }]
+        },
+        {
+          "id": "pilar-title-2", "name": "Pilar 2 Title",
+          "type": "RECTANGLE", "x": 560, "y": 271, "width": 300, "height": 22,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-2a", "name": "Pilar 2 Desc 1",
+          "type": "RECTANGLE", "x": 560, "y": 305, "width": 320, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-2b", "name": "Pilar 2 Desc 2",
+          "type": "RECTANGLE", "x": 560, "y": 329, "width": 300, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-2c", "name": "Pilar 2 Desc 3",
+          "type": "RECTANGLE", "x": 560, "y": 353, "width": 260, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+
+        {
+          "id": "pilar-card-3", "name": "Card: Pilar 3",
+          "type": "RECTANGLE", "x": 960, "y": 160, "width": 400, "height": 240,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "pilar-num-3", "name": "Number 3",
+          "type": "RECTANGLE", "x": 1000, "y": 195, "width": 56, "height": 56,
+          "cornerRadius": 16,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.741, "b": 0.478, "a": 1 } }]
+        },
+        {
+          "id": "pilar-title-3", "name": "Pilar 3 Title",
+          "type": "RECTANGLE", "x": 1000, "y": 271, "width": 300, "height": 22,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-3a", "name": "Pilar 3 Desc 1",
+          "type": "RECTANGLE", "x": 1000, "y": 305, "width": 320, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-3b", "name": "Pilar 3 Desc 2",
+          "type": "RECTANGLE", "x": 1000, "y": 329, "width": 300, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "pilar-desc-3c", "name": "Pilar 3 Desc 3",
+          "type": "RECTANGLE", "x": 1000, "y": 353, "width": 260, "height": 16,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        }
+      ]
+    },
+
+    {
+      "id": "section-program",
+      "name": "07 – Program Layanan",
+      "type": "FRAME",
+      "x": 0, "y": 2652, "width": 1440, "height": 560,
+      "fills": [{ "type": "SOLID", "color": { "r": 0.980, "g": 0.980, "b": 0.980, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "program-badge", "name": "Badge: EDUKASI BERKELANJUTAN",
+          "type": "RECTANGLE", "x": 540, "y": 50, "width": 280, "height": 36,
+          "cornerRadius": 18,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "program-title", "name": "Title: Program Layanan QLC",
+          "type": "RECTANGLE", "x": 460, "y": 100, "width": 520, "height": 40,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "program-card-1", "name": "Card: Program 1",
+          "type": "RECTANGLE", "x": 80, "y": 180, "width": 400, "height": 340,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "program-img-1", "name": "Program 1 Image",
+          "type": "RECTANGLE", "x": 80, "y": 180, "width": 400, "height": 156,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "program-img-1-icon", "name": "Program 1 Image Icon",
+          "type": "ELLIPSE", "x": 250, "y": 228, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        },
+        {
+          "id": "program-title-1", "name": "Program 1 Name",
+          "type": "RECTANGLE", "x": 112, "y": 358, "width": 300, "height": 24,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "program-desc-1a", "name": "Program 1 Desc 1",
+          "type": "RECTANGLE", "x": 112, "y": 394, "width": 340, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "program-desc-1b", "name": "Program 1 Desc 2",
+          "type": "RECTANGLE", "x": 112, "y": 420, "width": 320, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "program-btn-1", "name": "Program 1 Button",
+          "type": "RECTANGLE", "x": 112, "y": 462, "width": 336, "height": 44,
+          "cornerRadius": 18,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.937, "g": 0.937, "b": 0.937, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.749, "g": 0.749, "b": 0.749, "a": 1 } }],
+          "strokeWeight": 1
+        },
+
+        {
+          "id": "program-card-2", "name": "Card: Program 2",
+          "type": "RECTANGLE", "x": 520, "y": 180, "width": 400, "height": 340,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "program-img-2", "name": "Program 2 Image",
+          "type": "RECTANGLE", "x": 520, "y": 180, "width": 400, "height": 156,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "program-img-2-icon", "name": "Program 2 Image Icon",
+          "type": "ELLIPSE", "x": 690, "y": 228, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        },
+        {
+          "id": "program-title-2", "name": "Program 2 Name",
+          "type": "RECTANGLE", "x": 552, "y": 358, "width": 300, "height": 24,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "program-desc-2a", "name": "Program 2 Desc 1",
+          "type": "RECTANGLE", "x": 552, "y": 394, "width": 340, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "program-desc-2b", "name": "Program 2 Desc 2",
+          "type": "RECTANGLE", "x": 552, "y": 420, "width": 320, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "program-btn-2", "name": "Program 2 Button",
+          "type": "RECTANGLE", "x": 552, "y": 462, "width": 336, "height": 44,
+          "cornerRadius": 18,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.937, "g": 0.937, "b": 0.937, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.749, "g": 0.749, "b": 0.749, "a": 1 } }],
+          "strokeWeight": 1
+        },
+
+        {
+          "id": "program-card-3", "name": "Card: Program 3",
+          "type": "RECTANGLE", "x": 960, "y": 180, "width": 400, "height": 340,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "program-img-3", "name": "Program 3 Image",
+          "type": "RECTANGLE", "x": 960, "y": 180, "width": 400, "height": 156,
+          "cornerRadius": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "program-img-3-icon", "name": "Program 3 Image Icon",
+          "type": "ELLIPSE", "x": 1130, "y": 228, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        },
+        {
+          "id": "program-title-3", "name": "Program 3 Name",
+          "type": "RECTANGLE", "x": 992, "y": 358, "width": 300, "height": 24,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "program-desc-3a", "name": "Program 3 Desc 1",
+          "type": "RECTANGLE", "x": 992, "y": 394, "width": 340, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "program-desc-3b", "name": "Program 3 Desc 2",
+          "type": "RECTANGLE", "x": 992, "y": 420, "width": 320, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "program-btn-3", "name": "Program 3 Button",
+          "type": "RECTANGLE", "x": 992, "y": 462, "width": 336, "height": 44,
+          "cornerRadius": 18,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.937, "g": 0.937, "b": 0.937, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.749, "g": 0.749, "b": 0.749, "a": 1 } }],
+          "strokeWeight": 1
+        }
+      ]
+    },
+
+    {
+      "id": "section-galeri",
+      "name": "08 – Galeri Kegiatan",
+      "type": "FRAME",
+      "x": 0, "y": 3212, "width": 1440, "height": 500,
+      "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "galeri-badge", "name": "Badge: DOKUMENTASI",
+          "type": "RECTANGLE", "x": 580, "y": 50, "width": 200, "height": 36,
+          "cornerRadius": 18,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.937, "g": 0.937, "b": 0.937, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.878, "b": 0.878, "a": 1 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "galeri-title", "name": "Title: Galeri Kegiatan QLC",
+          "type": "RECTANGLE", "x": 460, "y": 100, "width": 520, "height": 38,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "galeri-cell-big", "name": "Galeri Cell: Big (col-span-2 row-span-2)",
+          "type": "RECTANGLE", "x": 80, "y": 160, "width": 580, "height": 290,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "galeri-cell-big-icon", "name": "Big Cell Icon",
+          "type": "ELLIPSE", "x": 340, "y": 275, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        },
+        {
+          "id": "galeri-cell-2", "name": "Galeri Cell 2",
+          "type": "RECTANGLE", "x": 680, "y": 160, "width": 280, "height": 135,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "galeri-cell-2-icon", "name": "Cell 2 Icon",
+          "type": "ELLIPSE", "x": 790, "y": 198, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        },
+        {
+          "id": "galeri-cell-3", "name": "Galeri Cell 3 (row-span-2)",
+          "type": "RECTANGLE", "x": 980, "y": 160, "width": 380, "height": 290,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "galeri-cell-3-icon", "name": "Cell 3 Icon",
+          "type": "ELLIPSE", "x": 1140, "y": 275, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        },
+        {
+          "id": "galeri-cell-4", "name": "Galeri Cell 4",
+          "type": "RECTANGLE", "x": 680, "y": 315, "width": 280, "height": 135,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.827, "g": 0.827, "b": 0.827, "a": 1 } }]
+        },
+        {
+          "id": "galeri-cell-4-icon", "name": "Cell 4 Icon",
+          "type": "ELLIPSE", "x": 790, "y": 353, "width": 60, "height": 60,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.686, "g": 0.686, "b": 0.686, "a": 1 } }]
+        },
+        {
+          "id": "galeri-see-all-btn", "name": "Button: Lihat Semua Galeri",
+          "type": "RECTANGLE", "x": 580, "y": 476, "width": 240, "height": 48,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 0.749, "g": 0.749, "b": 0.749, "a": 1 } }],
+          "strokeWeight": 1.5
+        }
+      ]
+    },
+
+    {
+      "id": "section-kerja-sama",
+      "name": "09 – Kerja Sama",
+      "type": "FRAME",
+      "x": 0, "y": 3712, "width": 1440, "height": 460,
+      "fills": [{ "type": "SOLID", "color": { "r": 0.192, "g": 0.192, "b": 0.192, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "ks-badge", "name": "Badge: KOLABORASI",
+          "type": "RECTANGLE", "x": 600, "y": 50, "width": 180, "height": 36,
+          "cornerRadius": 18,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.2 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "ks-title-1", "name": "Title Line 1: Jalin Kerja Sama",
+          "type": "RECTANGLE", "x": 440, "y": 102, "width": 560, "height": 46,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.9 } }]
+        },
+        {
+          "id": "ks-title-2", "name": "Title Line 2: dengan QLC",
+          "type": "RECTANGLE", "x": 530, "y": 156, "width": 380, "height": 46,
+          "cornerRadius": 6,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.878, "g": 0.812, "b": 0.561, "a": 0.9 } }]
+        },
+        {
+          "id": "ks-desc-1", "name": "Desc Line 1",
+          "type": "RECTANGLE", "x": 460, "y": 228, "width": 520, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.5 } }]
+        },
+        {
+          "id": "ks-desc-2", "name": "Desc Line 2",
+          "type": "RECTANGLE", "x": 480, "y": 256, "width": 480, "height": 20,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.5 } }]
+        },
+
+        {
+          "id": "ks-card-1", "name": "Partner Card: Institusi Pendidikan",
+          "type": "RECTANGLE", "x": 80, "y": 310, "width": 400, "height": 100,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "ks-card-1-icon", "name": "Card 1 Icon",
+          "type": "RECTANGLE", "x": 108, "y": 330, "width": 40, "height": 40,
+          "cornerRadius": 8,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.2 } }]
+        },
+        {
+          "id": "ks-card-1-title", "name": "Card 1 Title",
+          "type": "RECTANGLE", "x": 164, "y": 335, "width": 200, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.9 } }]
+        },
+        {
+          "id": "ks-card-1-desc", "name": "Card 1 Desc",
+          "type": "RECTANGLE", "x": 164, "y": 361, "width": 280, "height": 14,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.5 } }]
+        },
+
+        {
+          "id": "ks-card-2", "name": "Partner Card: Lembaga & Yayasan",
+          "type": "RECTANGLE", "x": 520, "y": 310, "width": 400, "height": 100,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "ks-card-2-icon", "name": "Card 2 Icon",
+          "type": "RECTANGLE", "x": 548, "y": 330, "width": 40, "height": 40,
+          "cornerRadius": 8,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.2 } }]
+        },
+        {
+          "id": "ks-card-2-title", "name": "Card 2 Title",
+          "type": "RECTANGLE", "x": 604, "y": 335, "width": 200, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.9 } }]
+        },
+        {
+          "id": "ks-card-2-desc", "name": "Card 2 Desc",
+          "type": "RECTANGLE", "x": 604, "y": 361, "width": 280, "height": 14,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.5 } }]
+        },
+
+        {
+          "id": "ks-card-3", "name": "Partner Card: Sponsor",
+          "type": "RECTANGLE", "x": 960, "y": 310, "width": 400, "height": 100,
+          "cornerRadius": 24,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.1 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }],
+          "strokeWeight": 1
+        },
+        {
+          "id": "ks-card-3-icon", "name": "Card 3 Icon",
+          "type": "RECTANGLE", "x": 988, "y": 330, "width": 40, "height": 40,
+          "cornerRadius": 8,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.2 } }]
+        },
+        {
+          "id": "ks-card-3-title", "name": "Card 3 Title",
+          "type": "RECTANGLE", "x": 1044, "y": 335, "width": 200, "height": 18,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.9 } }]
+        },
+        {
+          "id": "ks-card-3-desc", "name": "Card 3 Desc",
+          "type": "RECTANGLE", "x": 1044, "y": 361, "width": 280, "height": 14,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.5 } }]
+        },
+
+        {
+          "id": "ks-btn-primary", "name": "Button: Ajukan Kerja Sama",
+          "type": "RECTANGLE", "x": 520, "y": 432, "width": 220, "height": 52,
+          "cornerRadius": 26,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.831, "g": 0.627, "b": 0.090, "a": 1 } }]
+        },
+        {
+          "id": "ks-btn-secondary", "name": "Button: Hubungi via Email",
+          "type": "RECTANGLE", "x": 760, "y": 432, "width": 200, "height": 52,
+          "cornerRadius": 26,
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.15 } }],
+          "strokes": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 0.3 } }],
+          "strokeWeight": 1.5
+        }
+      ]
+    },
+
+    {
+      "id": "section-footer",
+      "name": "10 – Footer",
+      "type": "FRAME",
+      "x": 0, "y": 4172, "width": 1440, "height": 120,
+      "fills": [{ "type": "SOLID", "color": { "r": 0.122, "g": 0.122, "b": 0.122, "a": 1 } }],
+      "clipsContent": false,
+      "children": [
+        {
+          "id": "footer-logo", "name": "Footer Logo",
+          "type": "RECTANGLE", "x": 80, "y": 44, "width": 120, "height": 32,
+          "cornerRadius": 4,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "footer-link-1", "name": "Footer Link 1",
+          "type": "RECTANGLE", "x": 520, "y": 50, "width": 80, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "footer-link-2", "name": "Footer Link 2",
+          "type": "RECTANGLE", "x": 620, "y": 50, "width": 80, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "footer-link-3", "name": "Footer Link 3",
+          "type": "RECTANGLE", "x": 720, "y": 50, "width": 80, "height": 18,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.627, "g": 0.627, "b": 0.627, "a": 1 } }]
+        },
+        {
+          "id": "footer-copyright", "name": "Copyright",
+          "type": "RECTANGLE", "x": 560, "y": 80, "width": 320, "height": 14,
+          "cornerRadius": 3,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.384, "g": 0.384, "b": 0.384, "a": 1 } }]
+        },
+        {
+          "id": "footer-social-1", "name": "Social Icon 1",
+          "type": "ELLIPSE", "x": 1220, "y": 44, "width": 40, "height": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "footer-social-2", "name": "Social Icon 2",
+          "type": "ELLIPSE", "x": 1276, "y": 44, "width": 40, "height": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        },
+        {
+          "id": "footer-social-3", "name": "Social Icon 3",
+          "type": "ELLIPSE", "x": 1332, "y": 44, "width": 40, "height": 40,
+          "fills": [{ "type": "SOLID", "color": { "r": 0.318, "g": 0.318, "b": 0.318, "a": 1 } }]
+        }
+      ]
+    }
+
+  ]
+}

@@ -83,6 +83,18 @@ Route::get('/program-detail/{id}', function ($id) {
         $advantages = json_decode($advantages, true) ?? [];
     }
 
+    $generalGalleries = Gallery::where('type', 'Photo')
+        ->orderBy('uploaded_at', 'desc')
+        ->take(8)
+        ->get()
+        ->map(fn($g) => [
+            'id'        => (string) $g->_id,
+            'title'     => $g->title,
+            'media_url' => $g->media_url,
+        ])
+        ->values()
+        ->toArray();
+
     return Inertia::render('Landing/ProgramDetail', [
         'program' => [
             'id'              => (string) $program->_id,
@@ -95,6 +107,7 @@ Route::get('/program-detail/{id}', function ($id) {
             'advantages'      => array_values((array) $advantages),
             'gallery'         => array_values((array) ($program->gallery ?? [])),
         ],
+        'galleries' => $generalGalleries,
     ]);
 })->name('program.detail');
 // ==========================================

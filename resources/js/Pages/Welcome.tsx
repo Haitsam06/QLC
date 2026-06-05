@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { router } from '@inertiajs/react';
+import { X, PlayCircle } from 'lucide-react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 
@@ -69,7 +71,21 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
 
     const glassClass = 'bg-white/60 backdrop-blur-lg border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)]';
 
+    const [lightbox, setLightbox] = useState<{ type: 'photo' | 'video'; item: any } | null>(null);
+
+    const getGalleryThumbnail = (item: any): string => {
+        if (item.type !== 'Video') return item.media_url;
+        const match = item.media_url?.match(/(?:youtu\.be\/|youtube\.com\/(?:.*[?&]v=|.*\/embed\/|.*\/v\/|shorts\/))([^&?\n/]+)/);
+        return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : '';
+    };
+
+    const getYoutubeId = (url: string): string | null => {
+        const match = url?.match(/(?:youtu\.be\/|youtube\.com\/(?:.*[?&]v=|.*\/embed\/|.*\/v\/|shorts\/))([^&?\n/]+)/);
+        return match ? match[1] : null;
+    };
+
     return (
+        <>
         <div className="font-sans text-gray-800 bg-white min-h-screen overflow-x-hidden selection:bg-[#1B6B3A]/20">
             <style dangerouslySetInnerHTML={{ __html: `.reveal { transition: opacity 0.8s ease-out, transform 0.8s ease-out; }` }} />
             <Navbar />
@@ -286,18 +302,29 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                     </div>
 
                     {/* CONTAINER: Flex di mobile, Grid di desktop */}
-                    <div className="flex lg:grid lg:grid-cols-3 gap-6 lg:gap-10 overflow-x-auto lg:overflow-visible pb-8 lg:pb-4 snap-x snap-mandatory scrollbar-hide pt-4">
+                    <div className="flex lg:grid lg:grid-cols-3 gap-6 lg:gap-8 overflow-x-auto lg:overflow-visible pb-8 lg:pb-4 snap-x snap-mandatory scrollbar-hide pt-4">
                         {programs.map((prog, idx) => (
                             <div
                                 key={idx}
-                                className="reveal opacity-0 translate-y-8 bg-white border border-gray-200/60 shadow-md hover:shadow-2xl transition-all duration-300 rounded-[2.5rem] overflow-hidden flex flex-col group min-w-[85%] sm:min-w-[45%] lg:min-w-full snap-center"
+                                className="reveal opacity-0 translate-y-8 bg-white border border-gray-200/60 shadow-sm hover:shadow-lg transition-all duration-300 rounded-[2rem] overflow-hidden flex flex-col group min-w-[85%] sm:min-w-[45%] lg:min-w-full snap-center cursor-pointer"
                                 style={{ transitionDelay: `${idx * 0.1}s` }}
+                                onClick={() => router.get(`/program-detail/${prog.id}`)}
                             >
-                                <div className="h-48 overflow-hidden relative bg-gray-100">{prog.image_url && <img src={prog.image_url} alt={prog.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />}</div>
-                                <div className="p-8 flex-1 flex flex-col bg-white">
-                                    <h3 className="text-xl font-extrabold text-gray-900 mb-3 group-hover:text-[#1B6B3A] transition-colors">{prog.name}</h3>
-                                    <p className="text-gray-600 text-base mb-8 flex-1 leading-relaxed">{prog.description}</p>
-                                    <button onClick={() => router.get(`/program-detail/${prog.id}`)} className="w-full py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-[#1B6B3A] font-bold hover:bg-[#1B6B3A] hover:text-white transition-all shadow-sm text-sm">
+                                {/* Gambar program */}
+                                <div className="h-52 overflow-hidden relative bg-gradient-to-br from-[#1B6B3A]/10 to-[#D4A017]/10 flex items-center justify-center">
+                                    {prog.image_url ? (
+                                        <img src={prog.image_url} alt={prog.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                    ) : (
+                                        <span className="text-5xl font-black text-[#1B6B3A]/20 select-none">{idx + 1}</span>
+                                    )}
+                                </div>
+                                {/* Nama + deskripsi singkat + tombol */}
+                                <div className="p-6 flex flex-col gap-4">
+                                    <div>
+                                        <h3 className="text-base font-extrabold text-gray-900 group-hover:text-[#1B6B3A] transition-colors leading-snug mb-1.5">{prog.name}</h3>
+                                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">{prog.description}</p>
+                                    </div>
+                                    <button className="w-full py-2.5 rounded-xl border border-[#1B6B3A]/30 text-[#1B6B3A] font-bold group-hover:bg-[#1B6B3A] group-hover:text-white transition-all text-sm">
                                         Lihat Detail
                                     </button>
                                 </div>
@@ -322,15 +349,23 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
                         {galleries.slice(0, 4).map((gal, idx) => (
                             <div
                                 key={idx}
-                                className={`reveal opacity-0 translate-y-8 
-                        ${idx === 0 ? 'col-span-2 row-span-2' : ''} 
+                                onClick={() => setLightbox({ type: gal.type === 'Video' ? 'video' : 'photo', item: gal })}
+                                className={`reveal opacity-0 translate-y-8
+                        ${idx === 0 ? 'col-span-2 row-span-2' : ''}
                         ${idx === 1 ? 'col-span-1 row-span-1' : ''}
                         ${idx === 2 ? 'col-span-1 row-span-2' : ''}
                         ${idx === 3 ? 'col-span-1 row-span-1' : ''}
                         group relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] shadow-sm cursor-pointer border border-white/50 bg-gray-100`}
                             >
-                                <img src={gal.media_url} alt={gal.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#1B6B3A]/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4 md:p-6">
+                                <img src={getGalleryThumbnail(gal)} alt={gal.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                {gal.type === 'Video' && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors z-10">
+                                        <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                            <PlayCircle className="text-[#1B6B3A] w-7 h-7" />
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#1B6B3A]/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4 md:p-6 z-20">
                                     <h3 className="text-white font-bold text-xs md:text-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">{gal.title}</h3>
                                 </div>
                             </div>
@@ -386,6 +421,46 @@ const LandingPage = ({ profile, programs, galleries, foundations, leaders }: Pro
 
             <Footer />
         </div>
+
+        {/* ── LIGHTBOX FOTO ── */}
+        {lightbox?.type === 'photo' && createPortal(
+            <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+                <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors" onClick={() => setLightbox(null)}>
+                    <X size={20} />
+                </button>
+                <div className="max-w-4xl w-full flex flex-col items-center gap-3" onClick={e => e.stopPropagation()}>
+                    <img src={lightbox!.item.media_url} alt={lightbox!.item.title} className="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" />
+                    {lightbox!.item.title && <p className="text-white font-bold text-sm">{lightbox!.item.title}</p>}
+                </div>
+            </div>,
+            document.body
+        )}
+
+        {/* ── MODAL VIDEO ── */}
+        {lightbox?.type === 'video' && createPortal(
+            <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+                <div className="relative w-full max-w-4xl bg-black rounded-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <button className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors" onClick={() => setLightbox(null)}>
+                        <X size={20} />
+                    </button>
+                    <div className="px-6 py-4 bg-gray-900">
+                        <p className="text-white font-bold text-sm line-clamp-1">{lightbox!.item.title}</p>
+                    </div>
+                    <div className="aspect-video w-full">
+                        {(() => {
+                            const ytId = getYoutubeId(lightbox!.item.media_url);
+                            return ytId ? (
+                                <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`} title={lightbox!.item.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white/50 text-sm">Format URL video tidak dikenali.</div>
+                            );
+                        })()}
+                    </div>
+                </div>
+            </div>,
+            document.body
+        )}
+    </>
     );
 };
 

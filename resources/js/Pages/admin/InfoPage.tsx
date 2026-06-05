@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Building2, BookOpen, Image as ImageIcon, Plus, Pencil, Trash2, X, Loader2, CheckCircle2, AlertCircle, Upload, Instagram, Facebook, Youtube, Users, Star, Award, CreditCard } from 'lucide-react';
+import { Building2, BookOpen, Image as ImageIcon, Plus, Pencil, Trash2, X, Loader2, CheckCircle2, AlertCircle, Upload, Instagram, Facebook, Youtube, Users, Star, Award, CreditCard, Eye, PlayCircle } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -44,8 +44,11 @@ interface Program {
     name: string;
     description: string | null;
     target_audience: string | null;
-    duration: string | null;
     image_url: string | null;
+    hero_image_url: string | null;
+    about_image_url: string | null;
+    advantages: { title: string; desc: string }[];
+    gallery: string[];
 }
 interface GalleryItem {
     id: string;
@@ -55,6 +58,17 @@ interface GalleryItem {
 }
 
 const API = '/api/info';
+
+function getYoutubeId(url: string): string | null {
+    const match = url?.match(/(?:youtu\.be\/|youtube\.com\/(?:.*[?&]v=|.*\/embed\/|.*\/v\/|shorts\/))([^&?\n/]+)/);
+    return match ? match[1] : null;
+}
+
+function getGalleryThumbnail(item: GalleryItem): string {
+    if (item.type === 'Photo') return item.media_url;
+    const ytId = getYoutubeId(item.media_url);
+    return ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '';
+}
 
 /* ═══════════════════════════════════════════════════════════
    HELPERS
@@ -772,7 +786,8 @@ function FoundationsTab({ onToast }: { onToast: (msg: string, type: 'success' | 
                     onClose={() => setModal(null)}
                     onSave={async (fd) => {
                         const url = modal === 'edit' ? `${API}/foundations/${sel!.id}` : `${API}/foundations`;
-                        const j = await (await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) })).json();
+                        const method = modal === 'edit' ? 'PUT' : 'POST';
+                        const j = await (await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) })).json();
                         if (j.success) {
                             onToast('Berhasil disimpan.', 'success');
                             setModal(null);
@@ -1343,6 +1358,7 @@ function GalleryTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState<'add' | 'edit' | 'delete' | null>(null);
     const [sel, setSel] = useState<GalleryItem | null>(null);
+    const [preview, setPreview] = useState<GalleryItem | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -1350,9 +1366,7 @@ function GalleryTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
         if (j.success) setData(j.data);
         setLoading(false);
     }, []);
-    useEffect(() => {
-        load();
-    }, [load]);
+    useEffect(() => { load(); }, [load]);
 
     return (
         <div className="flex flex-col bg-purple-50/50 min-h-[600px]">
@@ -1363,10 +1377,7 @@ function GalleryTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
                 </div>
                 <button
                     className="flex items-center gap-2 px-6 h-12 rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700"
-                    onClick={() => {
-                        setSel(null);
-                        setModal('add');
-                    }}
+                    onClick={() => { setSel(null); setModal('add'); }}
                 >
                     <Plus size={16} /> Tambah Media
                 </button>
@@ -1381,44 +1392,63 @@ function GalleryTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
                     <div className="text-center text-slate-500 py-10 font-bold">Belum ada foto kegiatan.</div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {data.map((gal) => (
-                            <div key={gal.id} className="relative group rounded-[1.5rem] overflow-hidden bg-slate-100 aspect-square shadow-sm border border-slate-200">
-                                {gal.type === 'Photo' ? (
-                                    <img src={gal.media_url} alt={gal.title} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-slate-800 text-white">
-                                        <Youtube size={40} />
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
-                                    <span className="text-white font-bold text-center px-4">{gal.title}</span>
-                                    <div className="flex gap-2">
-                                        <button
-                                            className="p-2 bg-white/20 hover:bg-blue-600 rounded-full text-white"
-                                            onClick={() => {
-                                                setSel(gal);
-                                                setModal('edit');
-                                            }}
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                        <button
-                                            className="p-2 bg-white/20 hover:bg-red-600 rounded-full text-white"
-                                            onClick={() => {
-                                                setSel(gal);
-                                                setModal('delete');
-                                            }}
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                        {data.map((gal) => {
+                            const thumb = getGalleryThumbnail(gal);
+                            return (
+                                <div key={gal.id} className="relative group rounded-[1.5rem] overflow-hidden bg-slate-100 aspect-square shadow-sm border border-slate-200 cursor-pointer" onClick={() => setPreview(gal)}>
+                                    {/* Thumbnail: foto langsung, video pakai thumbnail YouTube */}
+                                    {thumb ? (
+                                        <img src={thumb} alt={gal.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-slate-800">
+                                            <Youtube size={40} className="text-white/40" />
+                                        </div>
+                                    )}
+
+                                    {/* Icon play untuk video */}
+                                    {gal.type === 'Video' && (
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                                                <PlayCircle size={28} className="text-purple-600" />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Overlay hover: judul + aksi */}
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 z-10">
+                                        <span className="text-white font-bold text-center px-4 text-sm line-clamp-2">{gal.title}</span>
+                                        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+                                            <button
+                                                className="p-2 bg-white/20 hover:bg-purple-600 rounded-full text-white transition-colors"
+                                                title="Preview"
+                                                onClick={() => setPreview(gal)}
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                            <button
+                                                className="p-2 bg-white/20 hover:bg-blue-600 rounded-full text-white transition-colors"
+                                                title="Edit"
+                                                onClick={() => { setSel(gal); setModal('edit'); }}
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button
+                                                className="p-2 bg-white/20 hover:bg-red-600 rounded-full text-white transition-colors"
+                                                title="Hapus"
+                                                onClick={() => { setSel(gal); setModal('delete'); }}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
 
+            {/* ── CRUD Modals ── */}
             {(modal === 'add' || modal === 'edit') && (
                 <GalleryModal
                     mode={modal}
@@ -1448,6 +1478,58 @@ function GalleryTab({ onToast }: { onToast: (msg: string, type: 'success' | 'err
                         } else onToast('Gagal.', 'error');
                     }}
                 />
+            )}
+
+            {/* ── LIGHTBOX FOTO ── */}
+            {preview?.type === 'Photo' && createPortal(
+                <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPreview(null)}>
+                    <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors" onClick={() => setPreview(null)}>
+                        <X size={20} />
+                    </button>
+                    <div className="max-w-4xl w-full flex flex-col items-center gap-3" onClick={e => e.stopPropagation()}>
+                        <img src={preview.media_url} alt={preview.title} className="w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" />
+                        <p className="text-white font-bold text-sm">{preview.title}</p>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* ── MODAL VIDEO ── */}
+            {preview?.type === 'Video' && createPortal(
+                <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPreview(null)}>
+                    <div className="relative w-full max-w-4xl bg-black rounded-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <button className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors" onClick={() => setPreview(null)}>
+                            <X size={20} />
+                        </button>
+                        <div className="px-6 py-4 bg-gray-900 flex items-center gap-3">
+                            <PlayCircle size={18} className="text-purple-400" />
+                            <p className="text-white font-bold text-sm line-clamp-1">{preview.title}</p>
+                        </div>
+                        <div className="aspect-video w-full">
+                            {(() => {
+                                const ytId = getYoutubeId(preview.media_url);
+                                return ytId ? (
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`}
+                                        title={preview.title}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        className="w-full h-full"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white/50 gap-4">
+                                        <Youtube size={48} className="text-white/20" />
+                                        <p className="text-sm">Format URL video tidak dikenali.</p>
+                                        <a href={preview.media_url} target="_blank" rel="noopener noreferrer" className="px-6 py-2 rounded-full bg-purple-600 text-white text-sm font-bold hover:bg-purple-700">
+                                            Buka di tab baru
+                                        </a>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
         </div>
     );

@@ -6,7 +6,6 @@ use App\Models\Foundation;
 use App\Models\Gallery;
 use App\Models\Leader;
 use App\Models\Profile;
-use App\Models\Program;
 use Illuminate\Database\Seeder;
 
 class LandingPageSeeder extends Seeder
@@ -63,68 +62,8 @@ class LandingPageSeeder extends Seeder
         }
 
         // ── Program ───────────────────────────────────────────
-        Program::truncate();
-        $programs = [
-            [
-                'name'            => 'QL - SCHOOL',
-                'description'     => "Program pendidikan berkesinambungan terpadu berbasis Al-Qur'an.",
-                'target_audience' => 'Semua usia',
-                'image_url'       => '/image/landing/1 (5).png',
-                'advantages'      => [
-                    ['title' => 'Kurikulum Terpadu',   'desc' => 'Kurikulum Al-Quran yang dirancang secara komprehensif dan terstruktur.'],
-                    ['title' => 'Guru Bersertifikat',  'desc' => 'Diampu oleh guru hafidz bersanad dan bersertifikat resmi.'],
-                    ['title' => 'Laporan Berkala',     'desc' => 'Laporan perkembangan santri dikirim rutin kepada wali murid.'],
-                ],
-                'gallery'         => [],
-            ],
-            [
-                'name'            => 'QL - TFT',
-                'description'     => "Training for Trainers. Pelatihan intensif mencetak instruktur Al-Quran.",
-                'target_audience' => 'Dewasa 18+',
-                'image_url'       => '/image/landing/1 (6).png',
-                'advantages'      => [
-                    ['title' => 'Modul Eksklusif',   'desc' => 'Modul pelatihan yang dikembangkan langsung oleh tim QLC.'],
-                    ['title' => 'Praktek Lapangan',  'desc' => 'Peserta langsung mengajar dan mendapatkan supervisi.'],
-                ],
-                'gallery'         => [],
-            ],
-            [
-                'name'            => 'QL - PARENTING',
-                'description'     => "Bimbingan untuk orang tua dalam mendidik anak sesuai fitrah Islami.",
-                'target_audience' => 'Orang tua',
-                'image_url'       => '/image/landing/1 (7).png',
-                'advantages'      => [
-                    ['title' => 'Konsultasi Personal', 'desc' => 'Sesi konsultasi privat bersama konselor parenting.'],
-                    ['title' => 'Komunitas Wali',      'desc' => 'Bergabung dengan komunitas orang tua aktif QLC.'],
-                ],
-                'gallery'         => [],
-            ],
-            [
-                'name'            => 'QL - KIDS',
-                'description'     => "Edukasi penanaman nilai tauhid dasar untuk usia dini.",
-                'target_audience' => 'Usia 4–12',
-                'image_url'       => '/image/landing/1 (8).png',
-                'advantages'      => [
-                    ['title' => 'Metode Bermain', 'desc' => 'Pembelajaran menyenangkan melalui permainan edukatif Islami.'],
-                    ['title' => 'Hafalan Dasar',  'desc' => 'Hafalan surat-surat pendek dan doa harian.'],
-                ],
-                'gallery'         => [],
-            ],
-            [
-                'name'            => 'QL - TEENS',
-                'description'     => "Pembinaan karakter & kepemimpinan remaja.",
-                'target_audience' => 'Usia 13–17',
-                'image_url'       => '/image/landing/1 (9).png',
-                'advantages'      => [
-                    ['title' => 'Leadership Camp',    'desc' => 'Program camp intensif untuk mengasah jiwa kepemimpinan.'],
-                    ['title' => 'Mentoring Intensif', 'desc' => 'Pendampingan langsung oleh mentor berpengalaman.'],
-                ],
-                'gallery'         => [],
-            ],
-        ];
-        foreach ($programs as $p) {
-            Program::create($p);
-        }
+        // Didelegasikan ke ProgramSeeder agar mudah di-seed ulang secara terpisah
+        $this->call(ProgramSeeder::class);
 
         // ── Galeri ────────────────────────────────────────────
         Gallery::truncate();

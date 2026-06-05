@@ -165,7 +165,7 @@ class InfoController extends Controller
             'nama'      => 'required|string|max:150',
             'jabatan'   => 'nullable|string|max:150',
             'deskripsi' => 'nullable|string|max:1000',
-            'poin'      => 'nullable|integer|min:0|max:9999',
+            'poin'      => 'nullable|string|max:2000',
             'image'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
@@ -179,7 +179,7 @@ class InfoController extends Controller
             'nama'      => $request->nama,
             'jabatan'   => $request->jabatan,
             'deskripsi' => $request->deskripsi,
-            'poin'      => $request->poin ? (int) $request->poin : null,
+            'poin'      => $request->poin ?: null,
             'image_url' => $imageUrl,
         ]);
 
@@ -197,7 +197,7 @@ class InfoController extends Controller
             'nama'      => 'required|string|max:150',
             'jabatan'   => 'nullable|string|max:150',
             'deskripsi' => 'nullable|string|max:1000',
-            'poin'      => 'nullable|integer|min:0|max:9999',
+            'poin'      => 'nullable|string|max:2000',
             'image'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
@@ -215,7 +215,7 @@ class InfoController extends Controller
             'nama'      => $request->nama,
             'jabatan'   => $request->jabatan,
             'deskripsi' => $request->deskripsi,
-            'poin'      => $request->poin ? (int) $request->poin : null,
+            'poin'      => $request->poin ?: null,
             'image_url' => $imageUrl,
         ]);
 
@@ -487,8 +487,14 @@ class InfoController extends Controller
             }
             $path     = $request->file('media')->store('info/gallery', 'public');
             $mediaUrl = url('storage/' . $path);
-        } elseif ($request->type === 'Video' && $request->filled('media_url')) {
-            $mediaUrl = $request->media_url;
+        } elseif ($request->type === 'Video') {
+            if ($doc->type === 'Photo' && $mediaUrl && str_contains($mediaUrl, '/storage/')) {
+                $parsedPath = parse_url($mediaUrl, PHP_URL_PATH);
+                if ($parsedPath) {
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
+                }
+            }
+            $mediaUrl = $request->filled('media_url') ? $request->media_url : null;
         }
 
         $doc->update(['title' => $request->title, 'type' => $request->type, 'media_url' => $mediaUrl]);

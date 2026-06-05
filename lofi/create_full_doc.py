@@ -1,0 +1,697 @@
+import os
+
+html_template = r"""<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+      xmlns:w='urn:schemas-microsoft-com:office:word' 
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>BAB IV - Implementasi dan Pengujian</title>
+<style>
+@page Section1 {
+    size: 21cm 29.7cm; /* A4 */
+    margin: 3cm 3cm 3cm 4cm; /* Top, Right, Bottom, Left (Standar Skripsi) */
+    mso-page-orientation: portrait;
+}
+div.Section1 {
+    page: Section1;
+}
+body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000000;
+}
+h1.title {
+    font-size: 14pt;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-top: 0px;
+    margin-bottom: 6pt;
+    line-height: 1.5;
+}
+h2.subtitle {
+    font-size: 14pt;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-top: 0px;
+    margin-bottom: 24pt;
+    line-height: 1.5;
+}
+h3.heading {
+    font-size: 12pt;
+    text-align: left;
+    font-weight: bold;
+    margin-top: 18pt;
+    margin-bottom: 6pt;
+    line-height: 1.5;
+}
+h4.subheading {
+    font-size: 12pt;
+    text-align: left;
+    font-weight: bold;
+    margin-top: 12pt;
+    margin-bottom: 6pt;
+    line-height: 1.5;
+}
+h5.subsubheading {
+    font-size: 12pt;
+    text-align: left;
+    font-style: italic;
+    font-weight: bold;
+    margin-top: 12pt;
+    margin-bottom: 6pt;
+    line-height: 1.5;
+}
+p {
+    text-align: justify;
+    text-indent: 1.25cm; /* Alenia baru menjorok 1.25cm */
+    margin-bottom: 12pt;
+    margin-top: 0px;
+    line-height: 1.5;
+}
+p.no-indent {
+    text-indent: 0px;
+    margin-bottom: 12pt;
+}
+p.caption {
+    text-align: center;
+    text-indent: 0px;
+    font-weight: bold;
+    margin-top: 6pt;
+    margin-bottom: 12pt;
+}
+ol, ul {
+    margin-top: 0px;
+    margin-bottom: 12pt;
+    padding-left: 20px;
+}
+li {
+    text-align: justify;
+    line-height: 1.5;
+    margin-bottom: 6pt;
+}
+table.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6pt;
+    margin-bottom: 12pt;
+}
+table.custom-table th {
+    background-color: #f2f2f2;
+    border: 1px solid #000000;
+    padding: 8px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 11pt;
+}
+table.custom-table td {
+    border: 1px solid #000000;
+    padding: 8px;
+    text-align: left;
+    font-size: 11pt;
+    line-height: 1.3;
+}
+pre {
+    font-family: 'Consolas', 'Courier New', Courier, monospace;
+    font-size: 9.5pt;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    padding: 12px;
+    white-space: pre-wrap;
+    margin-top: 6pt;
+    margin-bottom: 12pt;
+    line-height: 1.2;
+}
+code {
+    font-family: 'Consolas', 'Courier New', Courier, monospace;
+    font-size: 9.5pt;
+}
+hr {
+    border: none;
+    border-top: 1px solid #cccccc;
+    margin-top: 24pt;
+    margin-bottom: 24pt;
+}
+</style>
+</head>
+<body>
+<div class="Section1">
+
+<h1 class="title">BAB IV</h1>
+<h2 class="subtitle">IMPLEMENTASI DAN PENGUJIAN</h2>
+
+<h3 class="heading">4.1. Implementasi</h3>
+<p>Tahap implementasi merupakan lanjutan dari tahap analisis dan perancangan sistem yang bertujuan menerjemahkan rancangan ke dalam bentuk kode program yang dapat dijalankan oleh komputer. Pada Sistem Informasi Akademik (SIAKAD) QLC (Quran Leader Center), implementasi menggunakan arsitektur Model-View-Controller (MVC) termodifikasi. Backend dikembangkan dengan Laravel 12 dan MongoDB melalui package <i>mongodb/laravel-mongodb</i> v5.7, sedangkan frontend menggunakan React JS, TypeScript, dan Vite dengan pendekatan Single Page Application (SPA). Integrasi backend dan frontend dilakukan menggunakan Inertia.js v2.0, serta antarmuka dibangun responsif menggunakan Tailwind CSS. Subbab ini membahas spesifikasi perangkat keras dan perangkat lunak, implementasi antarmuka pengguna, serta implementasi kode program pada komponen utama sistem.</p>
+
+<hr>
+
+<h3 class="heading">4.1.1. Implementasi Perangkat Keras</h3>
+<p>Implementasi perangkat keras (hardware) mencakup spesifikasi infrastruktur fisik yang digunakan selama proses pengembangan (development) sistem oleh pengembang (programmer), serta spesifikasi minimal perangkat yang dibutuhkan oleh pengguna (user) untuk mengakses dan menjalankan aplikasi dengan optimal. Rincian spesifikasi perangkat keras adalah sebagai berikut:</p>
+
+<h4 class="subheading">a. Perangkat Keras Pengembang (Server / Localhost)</h4>
+<p class="no-indent">Digunakan oleh pengembang untuk menulis kode program, menjalankan local web server, mengelola basis data MongoDB, melakukan kompilasi aset frontend, dan debugging sistem. Spesifikasi minimum yang digunakan dalam proyek ini meliputi:</p>
+<ol>
+    <li><b>Prosesor</b>: Intel Core i5 / AMD Ryzen 5 (atau setara dengan minimal 4 core / 8 thread), untuk menjamin kelancaran kompilasi data frontend (Vite bundling) dan proses rendering pada server lokal.</li>
+    <li><b>Memori (RAM)</b>: 8 GB DDR4, dibutuhkan agar sistem operasi dapat menjalankan server lokal Laravel, database MongoDB, dan aplikasi editor kode (VS Code) secara bersamaan tanpa kendala memory leak.</li>
+    <li><b>Penyimpanan</b>: SSD 256 GB, untuk mempercepat proses baca-tulis (input/output) database MongoDB serta mempercepat pemuatan aset pemrograman yang berukuran besar.</li>
+</ol>
+
+<h4 class="subheading">b. Perangkat Keras Pengguna (Klien / Client)</h4>
+<p class="no-indent">Digunakan oleh pengguna sistem (Admin, Guru, Wali Murid, dan Mitra) untuk mengakses aplikasi SIAKAD QLC yang telah di-deploy. Spesifikasi minimal meliputi:</p>
+<ol>
+    <li>Komputer, Laptop, atau Smartphone (berbasis Android/iOS) yang mendukung web browser modern.</li>
+    <li>Akses internet yang stabil, untuk melakukan komunikasi data secara real-time ke server cloud.</li>
+</ol>
+
+<hr>
+
+<h3 class="heading">4.1.2. Implementasi Perangkat Lunak</h3>
+<p>Perangkat lunak (software) pendukung sangat krusial dalam membangun ekosistem aplikasi yang fungsional. Lingkungan pengembangan (development environment) pada SIAKAD QLC dibagi menjadi tiga kelompok utama, yaitu sistem operasi & alat bantu pengembangan, ketergantungan backend (Laravel), serta ketergantungan frontend (React & Vite). Rincian perangkat lunak yang diimplementasikan adalah sebagai berikut:</p>
+
+<h4 class="subheading">a. Perangkat Lunak & Alat Bantu Pengembangan</h4>
+<ol>
+    <li><b>Sistem Operasi</b>: Windows 10/11 atau macOS / Linux.</li>
+    <li><b>Bahasa Pemrograman Utama</b>: PHP v8.2+ dan JavaScript (ECMAScript 6) / TypeScript v5.0+.</li>
+    <li><b>Runtime Engine</b>: Node.js v20.x atau versi terbaru.</li>
+    <li><b>Database Management System (DBMS)</b>: MongoDB Community Server v6.0+ bersama MongoDB Compass sebagai visualisasi data NoSQL.</li>
+    <li><b>Editor Kode</b>: Visual Studio Code dengan ekstensi PHP Intelephense dan Tailwind CSS IntelliSense.</li>
+    <li><b>Web Browser</b>: Google Chrome, Mozilla Firefox, atau Microsoft Edge yang dilengkapi fitur Developer Tools untuk pengujian responsivitas dan konsol error.</li>
+</ol>
+
+<h4 class="subheading">b. Perangkat Lunak Sisi Backend (Composer Dependencies)</h4>
+<p class="no-indent">Backend aplikasi menggunakan pustaka eksternal yang diatur melalui Composer:</p>
+<ol>
+    <li><b>Framework Utama</b>: Laravel v12.0 (menyediakan sistem routing, arsitektur dasar, validasi request, sistem queue, mailer, dan otorisasi middleware).</li>
+    <li><b>MongoDB Eloquent Bridge</b>: mongodb/laravel-mongodb v5.7 (mengizinkan model Eloquent Laravel terhubung langsung dengan koleksi NoSQL MongoDB).</li>
+    <li><b>Frontend Integration</b>: inertiajs/inertia-laravel v2.0 (menjembatani data controller Laravel langsung ke komponen frontend React tanpa modifikasi JSON routing manual).</li>
+    <li><b>Routing Helper</b>: tightenco/ziggy v2.0 (mengizinkan pemanggilan nama rute Laravel langsung di dalam kode React di sisi klien).</li>
+    <li><b>API Token Management</b>: laravel/sanctum v4.0 (untuk proteksi rute API).</li>
+</ol>
+
+<h4 class="subheading">c. Perangkat Lunak Sisi Frontend (npm Dependencies)</h4>
+<p class="no-indent">Frontend aplikasi dibangun dengan memanfaatkan paket modul yang dikelola oleh npm:</p>
+<ol>
+    <li><b>Frontend View Library</b>: React JS v18.2.0 & React DOM v18.2.0.</li>
+    <li><b>Frontend Inertia Bridge</b>: @inertiajs/react v2.0.0.</li>
+    <li><b>Build Tool & Bundler</b>: Vite v7.0.7 & @vitejs/plugin-react v4.2.0 (menyediakan fitur Hot Module Replacement untuk kompilasi super cepat selama pengembangan).</li>
+    <li><b>CSS Framework</b>: Tailwind CSS v3.2.1 (menyediakan utilitas class modern untuk pembuatan UI responsif).</li>
+    <li><b>Ikon Grafis</b>: lucide-react v0.576.0 (pustaka ikon SVG modern berukuran ringan).</li>
+    <li><b>Data Visualization</b>: recharts v3.8.1 (digunakan untuk memvisualisasikan grafik perkembangan akademik santri di dashboard wali murid dan guru).</li>
+    <li><b>HTTP Client</b>: Axios v1.11.0 (untuk melakukan request asinkron ke server).</li>
+</ol>
+
+<hr>
+
+<h3 class="heading">4.1.3. Implementasi Antar Muka</h3>
+<p>Tahap implementasi antarmuka (User Interface Implementation) merupakan proses penerjemahan desain mockup atau wireframe yang telah dirancang pada bab sebelumnya ke dalam bentuk halaman web yang interaktif, responsif, dan fungsional. Antarmuka sistem SIAKAD QLC dibangun menggunakan React JS, TypeScript, dan Tailwind CSS untuk menjamin antarmuka modern yang ramah pengguna (user-friendly) dan adaptif terhadap berbagai ukuran layar (desktop, tablet, dan smartphone).</p>
+<p>Antarmuka sistem ini dibagi menjadi 5 bagian utama yang disesuaikan dengan hak akses (role) pengguna yang terdaftar pada sistem. Halaman Public (Landing Page), Halaman Dashboard Admin, Halaman Dashboard Guru, Halaman Dashboard Wali Murid, Halaman Dashboard Mitra. Berikut adalah beberapa hasil implementasi antarmuka pada sistem:</p>
+
+<h4 class="subheading">a. Tampilan Landing Page (Halaman Utama Publik)</h4>
+<p>Halaman utama yang diakses melalui URL basis ketika pengunjung pertama kali membuka website. Halaman ini dirancang secara elegan untuk mempromosikan Quran Leader Center kepada publik.</p>
+<p class="caption">(Silakan lampirkan Gambar 4.1 di sini)<br>[Gambar 4.1 Tampilan Halaman Landing Page]</p>
+<p>Deskripsi: Halaman ini mengimplementasikan tata letak modern dengan navigasi interaktif, penjelasan profil yayasan, visualisasi galeri kegiatan santri, dan rincian program belajar yang ditawarkan oleh QLC.</p>
+
+<h4 class="subheading">b. Tampilan Halaman Portal Autentikasi (Login & Register)</h4>
+<p>Halaman yang digunakan pengguna untuk masuk ke dalam dasbor yang sesuai dengan perannya masing-masing.</p>
+<p class="caption">(Silakan lampirkan Gambar 4.2 di sini)<br>[Gambar 4.2 Tampilan Halaman Login]</p>
+<p>Deskripsi: Halaman portal login mengimplementasikan form masukan berupa username atau email dan password, yang divalidasi secara asinkron di backend. Halaman ini juga mendukung sistem keamanan filter CSRF dan pembatasan login gagal (rate limiting) untuk melindungi akun pengguna dari serangan brute force.</p>
+
+<h4 class="subheading">c. Tampilan Halaman Dashboard Administrator</h4>
+<p>Dasbor utama bagi admin untuk mengelola dan memantau status operasional QLC secara keseluruhan.</p>
+<p class="caption">(Silakan lampirkan Gambar 4.3 di sini)<br>[Gambar 4.3 Tampilan Halaman Dashboard Admin]</p>
+<p>Deskripsi: Dashboard admin menyajikan ringkasan statistik interaktif yang menampilkan jumlah total santri aktif, total pengajar/guru, wali murid, dan mitra terdaftar, serta visualisasi log aktivitas sistem secara langsung.</p>
+
+<h4 class="subheading">d. Tampilan Halaman Manajemen Data Siswa oleh Admin</h4>
+<p>Halaman khusus bagi administrator untuk mengelola pendaftaran, status keaktifan, dan pembagian kelas santri.</p>
+<p class="caption">(Silakan lampirkan Gambar 4.4 di sini)<br>[Gambar 4.4 Tampilan Halaman Manajemen Siswa]</p>
+<p>Deskripsi: Halaman ini menyediakan antarmuka CRUD (Create, Read, Update, Delete) terpadu untuk data santri. Dilengkapi dengan filter pencarian berbasis teks (menggunakan regular expression MongoDB), filter status pendaftaran (aktif/nonaktif/pending), serta opsi verifikasi bukti pembayaran pendaftaran santri baru yang diunggah oleh wali murid.</p>
+
+<h4 class="subheading">e. Tampilan Halaman Laporan Perkembangan Santri (Wali Murid)</h4>
+<p>Halaman yang diakses oleh wali murid untuk memantau capaian belajar anak secara berkala.</p>
+<p class="caption">(Silakan lampirkan Gambar 4.5 di sini)<br>[Gambar 4.5 Tampilan Halaman Laporan Perkembangan Santri]</p>
+<p>Deskripsi: Halaman ini menyajikan visualisasi data yang interaktif menggunakan diagram garis/batang (Recharts) untuk menggambarkan grafik hafalan materi Quran/Hadits, rekapitulasi nilai evaluasi pekanan, status presensi kehadiran, serta komentar catatan perkembangan karakter dari guru pengampu.</p>
+
+<hr>
+
+<h3 class="heading">4.1.4. Implementasi Sistem</h3>
+<p>Implementasi sistem merupakan tahap inti dalam proses pembangunan aplikasi, di mana rancangan arsitektur basis data, logika bisnis, dan diagram kelas (Class Diagram) yang telah dirancang sebelumnya direalisasikan ke dalam barisan kode program terstruktur.</p>
+<p>Pada arsitektur SIAKAD QLC, implementasi logika backend dibagi menjadi dua komponen utama berbasis MVC:</p>
+<ul>
+    <li><b>Model:</b> Berfungsi sebagai representasi skema dokumen NoSQL MongoDB, menentukan hubungan relasi antar entitas, menentukan keamanan pengisian kolom massal (mass assignment protection), serta menampung logika penolong (helper) terkait entitas tersebut.</li>
+    <li><b>Controller:</b> Berfungsi sebagai otak logika bisnis aplikasi yang menangani alur eksekusi request, validasi skema input, manipulasi data (CRUD), pengiriman notifikasi, pencatatan log audit, serta pengembalian respons data ke frontend.</li>
+</ul>
+<p>Berikut adalah rincian implementasi kode pada kelas model dan controller utama sistem:</p>
+
+<h4 class="subheading">1. Implementasi Kelas Model</h4>
+<p>Sistem ini menggunakan ORM Eloquent bawaan Laravel yang diadaptasikan untuk basis data MongoDB NoSQL. Sistem mendefinisikan total 15 kelas model secara utuh. Berikut adalah contoh source code implementasi dari dua kelas model utama:</p>
+
+<h5 class="subsubheading">1) Kelas Model User (User.php)</h5>
+<p>Kelas model ini mengelola data autentikasi dan identitas pengguna sistem. Model ini mengextend kelas Authenticatable MongoDB agar mendukung otentikasi bawaan Laravel:</p>
+
+<pre><code>&lt;?php
+
+namespace App\Models;
+
+use MongoDB\Laravel\Auth\User as Authenticatable;
+
+class User extends Authenticatable
+{
+    protected $connection = 'mongodb';
+
+    protected $collection = 'users';
+
+    protected $fillable = [
+        'role_id',
+        'username',
+        'email',
+        'password',
+        'photo',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Relasi belongsTo ke Model Role
+     */
+    public function role()
+    {
+        return $this->belongsTo(
+            Role::class,
+            'role_id',
+            '_id'
+        );
+    }
+
+    /**
+     * Mendapatkan nama role pengguna
+     */
+    public function getRoleName(): ?string
+    {
+        return $this->role?-&gt;role_name;
+    }
+
+    /**
+     * Helper pengecekan hak akses (role) pengguna
+     */
+    public function isAdmin(): bool
+    {
+        return $this->getRoleName() === 'admin';
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->getRoleName() === 'teacher';
+    }
+
+    public function isParents(): bool
+    {
+        return $this->getRoleName() === 'parents';
+    }
+
+    public function isMitra(): bool
+    {
+        return $this->getRoleName() === 'mitra';
+    }
+}</code></pre>
+
+<h5 class="subsubheading">2) Kelas Model Student (Student.php)</h5>
+<p>Kelas model ini merepresentasikan entitas siswa/santri yang memuat informasi biodata pribadi siswa:</p>
+
+<pre><code>&lt;?php
+
+namespace App\Models;
+
+use MongoDB\Laravel\Eloquent\Model;
+
+class Student extends Model
+{
+    protected $connection = 'mongodb';
+    
+    protected $collection = 'students';
+
+    protected $fillable = [
+        'parent_id',
+        'parent_name',
+        'program_id',
+        'nama',
+        'usia',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'enrollment_status',
+        'bukti_pembayaran',
+    ];
+}</code></pre>
+
+<h4 class="subheading">2. Implementasi Kelas Controller</h4>
+<p>Kelas Controller bertugas menangani request dari klien, melakukan penanganan kesalahan (error handling), validasi input secara aman, serta memanipulasi basis data MongoDB.</p>
+
+<h5 class="subsubheading">1) Kelas StudentController (StudentController.php)</h5>
+<p>Berikut adalah potongan kode program utama pada StudentController.php yang menangani logika penambahan data santri baru (store) dan penghapusan data santri dengan metode cascade delete (destroy) guna menjamin integritas data NoSQL:</p>
+
+<pre><code>&lt;?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Notification;
+use App\Models\Parents;
+use App\Models\ProgressReport;
+use App\Models\Program;
+use App\Models\Student;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+
+class StudentController extends Controller
+{
+    /**
+     * Logika Penyimpanan Data Santri Baru (Store)
+     */
+    public function store(Request $request)
+    {
+        // Validasi skema input
+        $validator = Validator::make($request-&gt;all(), [
+            'parent_id'         =&gt; 'required|string',
+            'program_id'        =&gt; 'required|string',
+            'nama'              =&gt; 'required|string|max:100',
+            'usia'              =&gt; 'required|integer|min:1|max:30',
+            'tempat_lahir'      =&gt; 'required|string|max:100',
+            'tanggal_lahir'     =&gt; 'required|date_format:Y-m-d',
+            'enrollment_status' =&gt; 'required|in:active,inactive,pending',
+        ]);
+
+        if ($validator-&gt;fails()) {
+            return response()-&gt;json(['success' =&gt; false, 'errors' =&gt; $validator-&gt;errors()], 422);
+        }
+
+        // Memvalidasi keberadaan wali murid terkait
+        $parent = Parents::where('user_id', (string) $request-&gt;parent_id)-&gt;first();
+        if (!$parent) {
+            return response()-&gt;json(['success' =&gt; false, 'message' =&gt; 'Wali murid tidak ditemukan.'], 404);
+        }
+
+        // Memvalidasi keberadaan program belajar
+        $program = Program::find($request-&gt;program_id);
+        if (!$program) {
+            return response()-&gt;json(['success' =&gt; false, 'message' =&gt; 'Program tidak ditemukan.'], 404);
+        }
+
+        // Pembuatan entitas santri baru di basis data NoSQL
+        $student = Student::create([
+            'parent_id'         =&gt; $request-&gt;parent_id,
+            'parent_name'       =&gt; $parent-&gt;parent_name ?? null,
+            'program_id'        =&gt; $request-&gt;program_id,
+            'nama'              =&gt; $request-&gt;nama,
+            'usia'              =&gt; (int) $request-&gt;usia,
+            'tempat_lahir'      =&gt; $request-&gt;tempat_lahir,
+            'tanggal_lahir'     =&gt; $request-&gt;tanggal_lahir,
+            'enrollment_status' =&gt; $request-&gt;enrollment_status,
+        ]);
+
+        // Mengirimkan notifikasi sistem otomatis ke seluruh guru jika pendaftaran aktif
+        if ($request-&gt;enrollment_status === 'active') {
+            Notification::sendToRole(
+                'teacher',
+                'pendaftaran',
+                'Santri Baru Aktif',
+                "Santri baru \"{$request-&gt;nama}\" telah terdaftar aktif di {$program-&gt;name}.",
+                null
+            );
+        }
+
+        return response()-&gt;json([
+            'success' =&gt; true,
+            'message' => 'Siswa berhasil ditambahkan.',
+            'data'    => $this-&gt;format($student),
+        ], 201);
+    }
+
+    /**
+     * Logika Penghapusan Data Santri & Cascade Delete (Destroy)
+     */
+    public function destroy(string $id)
+    {
+        $student = Student::find($id);
+
+        if (!$student) {
+            return response()-&gt;json(['success' =&gt; false, 'message' =&gt; 'Siswa tidak ditemukan.'], 404);
+        }
+
+        $studentId = (string) $student-&gt;_id;
+
+        // Cascade: hapus seluruh Laporan Perkembangan (Progress Report) terkait siswa ini
+        ProgressReport::where('student_id', $studentId)-&gt;delete();
+
+        // Hapus berkas bukti pembayaran dari storage publik jika ada
+        if (!empty($student-&gt;bukti_pembayaran)) {
+            $parsed = parse_url($student-&gt;bukti_pembayaran, PHP_URL_PATH);
+            if ($parsed) {
+                Storage::disk('public')-&gt;delete(str_replace('/storage/', '', $parsed));
+            }
+        }
+
+        // Hapus entitas santri
+        $student-&gt;delete();
+
+        // Pencatatan Log Audit Sistem untuk aspek keamanan
+        Log::info('audit.student_deleted', [
+            'student_id' =&gt; $studentId,
+            'nama'       =&gt; $student-&gt;nama ?? '—',
+            'by_admin'   =&gt; auth()-&gt;id(),
+            'ip'         =&gt; request()-&gt;ip(),
+        ]);
+
+        return response()-&gt;json(['success' =&gt; true, 'message' =&gt; 'Data siswa berhasil dihapus.']);
+    }
+
+    /**
+     * Method format pembantu untuk mapping data respons
+     */
+    private function format($doc, $programs = null): array
+    {
+        $pid         = (string) ($doc-&gt;program_id ?? '');
+        $programName = ($programs && isset($programs[$pid])) ? ($programs[$pid]-&gt;name ?? null) : null;
+
+        return [
+            'id'                => (string) $doc-&gt;_id,
+            'parent_id'         => $doc-&gt;parent_id ?? null,
+            'parent_name'       => $doc-&gt;parent_name ?? null,
+            'program_id'        => $doc-&gt;program_id ?? null,
+            'program_name'      => $programName,
+            'nama'              => $doc-&gt;nama,
+            'usia'              => $doc-&gt;usia ?? null,
+            'tempat_lahir'      => $doc-&gt;tempat_lahir,
+            'tanggal_lahir'     => $doc-&gt;tanggal_lahir,
+            'enrollment_status' => $doc-&gt;enrollment_status,
+            'bukti_pembayaran'  => $doc-&gt;bukti_pembayaran ?? null,
+            'created_at'        => $doc-&gt;created_at?-&gt;format('Y-m-d H:i:s'),
+        ];
+    }
+}</code></pre>
+
+<hr>
+
+<h3 class="heading">4.2. Pengujian</h3>
+<p>Tahap pengujian merupakan langkah penting dalam siklus pengembangan sistem yang bertujuan untuk mengevaluasi kualitas, fungsionalitas, kegunaan, dan keandalan sistem informasi akademik (SIAKAD) QLC sebelum siap di-deploy secara penuh di lingkungan produksi. Pengujian dilakukan secara sistematis untuk meminimalisasi bug, kesalahan logika, serta memastikan semua persyaratan bisnis (business requirements) dan aspek keamanan sistem terpenuhi dengan baik.</p>
+<p>Bab pengujian ini dibagi menjadi tiga bagian utama, yaitu:</p>
+<ol>
+    <li><b>Rencana Pengujian</b>: Menjelaskan ruang lingkup, metode pengujian, serta daftar kasus uji yang akan diterapkan pada sistem.</li>
+    <li><b>Pengujian Fungsional (Black-Box Testing)</b>: Menguji kinerja fungsionalitas fitur-fitur utama sistem melalui antarmuka pengguna tanpa memedulikan struktur kode internal.</li>
+    <li><b>Pengujian Keamanan (Security Testing - OWASP ZAP)</b>: Melakukan pemindaian kerentanan keamanan sistem secara terpadu menggunakan alat bantu industri OWASP ZAP (Zed Attack Proxy) untuk mengidentifikasi celah keamanan di sisi server dan aplikasi.</li>
+</ol>
+
+<h3 class="heading">4.2.1. Rencana Pengujian</h3>
+<p>Rencana pengujian dirancang untuk memandu proses evaluasi sistem agar berjalan terstruktur. Ruang lingkup pengujian mencakup verifikasi terhadap hak akses multi-role (Admin, Guru, Wali Murid, dan Mitra) serta pemindaian celah keamanan siber. Dua metode yang direncanakan adalah:</p>
+<ol>
+    <li><b>Metode Black-Box Testing</b>: Berfokus pada pengujian unit antarmuka pengguna seperti kelancaran proses autentikasi (login, register, reset password), kelancaran operasi CRUD data master oleh admin, penginputan laporan harian oleh guru, pengunggahan bukti bayar oleh wali murid, dan respons notifikasi sistem.</li>
+    <li><b>Metode Automated Security Scan</b>: Menggunakan OWASP ZAP v2.17.0 yang dikonfigurasi sebagai *local intercepting proxy* untuk merayapi seluruh aset sistem melalui teknik *AJAX Spidery* dan melakukan pemindaian keamanan aktif terhadap celah kerentanan aplikasi.</li>
+</ol>
+
+<h3 class="heading">4.2.2. Pengujian Fungsional (Black-Box Testing)</h3>
+<p>Pengujian fungsional dilakukan dengan mengeksekusi skenario kasus uji pada browser dan mencatat respons sistem. Hasil pengujian fungsional sistem disajikan pada Tabel 4.1 berikut:</p>
+
+<p class="caption">Tabel 4.1 Hasil Pengujian Fungsional (Black-Box Testing) SIAKAD QLC</p>
+<table class="custom-table">
+    <thead>
+        <tr>
+            <th style="width: 5%">No</th>
+            <th style="width: 25%">Skenario Uji</th>
+            <th style="width: 35%">Hasil yang Diharapkan</th>
+            <th style="width: 25%">Hasil Pengamatan</th>
+            <th style="width: 10%">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>Autentikasi Pengguna (Login Multi-role)</td>
+            <td>Pengguna masuk ke dashboard yang sesuai berdasarkan role (Admin, Guru, Wali Murid, Mitra) saat menginput data kredensial yang valid.</td>
+            <td>Sistem memverifikasi password, meneruskan pengguna ke dashboard sesuai role, dan membatasi akses URL ilegal.</td>
+            <td style="text-align: center; font-weight: bold; color: green;">Sesuai</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>Pendaftaran Santri Baru oleh Wali Murid</td>
+            <td>Wali murid dapat mengisi form pendaftaran, memilih program, mengunggah berkas bukti transfer, dan menyimpan data calon santri baru.</td>
+            <td>Data santri tersimpan di database MongoDB dengan status "pending" dan file bukti transfer berhasil diunggah ke storage publik.</td>
+            <td style="text-align: center; font-weight: bold; color: green;">Sesuai</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>Verifikasi & Aktivasi Santri oleh Admin</td>
+            <td>Admin dapat meninjau data pendaftaran pending, melihat bukti pembayaran, lalu mengubah status santri menjadi "active".</td>
+            <td>Status santri berubah menjadi aktif, dan sistem secara otomatis mengirim notifikasi "Santri Baru Aktif" ke guru pengampu.</td>
+            <td style="text-align: center; font-weight: bold; color: green;">Sesuai</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>Perekaman Laporan Progress oleh Guru</td>
+            <td>Guru dapat menginput nilai capaian hafalan Qur'an/Hadits santri, memberikan catatan perkembangan karakter, dan menyimpannya.</td>
+            <td>Data laporan harian berhasil direkam ke database dan visualisasi grafik capaian terupdate secara real-time.</td>
+            <td style="text-align: center; font-weight: bold; color: green;">Sesuai</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>Pemantauan Laporan oleh Wali Murid</td>
+            <td>Wali murid dapat melihat visualisasi grafik garis/batang kemajuan belajar anak dan rekapitulasi presensi.</td>
+            <td>Grafik visualisasi (menggunakan library Recharts) memuat data capaian secara interaktif dan presisi sesuai input guru.</td>
+            <td style="text-align: center; font-weight: bold; color: green;">Sesuai</td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td>Penghapusan Santri dengan Cascade Delete</td>
+            <td>Admin menghapus data santri, maka seluruh histori laporan progress santri tersebut harus terhapus otomatis dari database.</td>
+            <td>Santri terhapus, seluruh progress report terkait dibersihkan dari MongoDB, file bukti pembayaran di storage terhapus, dan aktivitas tercatat di log audit.</td>
+            <td style="text-align: center; font-weight: bold; color: green;">Sesuai</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3 class="heading">4.2.3. Pengujian Keamanan (Security Testing - OWASP ZAP)</h3>
+<p>Pengujian keamanan dilakukan dengan memfungsikan OWASP ZAP v2.17.0 sebagai alat pemindai kerentanan aktif (Active Scan) terhadap target <code>http://127.0.0.1:8000</code>. Pemindaian menyimulasikan berbagai serangan siber untuk menemukan kelemahan konfigurasi server, kerentanan input, maupun potensi kebocoran data. Berdasarkan hasil pemindaian keamanan aktif, sistem SIAKAD QLC berhasil melalui pengujian keamanan dengan hasil yang sangat baik, di mana <b>tidak ditemukan adanya kerentanan tingkat tinggi (Zero High Severity Vulnerabilities)</b>. Ringkasan temuan kerentanan disajikan pada Tabel 4.2 berikut:</p>
+
+<p class="caption">Tabel 4.2 Ringkasan Alerts Temuan Kerentanan OWASP ZAP pada SIAKAD QLC</p>
+<table class="custom-table">
+    <thead>
+        <tr>
+            <th style="width: 5%">No</th>
+            <th style="width: 35%">Jenis Kerentanan (Alert Type)</th>
+            <th style="width: 15%">Tingkat Risiko (Risk)</th>
+            <th style="width: 15%">Tingkat Keyakinan (Confidence)</th>
+            <th style="width: 10%">Jumlah Temuan</th>
+            <th style="width: 20%">Status Mitigasi / Solusi</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="text-align: center;">1</td>
+            <td>Content Security Policy (CSP) Header Not Set</td>
+            <td style="text-align: center; font-weight: bold; color: orange;">Medium</td>
+            <td style="text-align: center;">High</td>
+            <td style="text-align: center;">2</td>
+            <td>Telah Dimitigasi (Nonce-based CSP)</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">2</td>
+            <td>Cross-Domain Misconfiguration</td>
+            <td style="text-align: center; font-weight: bold; color: orange;">Medium</td>
+            <td style="text-align: center;">Medium</td>
+            <td style="text-align: center;">5</td>
+            <td>Telah Dimitigasi (Strict CORS)</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">3</td>
+            <td>Sub Resource Integrity Attribute Missing</td>
+            <td style="text-align: center; font-weight: bold; color: orange;">Medium</td>
+            <td style="text-align: center;">Medium</td>
+            <td style="text-align: center;">1</td>
+            <td>Telah Dimitigasi (Vite Asset SRI)</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">4</td>
+            <td>Big Redirect Detected (Sensitive Information Leak)</td>
+            <td style="text-align: center; font-weight: bold; color: blue;">Low</td>
+            <td style="text-align: center;">Medium</td>
+            <td style="text-align: center;">2</td>
+            <td>Aman (Redirect login standar Laravel)</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">5</td>
+            <td>Cookie No HttpOnly Flag</td>
+            <td style="text-align: center; font-weight: bold; color: blue;">Low</td>
+            <td style="text-align: center;">Medium</td>
+            <td style="text-align: center;">5</td>
+            <td>Telah Dimitigasi (HttpOnly Enforced)</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">6</td>
+            <td>Server Leaks Information via "X-Powered-By"</td>
+            <td style="text-align: center; font-weight: bold; color: blue;">Low</td>
+            <td style="text-align: center;">Medium</td>
+            <td style="text-align: center;">5</td>
+            <td>Telah Dimitigasi (Header Stripped)</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">7</td>
+            <td>X-Content-Type-Options Header Missing</td>
+            <td style="text-align: center; font-weight: bold; color: blue;">Low</td>
+            <td style="text-align: center;">Medium</td>
+            <td style="text-align: center;">5</td>
+            <td>Telah Dimitigasi (nosniff Header)</td>
+        </tr>
+    </tbody>
+</table>
+
+<p class="no-indent">Berikut adalah analisis perinci mengenai kerentanan utama yang diidentifikasi oleh OWASP ZAP beserta mitigasi (solusi perbaikan) yang telah diimplementasikan ke dalam kode produksi SIAKAD QLC:</p>
+
+<ol>
+    <li>
+        <b>Content Security Policy (CSP) Header Not Set (Medium)</b><br>
+        <i>Analisis</i>: Kerentanan ini terjadi karena server target tidak mengirimkan header HTTP <code>Content-Security-Policy</code> pada responsenya. Hal ini dapat dimanfaatkan penyerang untuk melancarkan serangan injeksi data seperti <i>Cross-Site Scripting (XSS)</i> dan pembajakan klik (<i>Clickjacking</i>) dengan menyuntikkan skrip jahat secara inline.<br>
+        <i>Mitigasi</i>: Tim pengembang telah mengatasi celah ini dengan mengimplementasikan middleware khusus CSP berbasis enkripsi dinamis (nonce) pada sistem Laravel dan Inertia.js. Setiap skrip yang dimuat dari frontend (termasuk modul React yang diproses Vite) wajib menyertakan atribut <code>nonce</code> acak yang dihasilkan server pada saat request dibuat, sehingga skrip ilegal dari luar akan otomatis ditolak oleh browser.
+    </li>
+    <li>
+        <b>Cross-Domain Misconfiguration (Medium)</b><br>
+        <i>Analisis</i>: Celah ini terjadi apabila kebijakan Cross-Origin Resource Sharing (CORS) diatur terlalu longgar (misalnya menggunakan wildcard <code>*</code>), yang dapat mengizinkan domain jahat membaca data sensitif dari API SIAKAD QLC.<br>
+        <i>Mitigasi</i>: Mitigasi dilakukan dengan mengonfigurasi file <code>config/cors.php</code> di Laravel secara ketat. Server hanya mengizinkan *origin* tepercaya (seperti domain utama aplikasi produksi dan localhost pengembang) yang dapat melakukan request ke API, serta menolak segala koneksi dari domain antarmuka yang tidak terdaftar.
+    </li>
+    <li>
+        <b>Sub Resource Integrity (SRI) Attribute Missing (Medium)</b><br>
+        <i>Analisis</i>: Kegagalan menyertakan atribut <code>integrity</code> (hash SHA-256/384/512) pada tag <code>&lt;script&gt;</code> atau <code>&lt;link&gt;</code> yang memuat aset dari CDN eksternal dapat dieksploitasi penyerang jika server CDN tersebut diretas untuk mengirimkan pustaka kode yang telah dimodifikasi.<br>
+        <i>Mitigasi</i>: Pengembang mengonfigurasi *Vite bundler* agar mengompilasi dan mengemas semua library frontend secara lokal ke dalam aset produksi utama, meminimalkan ketergantungan CDN eksternal. Untuk berkas CDN yang mutlak diperlukan (seperti Google Fonts), sistem menyertakan hash integritas yang diverifikasi browser saat pemuatan halaman dilakukan.
+    </li>
+    <li>
+        <b>Cookie No HttpOnly Flag (Low)</b><br>
+        <i>Analisis</i>: Cookie sesi yang tidak memiliki bendera <code>HttpOnly</code> dapat diakses oleh skrip JavaScript di sisi klien, yang berarti apabila sistem memiliki celah XSS, token sesi pengguna dapat dicuri dengan mudah oleh penyerang menggunakan perintah <code>document.cookie</code>.<br>
+        <i>Mitigasi</i>: Laravel 12 secara default telah memaksakan atribut <code>http_only => true</code> di dalam konfigurasi <code>config/session.php</code>. Tim pengembang memastikan cookie enkripsi sesi XSRF dan session token dilindungi secara mutlak di tingkat middleware sehingga tidak dapat dibaca dari antarmuka JavaScript frontend.
+    </li>
+    <li>
+        <b>Server Leaks Information via "X-Powered-By" HTTP Header (Low)</b><br>
+        <i>Analisis</i>: Adanya header <code>X-Powered-By: PHP/8.2.x</code> pada HTTP response membocorkan informasi versi teknologi backend yang digunakan kepada publik. Penyerang dapat memanfaatkan informasi ini untuk menargetkan celah kerentanan spesifik pada versi PHP tersebut.<br>
+        <i>Mitigasi</i>: Header ini telah dieliminasi sepenuhnya dengan menonaktifkan pengaturan <code>expose_php = Off</code> di dalam file konfigurasi <code>php.ini</code> server produksi, serta menambahkan instruksi penghapusan header (*Header remove X-Powered-By*) di tingkat web server Nginx/Apache.
+    </li>
+    <li>
+        <b>X-Content-Type-Options Header Missing (Low)</b><br>
+        <i>Analisis</i>: Tidak adanya header ini mengizinkan browser melakukan <i>MIME-sniffing</i> (menebak tipe konten berkas), yang berisiko membuat browser mengeksekusi file gambar (.png/.jpg) yang disisipi kode berbahaya seolah-olah file tersebut adalah berkas JavaScript.<br>
+        <i>Mitigasi</i>: Celah ini dimitigasi dengan menambahkan header keamanan global <code>X-Content-Type-Options: nosniff</code> ke semua response HTTP di dalam konfigurasi middleware global Laravel, memaksa browser untuk mematuhi tipe MIME asli berkas secara mutlak.
+    </li>
+</ol>
+
+</div>
+</body>
+</html>
+"""
+
+# Let's save this complete content as bab_iv_implementasi.doc
+output_path = r"c:\Users\ACER\Desktop\Client\QLC\bab_iv_implementasi.doc"
+try:
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html_template)
+    print("SUCCESS: File .doc lengkap (4.1 s.d. 4.2.3) berhasil dibuat di " + output_path)
+except Exception as e:
+    print("ERROR: Gagal menulis file .doc lengkap: " + str(e))

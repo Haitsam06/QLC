@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 import { Head } from '@inertiajs/react';
@@ -23,10 +22,9 @@ interface Program {
 
 interface Props {
     program: Program;
-    galleries?: any[];
 }
 
-export default function ProgramDetail({ program, galleries = [] }: Props) {
+export default function ProgramDetail({ program }: Props) {
     const glassClass = 'bg-white/80 backdrop-blur-lg border border-white/40 shadow-lg';
     const heroImage = program?.hero_image_url || '/image/landing/1 (5).png';
     const descriptionParagraphs = program?.description ? program.description.split('\n').filter(Boolean) : ['Belum ada deskripsi untuk program ini.'];
@@ -115,25 +113,39 @@ export default function ProgramDetail({ program, galleries = [] }: Props) {
                     </div>
                 </section>
 
-                {/* 3. GALLERY */}
-                {program?.gallery && program.gallery.length > 0 && (
-                    <section className="py-20 px-4 md:px-8 max-w-7xl mx-auto border-t border-slate-100">
-                        <div className="flex flex-col gap-2 mb-10">
-                            <p className="text-[#1B6B3A] font-black text-xs tracking-widest uppercase ml-1">Documentation</p>
-                            <h2 className="text-3xl md:text-5xl font-black text-gray-900">Potret Kegiatan</h2>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[250px] gap-3 md:gap-5">
-                            {program.gallery.map((url: string, idx: number) => (
-                                <div key={idx} className={`relative rounded-3xl overflow-hidden group shadow-sm bg-slate-100 ${idx === 0 ? 'col-span-2 row-span-2' : ''}`}>
-                                    <img src={url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Kegiatan" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-5">
-                                        <Camera className="text-white/80" size={24} />
+                {/* 3. GALLERY — hanya foto milik program ini */}
+                {(() => {
+                    // Kumpulkan semua gambar yang relevan dengan program ini
+                    const photos: string[] = [
+                        ...(program?.gallery ?? []),
+                        ...(program?.about_image_url && !program?.gallery?.includes(program.about_image_url) ? [program.about_image_url] : []),
+                        ...(program?.image_url && !program?.gallery?.includes(program.image_url) ? [program.image_url] : []),
+                    ].filter(Boolean);
+
+                    if (photos.length === 0) return null;
+
+                    return (
+                        <section className="py-20 px-4 md:px-8 max-w-7xl mx-auto border-t border-slate-100">
+                            <div className="flex flex-col gap-1 mb-10">
+                                <p className="text-[#1B6B3A] font-black text-xs tracking-widest uppercase ml-1">Dokumentasi</p>
+                                <h2 className="text-3xl md:text-4xl font-black text-gray-900">Potret Kegiatan</h2>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[220px] gap-3 md:gap-5">
+                                {photos.map((url: string, idx: number) => (
+                                    <div
+                                        key={idx}
+                                        className={`relative rounded-2xl overflow-hidden group shadow-sm bg-slate-100 ${idx === 0 ? 'col-span-2 row-span-2' : ''}`}
+                                    >
+                                        <img src={url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Kegiatan" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                            <Camera className="text-white/80" size={20} />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
+                                ))}
+                            </div>
+                        </section>
+                    );
+                })()}
             </main>
             <Footer />
         </div>
