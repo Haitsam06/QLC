@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -18,42 +19,40 @@ class SettingsController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'username' => 'required|string|max:50|unique:users,username,' . $user->_id . ',_id',
-            'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->_id . ',_id',
-
-            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ], [
-            'username.unique' => 'Username sudah digunakan orang lain.',
-            'email.unique' => 'Email sudah terdaftar pada akun lain.',
+            'username' => 'required|string|min:4|max:50|alpha_num',
+            'email'    => 'nullable|email|max:255',
+            'photo'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        // Cek uniqueness secara manual agar kompatibel dengan MongoDB ObjectId
+        if (User::where('username', $request->username)->where('_id', '!=', (string) $user->_id)->exists()) {
+            return back()->withErrors(['username' => 'Username sudah digunakan orang lain.'])->withInput();
+        }
+
+        if ($request->filled('email') && User::where('email', $request->email)->where('_id', '!=', (string) $user->_id)->exists()) {
+            return back()->withErrors(['email' => 'Email sudah terdaftar pada akun lain.'])->withInput();
+        }
 
         $photoUrl = $user->photo ?? null;
 
-        // upload photo baru
         if ($request->hasFile('photo')) {
-
-            // hapus photo lama
             if ($photoUrl && str_contains($photoUrl, '/storage/')) {
-
                 $parsedPath = parse_url($photoUrl, PHP_URL_PATH);
-
                 if ($parsedPath) {
-                    $oldPath = str_replace('/storage/', '', $parsedPath);
-
-                    Storage::disk('public')->delete($oldPath);
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
                 }
             }
-
-            $path = $request->file('photo')->store('profile', 'public');
-
+            $path     = $request->file('photo')->store('profile', 'public');
             $photoUrl = url('storage/' . $path);
         }
 
         $user->update([
             'username' => $request->username,
-            'email' => $request->email,
-            'photo' => $photoUrl,
+            'email'    => $request->email,
+            'photo'    => $photoUrl,
         ]);
+
+        Auth::setUser($user->fresh());
 
         return back()->with('success', 'Informasi akun berhasil diperbarui.');
     }

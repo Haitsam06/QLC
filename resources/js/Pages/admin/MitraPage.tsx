@@ -37,6 +37,8 @@ type Status = 'Active' | 'Inactive';
 interface Mitra {
     id: string;
     user_id?: string | null;
+    username?: string | null;
+    email?: string | null;
     institution_name: string;
     contact_person: string;
     phone: string;
@@ -163,10 +165,12 @@ function MitraModal({ init, onClose, onSave }: { init: FormState & { id?: string
         if (!f.contact_person.trim()) err.contact_person = 'Nama kontak wajib diisi.';
         if (!f.phone.trim()) err.phone = 'Nomor telepon wajib diisi.';
 
-        // Validasi akun hanya untuk mode Tambah (Add)
         if (!isEdit) {
             if (!f.username?.trim()) err.username = 'Username wajib diisi.';
             if (!f.password?.trim() || f.password.length < 8) err.password = 'Password minimal 8 karakter.';
+        } else {
+            if (f.username && !/^[a-zA-Z0-9]{4,50}$/.test(f.username)) err.username = 'Min 4 karakter, huruf & angka.';
+            if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) err.email = 'Format email tidak valid.';
         }
 
         setE(err);
@@ -200,7 +204,34 @@ function MitraModal({ init, onClose, onSave }: { init: FormState & { id?: string
                 </div>
 
                 <div className="px-7 py-6 flex flex-col gap-4 overflow-y-auto flex-1">
-                    {/* ── SEGMEN INFORMASI AKUN (Hanya saat Tambah Mitra) ── */}
+                    {/* ── SEGMEN INFORMASI AKUN ── */}
+                    {/* Mode edit: username/email/password bersifat opsional */}
+                    {isEdit && (
+                        <div className="flex flex-col gap-4 pt-1 border-t border-slate-100">
+                            <div className="flex items-center gap-3 text-[11px] font-extrabold uppercase tracking-widest text-purple-600 before:content-[''] before:flex-1 before:h-px before:bg-purple-100 after:content-[''] after:flex-1 after:h-px after:bg-purple-100">
+                                Kredensial Akun
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Username</label>
+                                    <div className="relative">
+                                        <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                        <input className={`h-11 w-full pl-10 pr-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e.username ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-purple-600 focus:ring-purple-600/15'}`} placeholder="Kosongkan jika tidak diubah" value={f.username ?? ''} onChange={upd('username')} />
+                                    </div>
+                                    {e.username && <span className="text-[11px] text-red-600 font-bold">{e.username}</span>}
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Email</label>
+                                    <div className="relative">
+                                        <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                        <input type="email" className={`h-11 w-full pl-10 pr-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e.email ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-purple-600 focus:ring-purple-600/15'}`} placeholder="Kosongkan jika tidak diubah" value={f.email ?? ''} onChange={upd('email')} />
+                                    </div>
+                                    {e.email && <span className="text-[11px] text-red-600 font-bold">{e.email}</span>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {!isEdit && (
                         <>
                             <div className="flex items-center gap-3 text-[11px] font-extrabold uppercase tracking-widest text-purple-600 my-1 before:content-[''] before:flex-1 before:h-px before:bg-purple-100 after:content-[''] after:flex-1 after:h-px after:bg-purple-100">
@@ -623,14 +654,13 @@ export default function MitraPage() {
     };
 
     const handleEdit = async (f: FormState) => {
+        const skipOnEdit = new Set(['institution_name', 'contact_person', 'phone', 'mou_file_url']);
         const formData = new FormData();
         Object.entries(f).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && key !== 'mou_file_url') {
+            if (value !== null && value !== undefined && !skipOnEdit.has(key)) {
                 formData.append(key, value as string | Blob);
             }
         });
-        // PENTING UNTUK LARAVEL: Kita menggunakan POST, tapi menyisipkan _method PUT
-        // karena PHP tidak bisa membaca file dari form-data dengan method PUT murni.
         formData.append('_method', 'PUT');
 
         const res = await fetch(`${BASE}/partners/${editModal!.id}`, { method: 'POST', body: formData });
@@ -814,7 +844,7 @@ export default function MitraPage() {
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="text-[14px] font-bold text-slate-900 tracking-tight truncate max-w-[200px]">{m.institution_name}</div>
-                                                        <div className="text-[11px] font-semibold text-slate-500 mt-0.5 truncate">ID: {m.id.slice(-6).toUpperCase()}</div>
+                                                        {m.username && <div className="text-[11px] font-semibold text-slate-400 mt-0.5 truncate">username: "{m.username}"</div>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -939,9 +969,11 @@ export default function MitraPage() {
                         institution_name: editModal.institution_name,
                         contact_person: editModal.contact_person,
                         phone: editModal.phone,
-                        mou_file: null, // File baru tidak wajib saat edit, jadi inisialisasi dengan null
+                        mou_file: null,
                         mou_file_url: editModal.mou_file_url ?? '',
                         status: editModal.status,
+                        username: editModal.username ?? '',
+                        email: editModal.email ?? '',
                     }}
                     onClose={() => setEditModal(null)}
                     onSave={handleEdit}

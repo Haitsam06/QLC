@@ -44,9 +44,14 @@ class MitraController extends Controller
         $total    = $query->count();
         $partners = $query->orderBy('institution_name')->skip($skip)->take($perPage)->get();
 
+        $userIds = $partners->pluck('user_id')->filter()->unique()->values()->toArray();
+        $userMap = empty($userIds) ? collect() : User::whereIn('_id', $userIds)
+            ->get(['_id', 'username', 'email'])
+            ->keyBy(fn($u) => (string) $u->_id);
+
         return response()->json([
             'success' => true,
-            'data'    => $partners->map(fn($p) => $this->format($p)),
+            'data'    => $partners->map(fn($p) => $this->format($p, $userMap->get((string) ($p->user_id ?? '')))),
             'meta'    => [
                 'total'     => $total,
                 'page'      => $page,
@@ -137,11 +142,14 @@ class MitraController extends Controller
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
-            'institution_name' => 'required|string|max:200',
-            'contact_person'   => 'required|string|max:150',
-            'phone'            => 'required|string|max:20',
+            'institution_name' => 'nullable|string|max:200',
+            'contact_person'   => 'nullable|string|max:150',
+            'phone'            => 'nullable|string|max:20',
             'mou_file'         => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120',
-            'status'           => 'required|in:Active,Inactive',
+            'status'           => 'nullable|in:Active,Inactive',
+            'username'         => 'nullable|string|min:4|max:50|alpha_num',
+            'email'            => 'nullable|email|max:100',
+            'new_password'     => 'nullable|string|min:8|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -153,8 +161,18 @@ class MitraController extends Controller
             return response()->json(['success' => false, 'message' => 'Mitra tidak ditemukan.'], 404);
         }
 
-        if (Partner::where('phone', $request->phone)->where('_id', '!=', $id)->exists()) {
+        if ($request->filled('phone') && Partner::where('phone', $request->phone)->where('_id', '!=', (string) $partner->_id)->exists()) {
             return response()->json(['success' => false, 'message' => 'Nomor telepon sudah digunakan mitra lain.'], 409);
+        }
+
+        $userId = $partner->user_id ?? null;
+        if ($userId) {
+            if ($request->filled('username') && User::where('username', $request->username)->where('_id', '!=', $userId)->exists()) {
+                return response()->json(['success' => false, 'message' => 'Username sudah digunakan akun lain.'], 409);
+            }
+            if ($request->filled('email') && User::where('email', $request->email)->where('_id', '!=', $userId)->exists()) {
+                return response()->json(['success' => false, 'message' => 'Email sudah digunakan akun lain.'], 409);
+            }
         }
 
         $mouFileUrl = $partner->mou_file_url ?? null;
@@ -169,18 +187,29 @@ class MitraController extends Controller
             $mouFileUrl = url('storage/' . $path);
         }
 
-        $partner->update([
-            'institution_name' => $request->institution_name,
-            'contact_person'   => $request->contact_person,
-            'phone'            => $request->phone,
-            'mou_file_url'     => $mouFileUrl,
-            'status'           => $request->status,
-        ]);
+        $partnerUpdate = ['mou_file_url' => $mouFileUrl];
+        if ($request->filled('institution_name')) $partnerUpdate['institution_name'] = $request->institution_name;
+        if ($request->filled('contact_person'))   $partnerUpdate['contact_person']   = $request->contact_person;
+        if ($request->filled('phone'))            $partnerUpdate['phone']            = $request->phone;
+        if ($request->filled('status'))           $partnerUpdate['status']           = $request->status;
+        $partner->update($partnerUpdate);
+
+        $user = null;
+        if ($userId) {
+            $user = User::find($userId);
+            if ($user) {
+                $userUpdate = [];
+                if ($request->filled('username'))     $userUpdate['username'] = $request->username;
+                if ($request->filled('email'))        $userUpdate['email']    = $request->email;
+                if ($request->filled('new_password')) $userUpdate['password'] = Hash::make($request->new_password);
+                if (!empty($userUpdate)) $user->update($userUpdate);
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Data mitra berhasil diperbarui.',
-            'data'    => $this->format($partner->fresh()),
+            'data'    => $this->format($partner->fresh(), $user),
         ]);
     }
 
@@ -197,7 +226,7 @@ class MitraController extends Controller
 
         $user = User::find($partner->user_id);
         if ($user) {
-            $newPassword = Str::random(12);
+            $newPassword = 'mieayambakso';
             $user->update(['password' => Hash::make($newPassword)]);
         }
 
@@ -280,6 +309,7 @@ class MitraController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|min:4|max:50|alpha_num',
+            'email'    => 'nullable|email|max:100',
             'photo'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
@@ -296,6 +326,10 @@ class MitraController extends Controller
             return back()->withErrors(['username' => 'Username sudah digunakan.']);
         }
 
+        if ($request->filled('email') && User::where('email', $request->email)->where('_id', '!=', (string) $user->_id)->exists()) {
+            return back()->withErrors(['email' => 'Email sudah digunakan akun lain.']);
+        }
+
         $photoUrl = $user->photo ?? null;
         if ($request->hasFile('photo')) {
             if ($photoUrl && str_contains($photoUrl, '/storage/')) {
@@ -310,6 +344,7 @@ class MitraController extends Controller
 
         $user->update([
             'username' => $request->username,
+            'email'    => $request->email ?? $user->email,
             'photo'    => $photoUrl,
         ]);
 
@@ -336,11 +371,13 @@ class MitraController extends Controller
         return back()->with('success', 'Password berhasil diperbarui.');
     }
 
-    private function format($doc): array
+    private function format($doc, $user = null): array
     {
         return [
             'id'               => (string) $doc->_id,
             'user_id'          => $doc->user_id ?? null,
+            'username'         => $user?->username ?? null,
+            'email'            => $user?->email ?? null,
             'institution_name' => $doc->institution_name,
             'contact_person'   => $doc->contact_person,
             'phone'            => $doc->phone,

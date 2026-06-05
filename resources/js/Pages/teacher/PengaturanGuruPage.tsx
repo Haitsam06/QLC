@@ -6,7 +6,7 @@ import type { PageProps } from '@/types';
 
 import { createPortal } from 'react-dom';
 
-import { User, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Phone, MessageCircle, KeyRound, Save, ExternalLink, GraduationCap, Loader2 } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Phone, MessageCircle, KeyRound, Save, ExternalLink, GraduationCap, Loader2, Mail } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -71,6 +71,7 @@ function UsernameForm() {
 
     const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
         username: user?.username || '',
+        email:    user?.email    || '',
 
         photo: null as File | null,
     });
@@ -117,7 +118,7 @@ function UsernameForm() {
                             {photoFile ? (
                                 <img src={URL.createObjectURL(photoFile)} className="w-full h-full object-cover" />
                             ) : user?.photo ? (
-                                <img src={`${user.photo}?t=${Date.now()}`} className="w-full h-full object-cover" />
+                                <img src={user.photo} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full bg-[#1B6B3A] text-white flex items-center justify-center text-3xl font-black">{(user?.username || 'G').charAt(0).toUpperCase()}</div>
                             )}
@@ -143,6 +144,13 @@ function UsernameForm() {
                             <span className="text-[11px] text-slate-400">JPG, PNG, WEBP • Maksimal 2MB</span>
                         </div>
                     </div>
+
+                    {errors.photo && (
+                        <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold ml-1">
+                            <AlertCircle size={14} />
+                            {errors.photo}
+                        </div>
+                    )}
 
                     {/* USERNAME */}
                     <div className="flex flex-col gap-1.5 max-w-xl">
@@ -174,6 +182,39 @@ function UsernameForm() {
                                 <AlertCircle size={14} />
 
                                 {errors.username}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* EMAIL */}
+                    <div className="flex flex-col gap-1.5 max-w-xl">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Email</label>
+
+                        <div className="relative flex items-center">
+                            <Mail className="absolute left-4 text-slate-400 pointer-events-none" size={18} />
+
+                            <input
+                                type="email"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
+                                placeholder="Email (opsional)"
+                                autoComplete="email"
+                                className={`
+                                    w-full h-12 pl-12 pr-4
+                                    bg-slate-50 border rounded-2xl
+                                    text-[14px] font-bold text-slate-900
+                                    transition-all outline-none
+                                    focus:bg-white focus:ring-4
+
+                                    ${errors.email ? 'border-red-500 focus:ring-red-500/10' : 'border-transparent focus:border-[#1B6B3A] focus:ring-[#1B6B3A]/10'}
+                                `}
+                            />
+                        </div>
+
+                        {errors.email && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold mt-1 ml-1">
+                                <AlertCircle size={14} />
+                                {errors.email}
                             </div>
                         )}
                     </div>

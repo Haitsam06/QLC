@@ -8,6 +8,8 @@ import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, Users, Phon
 interface Parent {
     id: string;
     user_id: string | null;
+    username: string | null;
+    email: string | null;
     parent_name: string;
     phone: string;
     address: string;
@@ -32,10 +34,12 @@ interface EditFormData {
     parent_name: string;
     phone: string;
     address: string;
+    username: string;
+    email: string;
 }
 
 const EMPTY_ADD: AddFormData = { parent_name: '', phone: '', address: '', username: '', password: '', email: '' };
-const EMPTY_EDIT: EditFormData = { parent_name: '', phone: '', address: '' };
+const EMPTY_EDIT: EditFormData = { parent_name: '', phone: '', address: '', username: '', email: '' };
 const API = '/api/parents';
 
 /* ── Helpers ── */
@@ -262,14 +266,8 @@ function EditModal({ init, onClose, onSave }: { init: EditFormData; onClose: () 
     const [e, setE] = useState<Partial<Record<keyof EditFormData, string>>>({});
     const [busy, setBusy] = useState(false);
 
-    const updInp = (k: keyof EditFormData) => (ev: React.ChangeEvent<HTMLInputElement>) => {
-        setF((p) => ({ ...p, [k]: ev.target.value }));
-        setE((p) => ({ ...p, [k]: '' }));
-    };
-    const updTA = (k: keyof EditFormData) => (ev: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setF((p) => ({ ...p, [k]: ev.target.value }));
-        setE((p) => ({ ...p, [k]: '' }));
-    };
+    const updInp = (k: keyof EditFormData) => (ev: React.ChangeEvent<HTMLInputElement>) => { setF((p) => ({ ...p, [k]: ev.target.value })); setE((p) => ({ ...p, [k]: '' })); };
+    const updTA  = (k: keyof EditFormData) => (ev: React.ChangeEvent<HTMLTextAreaElement>) => { setF((p) => ({ ...p, [k]: ev.target.value })); setE((p) => ({ ...p, [k]: '' })); };
 
     const validate = () => {
         const err: Partial<Record<keyof EditFormData, string>> = {};
@@ -277,74 +275,56 @@ function EditModal({ init, onClose, onSave }: { init: EditFormData; onClose: () 
         if (!f.phone.trim()) err.phone = 'Telepon wajib diisi.';
         else if (!/^[0-9+\-\s]{8,20}$/.test(f.phone)) err.phone = 'Format tidak valid.';
         if (!f.address.trim()) err.address = 'Alamat wajib diisi.';
+        if (f.username && !/^[a-zA-Z0-9]{4,50}$/.test(f.username)) err.username = 'Min 4 karakter, huruf & angka.';
+        if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) err.email = 'Format email tidak valid.';
         setE(err);
         return !Object.keys(err).length;
     };
 
-    const submit = async () => {
-        if (!validate()) return;
-        setBusy(true);
-        try {
-            await onSave(f);
-        } finally {
-            setBusy(false);
-        }
-    };
+    const submit = async () => { if (!validate()) return; setBusy(true); try { await onSave(f); } finally { setBusy(false); } };
+
+    const cls = (k: keyof EditFormData) => `h-11 px-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e[k] ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-blue-600 focus:ring-blue-600/15'}`;
 
     return createPortal(
-        <div
-            className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
-            onClick={(ev) => ev.target === ev.currentTarget && onClose()}
-        >
-            <div className="w-full max-w-[480px] max-h-[90vh] flex flex-col bg-white border border-slate-200 rounded-[24px] shadow-2xl animate-[slideUp_0.3s_ease-out]">
+        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" onClick={(ev) => ev.target === ev.currentTarget && onClose()}>
+            <div className="w-full max-w-[520px] max-h-[90vh] flex flex-col bg-white border border-slate-200 rounded-[24px] shadow-2xl animate-[slideUp_0.3s_ease-out]">
                 <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100">
                     <span className="text-[17px] font-extrabold text-slate-900">Edit Data Wali Murid</span>
-                    <button
-                        className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 transition-colors hover:bg-red-100 hover:text-red-600 focus:outline-none"
-                        onClick={onClose}
-                    >
-                        <X size={16} />
-                    </button>
+                    <button className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600 focus:outline-none" onClick={onClose}><X size={16} /></button>
                 </div>
-
                 <div className="px-7 py-6 flex flex-col gap-4 overflow-y-auto flex-1">
+                    {/* Profil */}
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Nama Lengkap</label>
-                        <input
-                            className={`h-11 px-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e.parent_name ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-blue-600 focus:ring-blue-600/15'}`}
-                            placeholder="Nama lengkap"
-                            value={f.parent_name}
-                            onChange={updInp('parent_name')}
-                        />
-                        {e.parent_name && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.parent_name}</span>}
+                        <input className={cls('parent_name')} placeholder="Nama lengkap" value={f.parent_name} onChange={updInp('parent_name')} />
+                        {e.parent_name && <span className="text-[11px] text-red-600 font-bold">{e.parent_name}</span>}
                     </div>
-
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Nomor Telepon</label>
-                        <input
-                            className={`h-11 px-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e.phone ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-blue-600 focus:ring-blue-600/15'}`}
-                            placeholder="08123456789"
-                            value={f.phone}
-                            onChange={updInp('phone')}
-                        />
-                        {e.phone && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.phone}</span>}
+                        <input className={cls('phone')} placeholder="08123456789" value={f.phone} onChange={updInp('phone')} />
+                        {e.phone && <span className="text-[11px] text-red-600 font-bold">{e.phone}</span>}
                     </div>
-
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Alamat</label>
-                        <textarea
-                            className={`p-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none resize-none focus:bg-white focus:ring-2 ${e.address ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-blue-600 focus:ring-blue-600/15'}`}
-                            placeholder="Alamat lengkap"
-                            value={f.address}
-                            onChange={updTA('address')}
-                            rows={3}
-                        />
-                        {e.address && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.address}</span>}
+                        <textarea className={`p-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none resize-none focus:bg-white focus:ring-2 ${e.address ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-blue-600 focus:ring-blue-600/15'}`} placeholder="Alamat lengkap" value={f.address} onChange={updTA('address')} rows={3} />
+                        {e.address && <span className="text-[11px] text-red-600 font-bold">{e.address}</span>}
                     </div>
 
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100 mt-2">
-                        <CheckCircle2 size={18} className="text-blue-600 shrink-0 mt-0.5" />
-                        <span className="text-[12.5px] text-blue-700 font-semibold leading-relaxed">Username & password tidak berubah. Hubungi admin untuk reset akun.</span>
+                    {/* Kredensial */}
+                    <div className="pt-3 border-t border-slate-100 flex flex-col gap-4">
+                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Kredensial Akun</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Username</label>
+                                <input className={cls('username')} placeholder="Kosongkan jika tidak diubah" value={f.username} onChange={updInp('username')} autoComplete="off" />
+                                {e.username && <span className="text-[11px] text-red-600 font-bold">{e.username}</span>}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Email</label>
+                                <input className={cls('email')} type="email" placeholder="Kosongkan jika tidak diubah" value={f.email} onChange={updInp('email')} />
+                                {e.email && <span className="text-[11px] text-red-600 font-bold">{e.email}</span>}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -703,7 +683,7 @@ export default function WaliMuridPage() {
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="text-[14px] font-bold text-slate-900 tracking-tight truncate max-w-[200px]">{p.parent_name}</div>
-                                                        {p.user_id && <div className="text-[11px] font-semibold text-slate-500 mt-0.5 truncate">UID: {p.user_id}</div>}
+                                                        {p.username && <div className="text-[11px] font-semibold text-slate-400 mt-0.5 truncate">username: "{p.username}"</div>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -823,7 +803,7 @@ export default function WaliMuridPage() {
 
             {/* Modals */}
             {modal === 'add' && <AddModal onClose={() => setModal(null)} onSave={post} />}
-            {modal === 'edit' && sel && <EditModal init={{ parent_name: sel.parent_name, phone: sel.phone, address: sel.address }} onClose={() => setModal(null)} onSave={put} />}
+            {modal === 'edit' && sel && <EditModal init={{ parent_name: sel.parent_name, phone: sel.phone, address: sel.address, username: sel.username ?? '', email: sel.email ?? '' }} onClose={() => setModal(null)} onSave={put} />}
             {modal === 'delete' && sel && <DeleteModal parent={sel} onClose={() => setModal(null)} onConfirm={del} />}
             {modal === 'reset' && sel && <ResetPasswordModal parent={sel} onClose={() => setModal(null)} onConfirm={resetPw} />}
 

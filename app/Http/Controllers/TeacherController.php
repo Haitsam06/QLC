@@ -137,6 +137,7 @@ class TeacherController extends Controller
             'spesialisasi' => 'nullable|string|max:100',
             'username'     => 'nullable|string|min:4|max:50|alpha_num',
             'email'        => 'nullable|email|max:100',
+            'new_password' => 'nullable|string|min:8|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -149,11 +150,16 @@ class TeacherController extends Controller
             return response()->json(['success' => false, 'message' => 'Guru tidak ditemukan.'], 404);
         }
 
-        if ($request->phone && Teacher::where('phone', $request->phone)->where('_id', '!=', $id)->exists()) {
-            return response()->json(['success' => false, 'message' => 'Nomor telepon sudah digunakan.'], 409);
+        if ($request->filled('phone') && Teacher::where('phone', $request->phone)->where('_id', '!=', (string) $teacher->_id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Nomor telepon sudah digunakan guru lain.'], 409);
         }
 
-        // Cek keunikan username/email sebelum update
+        $teacherUpdate = [];
+        if ($request->filled('nama_guru'))    $teacherUpdate['nama_guru'] = $request->nama_guru;
+        if ($request->filled('phone'))        $teacherUpdate['phone']     = $request->phone;
+        if ($request->filled('spesialisasi')) $teacherUpdate['bidang']    = $request->spesialisasi;
+        if (!empty($teacherUpdate)) $teacher->update($teacherUpdate);
+
         $userId = $teacher->user_id ?? null;
         if ($userId) {
             if ($request->filled('username') && User::where('username', $request->username)->where('_id', '!=', $userId)->exists()) {
@@ -164,20 +170,14 @@ class TeacherController extends Controller
             }
         }
 
-        $teacher->update([
-            'nama_guru' => $request->nama_guru,
-            'phone'     => $request->phone,
-            'bidang'    => $request->spesialisasi,
-        ]);
-
-        // Update akun login (username/email) jika diisi
         $user = null;
         if ($userId) {
             $user = User::find($userId);
             if ($user) {
                 $userUpdate = [];
-                if ($request->filled('username')) $userUpdate['username'] = $request->username;
-                if ($request->filled('email'))    $userUpdate['email']    = $request->email;
+                if ($request->filled('username'))     $userUpdate['username'] = $request->username;
+                if ($request->filled('email'))        $userUpdate['email']    = $request->email;
+                if ($request->filled('new_password')) $userUpdate['password'] = Hash::make($request->new_password);
                 if (!empty($userUpdate)) $user->update($userUpdate);
             }
         }
@@ -232,7 +232,7 @@ class TeacherController extends Controller
 
         $user = User::find($teacher->user_id);
         if ($user) {
-            $newPassword = Str::random(12);
+            $newPassword = 'mieayambakso';
             $user->update(['password' => Hash::make($newPassword)]);
         }
 
@@ -255,6 +255,7 @@ class TeacherController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|min:4|max:50|alpha_num',
+            'email'    => 'nullable|email|max:100',
             'photo'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
@@ -272,6 +273,10 @@ class TeacherController extends Controller
             return back()->withErrors(['username' => 'Username sudah digunakan.']);
         }
 
+        if ($request->filled('email') && User::where('email', $request->email)->where('_id', '!=', (string) $user->_id)->exists()) {
+            return back()->withErrors(['email' => 'Email sudah digunakan akun lain.']);
+        }
+
         $photoUrl = $user->photo ?? null;
 
         if ($request->hasFile('photo')) {
@@ -287,6 +292,7 @@ class TeacherController extends Controller
 
         $user->update([
             'username' => $request->username,
+            'email'    => $request->email ?? $user->email,
             'photo'    => $photoUrl,
         ]);
 

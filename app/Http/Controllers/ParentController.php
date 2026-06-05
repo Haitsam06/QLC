@@ -40,9 +40,14 @@ class ParentController extends Controller
         $total   = $query->count();
         $parents = $query->orderBy('parent_name')->skip($skip)->take($perPage)->get();
 
+        $userIds = $parents->pluck('user_id')->filter()->unique()->values()->toArray();
+        $userMap = empty($userIds) ? collect() : User::whereIn('_id', $userIds)
+            ->get(['_id', 'username', 'email'])
+            ->keyBy(fn($u) => (string) $u->_id);
+
         return response()->json([
             'success' => true,
-            'data'    => $parents->map(fn($p) => $this->format($p)),
+            'data'    => $parents->map(fn($p) => $this->format($p, $userMap->get((string) ($p->user_id ?? '')))),
             'meta'    => [
                 'total'     => $total,
                 'page'      => $page,
@@ -120,9 +125,12 @@ class ParentController extends Controller
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
-            'parent_name' => 'required|string|max:100',
-            'phone'       => 'required|string|max:20',
-            'address'     => 'required|string|max:255',
+            'parent_name'  => 'nullable|string|max:100',
+            'phone'        => 'nullable|string|max:20',
+            'address'      => 'nullable|string|max:255',
+            'username'     => 'nullable|string|min:4|max:50|alpha_num',
+            'email'        => 'nullable|email|max:100',
+            'new_password' => 'nullable|string|min:8|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -135,20 +143,42 @@ class ParentController extends Controller
             return response()->json(['success' => false, 'message' => 'Wali murid tidak ditemukan.'], 404);
         }
 
-        if (Parents::where('phone', $request->phone)->where('_id', '!=', $id)->exists()) {
+        if ($request->filled('phone') && Parents::where('phone', $request->phone)->where('_id', '!=', (string) $parent->_id)->exists()) {
             return response()->json(['success' => false, 'message' => 'Nomor telepon sudah digunakan wali murid lain.'], 409);
         }
 
-        $parent->update([
-            'parent_name' => $request->parent_name,
-            'phone'       => $request->phone,
-            'address'     => $request->address,
-        ]);
+        $parentUpdate = [];
+        if ($request->filled('parent_name')) $parentUpdate['parent_name'] = $request->parent_name;
+        if ($request->filled('phone'))       $parentUpdate['phone']       = $request->phone;
+        if ($request->filled('address'))     $parentUpdate['address']     = $request->address;
+        if (!empty($parentUpdate)) $parent->update($parentUpdate);
+
+        $userId = $parent->user_id ?? null;
+        if ($userId) {
+            if ($request->filled('username') && User::where('username', $request->username)->where('_id', '!=', $userId)->exists()) {
+                return response()->json(['success' => false, 'message' => 'Username sudah digunakan akun lain.'], 409);
+            }
+            if ($request->filled('email') && User::where('email', $request->email)->where('_id', '!=', $userId)->exists()) {
+                return response()->json(['success' => false, 'message' => 'Email sudah digunakan akun lain.'], 409);
+            }
+        }
+
+        $user = null;
+        if ($userId) {
+            $user = User::find($userId);
+            if ($user) {
+                $userUpdate = [];
+                if ($request->filled('username'))     $userUpdate['username'] = $request->username;
+                if ($request->filled('email'))        $userUpdate['email']    = $request->email;
+                if ($request->filled('new_password')) $userUpdate['password'] = Hash::make($request->new_password);
+                if (!empty($userUpdate)) $user->update($userUpdate);
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Data wali murid berhasil diperbarui.',
-            'data'    => $this->format($parent->fresh()),
+            'data'    => $this->format($parent->fresh(), $user),
         ]);
     }
 
@@ -161,12 +191,9 @@ class ParentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'parent_name' => 'required|string|max:100',
-            'phone'       => 'required|string|max:20',
-            'address'     => 'required|string|max:255',
-            'username'    => 'required|string|min:4|max:50|alpha_num',
-            'email'       => 'nullable|email|max:100',
-            'photo'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'username' => 'required|string|min:4|max:50|alpha_num',
+            'email'    => 'nullable|email|max:100',
+            'photo'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -179,12 +206,6 @@ class ParentController extends Controller
 
         if ($request->email && User::where('email', $request->email)->where('_id', '!=', (string) $user->_id)->exists()) {
             return back()->withErrors(['email' => 'Email sudah digunakan.']);
-        }
-
-        $parent = Parents::where('user_id', (string) $user->_id)->first();
-
-        if (!$parent) {
-            return back()->withErrors(['general' => 'Data wali murid tidak ditemukan.']);
         }
 
         $photoUrl = $user->photo ?? null;
@@ -206,11 +227,7 @@ class ParentController extends Controller
             'photo'    => $photoUrl,
         ]);
 
-        $parent->update([
-            'parent_name' => $request->parent_name,
-            'phone'       => $request->phone,
-            'address'     => $request->address,
-        ]);
+        Auth::setUser($user->fresh());
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }
@@ -229,7 +246,7 @@ class ParentController extends Controller
 
         $user = User::find($parent->user_id);
         if ($user) {
-            $newPassword = Str::random(12);
+            $newPassword = 'mieayambakso';
             $user->update(['password' => Hash::make($newPassword)]);
         }
 
@@ -302,11 +319,13 @@ class ParentController extends Controller
         return back()->with('success', 'Password berhasil diperbarui.');
     }
 
-    private function format($doc): array
+    private function format($doc, $user = null): array
     {
         return [
             'id'          => (string) $doc->_id,
             'user_id'     => $doc->user_id ?? null,
+            'username'    => $user?->username ?? null,
+            'email'       => $user?->email ?? null,
             'parent_name' => $doc->parent_name,
             'phone'       => $doc->phone,
             'address'     => $doc->address,

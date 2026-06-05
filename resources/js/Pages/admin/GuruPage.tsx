@@ -33,12 +33,14 @@ interface EditFormData {
     nama_guru: string;
     phone: string;
     spesialisasi: string;
+    username: string;
+    email: string;
 }
 
 type FormData = AddFormData | EditFormData;
 
 const EMPTY_ADD: AddFormData = { nama_guru: '', phone: '', spesialisasi: '', username: '', password: '', email: '' };
-const EMPTY_EDIT: EditFormData = { nama_guru: '', phone: '', spesialisasi: '' };
+const EMPTY_EDIT: EditFormData = { nama_guru: '', phone: '', spesialisasi: '', username: '', email: '' };
 const API = '/api/teachers';
 
 /* ── Helpers ── */
@@ -256,12 +258,15 @@ function AddModal({ specs, onClose, onSave }: { specs: string[]; onClose: () => 
 }
 
 /* ── Edit Modal ── */
-function EditModal({ init, username, email, specs, onClose, onSave }: { init: EditFormData; username: string | null; email: string | null; specs: string[]; onClose: () => void; onSave: (d: EditFormData) => Promise<void> }) {
+function EditModal({ init, specs, onClose, onSave }: { init: EditFormData; specs: string[]; onClose: () => void; onSave: (d: EditFormData) => Promise<void> }) {
     const [f, setF] = useState<EditFormData>(init);
     const [e, setE] = useState<Partial<Record<keyof EditFormData, string>>>({});
     const [busy, setBusy] = useState(false);
 
-    const upd = (k: keyof EditFormData) => (ev: React.ChangeEvent<HTMLInputElement>) => setF((p) => ({ ...p, [k]: ev.target.value }));
+    const upd = (k: keyof EditFormData) => (ev: React.ChangeEvent<HTMLInputElement>) => {
+        setF((p) => ({ ...p, [k]: ev.target.value }));
+        setE((p) => ({ ...p, [k]: '' }));
+    };
 
     const validate = () => {
         const err: Partial<Record<keyof EditFormData, string>> = {};
@@ -269,6 +274,8 @@ function EditModal({ init, username, email, specs, onClose, onSave }: { init: Ed
         if (!f.phone.trim()) err.phone = 'Telepon wajib diisi.';
         else if (!/^[0-9+\-\s]{8,20}$/.test(f.phone)) err.phone = 'Format tidak valid.';
         if (!f.spesialisasi.trim()) err.spesialisasi = 'Spesialisasi wajib diisi.';
+        if (f.username && !/^[a-zA-Z0-9]{4,50}$/.test(f.username)) err.username = 'Min 4 karakter, huruf & angka.';
+        if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) err.email = 'Format email tidak valid.';
         setE(err);
         return !Object.keys(err).length;
     };
@@ -276,83 +283,55 @@ function EditModal({ init, username, email, specs, onClose, onSave }: { init: Ed
     const submit = async () => {
         if (!validate()) return;
         setBusy(true);
-        try {
-            await onSave(f);
-        } finally {
-            setBusy(false);
-        }
+        try { await onSave(f); } finally { setBusy(false); }
     };
 
+    const cls = (field: keyof EditFormData, color = 'teal') =>
+        `h-11 px-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e[field] ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : `border-slate-200 focus:border-${color}-600 focus:ring-${color}-600/15`}`;
+
     return createPortal(
-        <div
-            className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
-            onClick={(ev) => ev.target === ev.currentTarget && onClose()}
-        >
-            <div className="w-full max-w-[480px] max-h-[90vh] flex flex-col bg-white border border-slate-200 rounded-[24px] shadow-2xl animate-[slideUp_0.3s_ease-out]">
+        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" onClick={(ev) => ev.target === ev.currentTarget && onClose()}>
+            <div className="w-full max-w-[520px] max-h-[90vh] flex flex-col bg-white border border-slate-200 rounded-[24px] shadow-2xl animate-[slideUp_0.3s_ease-out]">
                 <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100">
                     <span className="text-[17px] font-extrabold text-slate-900">Edit Data Guru</span>
-                    <button
-                        className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 transition-colors hover:bg-red-100 hover:text-red-600 focus:outline-none"
-                        onClick={onClose}
-                    >
+                    <button className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600 focus:outline-none" onClick={onClose}>
                         <X size={16} />
                     </button>
                 </div>
                 <div className="px-7 py-6 flex flex-col gap-4 overflow-y-auto flex-1">
+                    {/* Profil */}
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Nama Guru</label>
-                        <input
-                            className={`h-11 px-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e.nama_guru ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-teal-600 focus:ring-teal-600/15'}`}
-                            placeholder="Contoh: Ahmad Fauzi, S.Pd"
-                            value={f.nama_guru}
-                            onChange={upd('nama_guru')}
-                        />
-                        {e.nama_guru && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.nama_guru}</span>}
+                        <input className={cls('nama_guru')} placeholder="Contoh: Ahmad Fauzi, S.Pd" value={f.nama_guru} onChange={upd('nama_guru')} />
+                        {e.nama_guru && <span className="text-[11px] text-red-600 font-bold">{e.nama_guru}</span>}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Nomor Telepon</label>
-                            <input
-                                className={`h-11 px-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e.phone ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-teal-600 focus:ring-teal-600/15'}`}
-                                placeholder="08123456789"
-                                value={f.phone}
-                                onChange={upd('phone')}
-                            />
-                            {e.phone && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.phone}</span>}
+                            <input className={cls('phone')} placeholder="08123456789" value={f.phone} onChange={upd('phone')} />
+                            {e.phone && <span className="text-[11px] text-red-600 font-bold">{e.phone}</span>}
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Spesialisasi</label>
-                            <input
-                                className={`h-11 px-4 bg-slate-50 border rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 ${e.spesialisasi ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-teal-600 focus:ring-teal-600/15'}`}
-                                placeholder="Matematika"
-                                value={f.spesialisasi}
-                                onChange={upd('spesialisasi')}
-                                list="sl-edit"
-                            />
-                            <datalist id="sl-edit">
-                                {specs.map((s) => (
-                                    <option key={s} value={s} />
-                                ))}
-                            </datalist>
-                            {e.spesialisasi && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.spesialisasi}</span>}
+                            <input className={cls('spesialisasi')} placeholder="Matematika" value={f.spesialisasi} onChange={upd('spesialisasi')} list="sl-edit" />
+                            <datalist id="sl-edit">{specs.map((s) => <option key={s} value={s} />)}</datalist>
+                            {e.spesialisasi && <span className="text-[11px] text-red-600 font-bold">{e.spesialisasi}</span>}
                         </div>
                     </div>
 
-                    {/* AKUN LOGIN — VIEW ONLY */}
-                    <div className="pt-3 border-t border-slate-100">
-                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-3">Akun Login</p>
+                    {/* Kredensial */}
+                    <div className="pt-3 border-t border-slate-100 flex flex-col gap-4">
+                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Kredensial Akun</p>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Username</label>
-                                <div className="h-11 px-4 bg-slate-100 border border-slate-200 rounded-xl text-[13px] font-medium text-slate-500 flex items-center select-none cursor-default">
-                                    {username ?? '—'}
-                                </div>
+                                <input className={cls('username')} placeholder="Kosongkan jika tidak diubah" value={f.username} onChange={upd('username')} autoComplete="off" />
+                                {e.username && <span className="text-[11px] text-red-600 font-bold">{e.username}</span>}
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Email</label>
-                                <div className="h-11 px-4 bg-slate-100 border border-slate-200 rounded-xl text-[13px] font-medium text-slate-500 flex items-center select-none cursor-default overflow-hidden">
-                                    <span className="truncate">{email ?? '—'}</span>
-                                </div>
+                                <input className={cls('email')} type="email" placeholder="Kosongkan jika tidak diubah" value={f.email} onChange={upd('email')} />
+                                {e.email && <span className="text-[11px] text-red-600 font-bold">{e.email}</span>}
                             </div>
                         </div>
                     </div>
@@ -733,7 +712,7 @@ export default function GuruPage() {
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="text-[14px] font-bold text-slate-900 tracking-tight truncate max-w-[200px]">{t.nama_guru}</div>
-                                                        {t.user_id && <div className="text-[11px] font-semibold text-slate-500 mt-0.5 truncate">UID: {t.user_id}</div>}
+                                                        {t.username && <div className="text-[11px] font-semibold text-slate-400 mt-0.5 truncate">username: "{t.username}"</div>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -853,7 +832,7 @@ export default function GuruPage() {
 
             {/* Modals */}
             {modal === 'add' && <AddModal specs={specs} onClose={() => setModal(null)} onSave={post} />}
-            {modal === 'edit' && sel && <EditModal init={{ nama_guru: sel.nama_guru ?? '', phone: sel.phone ?? '', spesialisasi: sel.spesialisasi ?? '' }} username={sel.username ?? null} email={sel.email ?? null} specs={specs} onClose={() => setModal(null)} onSave={put} />}
+            {modal === 'edit' && sel && <EditModal init={{ nama_guru: sel.nama_guru ?? '', phone: sel.phone ?? '', spesialisasi: sel.spesialisasi ?? '', username: sel.username ?? '', email: sel.email ?? '' }} specs={specs} onClose={() => setModal(null)} onSave={put} />}
             {modal === 'delete' && sel && <DeleteModal teacher={sel} onClose={() => setModal(null)} onConfirm={del} />}
             {modal === 'reset' && sel && <ResetPasswordModal teacher={sel} onClose={() => setModal(null)} onConfirm={resetPw} />}
 
