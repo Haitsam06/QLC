@@ -13,6 +13,33 @@ class ProgramSeeder extends Seeder
 
         $programs = [
             // ─────────────────────────────────────────────────────────
+            // QL-SCHOOL
+            // ─────────────────────────────────────────────────────────
+            [
+                'name'            => 'QL-SCHOOL',
+                'description'     => "Program pendidikan berbasis Qur'an untuk anak usia sekolah dengan pendekatan holistik yang memadukan hafalan Al-Qur'an, pembentukan akhlak, dan prestasi akademik.",
+                'target_audience' => 'Anak usia sekolah (SD–SMP)',
+                'image_url'       => null,
+                'hero_image_url'  => null,
+                'about_image_url' => null,
+                'advantages'      => [
+                    [
+                        'title' => "Hafalan Qur'an Bersanad",
+                        'desc'  => "Membimbing siswa menghafal Al-Qur'an dengan metode terstruktur dan bersanad terpercaya.",
+                    ],
+                    [
+                        'title' => 'Pembentukan Akhlak Mulia',
+                        'desc'  => "Menanamkan nilai-nilai Islami dan akhlaqul karimah sejak usia sekolah.",
+                    ],
+                    [
+                        'title' => 'Prestasi Akademik',
+                        'desc'  => "Mendukung pencapaian akademik siswa melalui pendekatan integral berbasis Qur'an.",
+                    ],
+                ],
+                'gallery'         => [],
+            ],
+
+            // ─────────────────────────────────────────────────────────
             // QL-TFT  (Train For Trainer)
             // ─────────────────────────────────────────────────────────
             [
