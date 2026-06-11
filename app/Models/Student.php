@@ -19,5 +19,6 @@ class Student extends Model
         'tanggal_lahir',
         'enrollment_status',
         'bukti_pembayaran',
+        'foto',
     ];
 }

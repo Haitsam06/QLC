@@ -1,5 +1,6 @@
 import { router } from '@inertiajs/react';
-import { Plus, CheckCircle2, Clock, XCircle, GraduationCap, Calendar, FileText, ExternalLink, Baby } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Plus, CheckCircle2, Clock, XCircle, GraduationCap, Calendar, FileText, ExternalLink, Baby, Camera, Loader2 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -16,6 +17,7 @@ export interface Child {
     program_name: string | null;
     enrollment_status: EnrollmentStatus;
     bukti_pembayaran: string | null;
+    foto: string | null;
     created_at: string | null;
 }
 
@@ -64,7 +66,41 @@ export default function AnakPage({ anakList }: Props) {
     const activeCount = anakList.filter((c) => c.enrollment_status === 'active').length;
     const pendingCount = anakList.filter((c) => c.enrollment_status === 'pending').length;
 
+    const [children, setChildren] = useState(anakList);
+    const fotoInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingId, setUploadingId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+    const handleFotoClick = (id: string) => {
+        setUploadingId(id);
+        fotoInputRef.current?.click();
+    };
+
+    const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !uploadingId) return;
+        e.target.value = '';
+        const fd = new FormData();
+        fd.append('foto', file);
+        try {
+            const j = await (await fetch(`/api/parent/children/${uploadingId}/foto`, { method: 'POST', headers: { Accept: 'application/json' }, body: fd })).json();
+            if (j.success) {
+                setChildren((prev) => prev.map((c) => c.id === uploadingId ? { ...c, foto: j.foto } : c));
+                setToast({ msg: 'Foto berhasil diperbarui.', ok: true });
+            } else {
+                setToast({ msg: j.message ?? 'Gagal mengupload foto.', ok: false });
+            }
+        } catch {
+            setToast({ msg: 'Gagal mengupload foto.', ok: false });
+        } finally {
+            setUploadingId(null);
+            setTimeout(() => setToast(null), 3000);
+        }
+    };
+
     return (
+        <>
+        <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
         <div className="flex flex-col gap-5 w-full animate-[fadeIn_0.3s_ease-out]">
             {/* ════ HEADER ════ */}
             <div className="flex flex-col md:flex-row justify-between md:items-end flex-wrap gap-4 mb-2">
@@ -119,7 +155,7 @@ export default function AnakPage({ anakList }: Props) {
             ) : (
                 /* ════ CHILD CARDS GRID ════ */
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                    {anakList.map((child) => {
+                    {children.map((child) => {
                         const st = STATUS_CONFIG[child.enrollment_status] ?? STATUS_CONFIG.pending;
                         return (
                             <div key={child.id} className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm transition-transform active:scale-[0.98] flex flex-col">
@@ -129,7 +165,23 @@ export default function AnakPage({ anakList }: Props) {
                                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
 
                                     {/* Avatar */}
-                                    <div className="w-14 h-14 rounded-[1.2rem] shrink-0 bg-white/20 border-2 border-white/30 flex items-center justify-center text-[18px] font-black text-white shadow-md relative z-10">{inits(child.nama)}</div>
+                                    <button
+                                        className="relative w-14 h-14 rounded-[1.2rem] shrink-0 overflow-hidden border-2 border-white/30 shadow-md z-10 group/av focus:outline-none"
+                                        title="Klik untuk ganti foto"
+                                        onClick={() => handleFotoClick(child.id)}
+                                        disabled={uploadingId === child.id}
+                                    >
+                                        {child.foto
+                                            ? <img src={child.foto} alt={child.nama} className="w-full h-full object-cover" />
+                                            : <div className="w-full h-full bg-white/20 flex items-center justify-center text-[18px] font-black text-white">{inits(child.nama)}</div>
+                                        }
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/av:opacity-100 transition-opacity">
+                                            {uploadingId === child.id
+                                                ? <Loader2 size={16} className="text-white animate-spin" />
+                                                : <Camera size={16} className="text-white" />
+                                            }
+                                        </div>
+                                    </button>
 
                                     <div className="flex-1 relative z-10 min-w-0">
                                         <div className="text-[16px] font-black text-white leading-tight truncate">{child.nama}</div>
@@ -192,5 +244,15 @@ export default function AnakPage({ anakList }: Props) {
                 </div>
             )}
         </div>
+
+        <input ref={fotoInputRef} type="file" accept="image/jpg,image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoChange} />
+
+        {toast && (
+            <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-2.5 py-3 px-5 rounded-xl text-[13.5px] font-bold text-white shadow-xl animate-[fadeIn_0.2s_ease-out] ${toast.ok ? 'bg-teal-700' : 'bg-red-600'}`}>
+                {toast.ok ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
+                {toast.msg}
+            </div>
+        )}
+        </>
     );
 }

@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
-import { LayoutDashboard, Users, BookCheck, Settings, LogOut, Bell, BookOpen, TrendingUp, CheckCircle2, FileText, GraduationCap, MessageCircle, Calendar, Menu, X, ChevronRight, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, BookCheck, Settings, LogOut, Bell, BookOpen, TrendingUp, CheckCircle2, FileText, GraduationCap, MessageCircle, Calendar, Menu, X, ChevronRight, Activity, CreditCard } from 'lucide-react';
 
 // Sub-pages
 import AnakPage, { type Child } from './AnakPage';
 import LaporanPage from './LaporanPage';
+import SppParentPage from './SppPage';
 import PengaturanPage, { type ParentProfile } from './PengaturanPage';
 
 // ── Components ───────────────────────────────────────────────
@@ -113,6 +114,8 @@ export default function ParentDashboard({ anakList, stats, bulan, children_stats
                         <AnakPage anakList={anakList} />
                     ) : activeTab === 'laporan' ? (
                         <LaporanPage />
+                    ) : activeTab === 'spp' ? (
+                        <SppParentPage />
                     ) : activeTab === 'pengaturan' ? (
                         <PengaturanPage profile={profile} />
                     ) : (
@@ -306,6 +309,7 @@ const navItems = [
     { icon: LayoutDashboard, label: 'Beranda', id: 'dashboard' },
     { icon: Users, label: 'Ananda', id: 'anak' },
     { icon: BookCheck, label: 'Laporan', id: 'laporan' },
+    { icon: CreditCard, label: 'SPP', id: 'spp' },
     { icon: Settings, label: 'Menu', id: 'pengaturan' },
 ];
 

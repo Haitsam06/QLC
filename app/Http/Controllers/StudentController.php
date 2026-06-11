@@ -223,6 +223,68 @@ class StudentController extends Controller
         return response()->json(['success' => true, 'message' => 'Data siswa berhasil dihapus.']);
     }
 
+    public function uploadFoto(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'foto' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $student = Student::find($id);
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan.'], 404);
+        }
+
+        if (!empty($student->foto)) {
+            $parsed = parse_url($student->foto, PHP_URL_PATH);
+            if ($parsed) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
+            }
+        }
+
+        $path    = $request->file('foto')->store('students/foto', 'public');
+        $fotoUrl = url('storage/' . $path);
+        $student->update(['foto' => $fotoUrl]);
+
+        return response()->json(['success' => true, 'message' => 'Foto berhasil diperbarui.', 'foto' => $fotoUrl]);
+    }
+
+    public function parentUploadFoto(Request $request, string $studentId)
+    {
+        $validator = Validator::make($request->all(), [
+            'foto' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $student = Student::find($studentId);
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan.'], 404);
+        }
+
+        if ((string) ($student->parent_id ?? '') !== (string) auth()->id()) {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
+        if (!empty($student->foto)) {
+            $parsed = parse_url($student->foto, PHP_URL_PATH);
+            if ($parsed) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
+            }
+        }
+
+        $path    = $request->file('foto')->store('students/foto', 'public');
+        $fotoUrl = url('storage/' . $path);
+        $student->update(['foto' => $fotoUrl]);
+
+        return response()->json(['success' => true, 'message' => 'Foto berhasil diperbarui.', 'foto' => $fotoUrl]);
+    }
+
     public function options(Request $request)
     {
         $search = trim($request->query('search', ''));
@@ -267,6 +329,7 @@ class StudentController extends Controller
             'tanggal_lahir'     => $doc->tanggal_lahir,
             'enrollment_status' => $doc->enrollment_status,
             'bukti_pembayaran'  => $doc->bukti_pembayaran ?? null,
+            'foto'              => $doc->foto ?? null,
             'created_at'        => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }

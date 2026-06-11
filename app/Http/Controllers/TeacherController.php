@@ -65,12 +65,13 @@ class TeacherController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nama_guru'    => 'nullable|string|max:100',
-            'phone'        => 'nullable|string|max:20',
-            'spesialisasi' => 'nullable|string|max:100',
-            'username'     => 'required|string|min:4|max:50|alpha_num',
-            'password'     => 'required|string|min:8|max:100',
-            'email'        => 'nullable|email|max:100',
+            'nama_guru'      => 'nullable|string|max:100',
+            'phone'          => 'nullable|string|max:20',
+            'spesialisasi'   => 'nullable|string|max:100',
+            'username'       => 'required|string|min:4|max:50|alpha_num',
+            'password'       => 'required|string|min:8|max:100',
+            'email'          => 'nullable|email|max:100',
+            'tanggal_masuk'  => 'nullable|date_format:Y-m-d',
         ]);
 
         if ($validator->fails()) {
@@ -99,11 +100,12 @@ class TeacherController extends Controller
 
         try {
             $teacher = Teacher::create([
-                'user_id'  => (string) $user->_id,
-                'nama_guru' => $request->nama_guru,
-                'phone'     => $request->phone,
-                'email'     => $request->email ?? null,
-                'bidang'    => $request->spesialisasi,
+                'user_id'       => (string) $user->_id,
+                'nama_guru'     => $request->nama_guru,
+                'phone'         => $request->phone,
+                'email'         => $request->email ?? null,
+                'bidang'        => $request->spesialisasi,
+                'tanggal_masuk' => $request->tanggal_masuk ?? null,
             ]);
         } catch (\Exception $e) {
             $user->delete();
@@ -132,12 +134,13 @@ class TeacherController extends Controller
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
-            'nama_guru'    => 'nullable|string|max:100',
-            'phone'        => 'nullable|string|max:20',
-            'spesialisasi' => 'nullable|string|max:100',
-            'username'     => 'nullable|string|min:4|max:50|alpha_num',
-            'email'        => 'nullable|email|max:100',
-            'new_password' => 'nullable|string|min:8|max:100',
+            'nama_guru'      => 'nullable|string|max:100',
+            'phone'          => 'nullable|string|max:20',
+            'spesialisasi'   => 'nullable|string|max:100',
+            'username'       => 'nullable|string|min:4|max:50|alpha_num',
+            'email'          => 'nullable|email|max:100',
+            'new_password'   => 'nullable|string|min:8|max:100',
+            'tanggal_masuk'  => 'nullable|date_format:Y-m-d',
         ]);
 
         if ($validator->fails()) {
@@ -155,9 +158,10 @@ class TeacherController extends Controller
         }
 
         $teacherUpdate = [];
-        if ($request->filled('nama_guru'))    $teacherUpdate['nama_guru'] = $request->nama_guru;
-        if ($request->filled('phone'))        $teacherUpdate['phone']     = $request->phone;
-        if ($request->filled('spesialisasi')) $teacherUpdate['bidang']    = $request->spesialisasi;
+        if ($request->filled('nama_guru'))    $teacherUpdate['nama_guru']     = $request->nama_guru;
+        if ($request->filled('phone'))        $teacherUpdate['phone']         = $request->phone;
+        if ($request->filled('spesialisasi')) $teacherUpdate['bidang']        = $request->spesialisasi;
+        if ($request->has('tanggal_masuk'))   $teacherUpdate['tanggal_masuk'] = $request->tanggal_masuk;
         if (!empty($teacherUpdate)) $teacher->update($teacherUpdate);
 
         $userId = $teacher->user_id ?? null;
@@ -329,14 +333,15 @@ class TeacherController extends Controller
     private function formatTeacher($doc, $user = null): array
     {
         return [
-            'id'           => (string) $doc->_id,
-            'user_id'      => $doc->user_id ?? null,
-            'username'     => $user?->username ?? null,
-            'nama_guru'    => $doc->nama_guru ?? null,
-            'phone'        => $doc->phone ?? null,
-            'email'        => $doc->email ?? null,
-            'spesialisasi' => $doc->bidang ?? null,
-            'created_at'   => $doc->created_at?->format('Y-m-d H:i:s'),
+            'id'             => (string) $doc->_id,
+            'user_id'        => $doc->user_id ?? null,
+            'username'       => $user?->username ?? null,
+            'nama_guru'      => $doc->nama_guru ?? null,
+            'phone'          => $doc->phone ?? null,
+            'email'          => $doc->email ?? null,
+            'spesialisasi'   => $doc->bidang ?? null,
+            'tanggal_masuk'  => $doc->tanggal_masuk ?? null,
+            'created_at'     => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }
 }

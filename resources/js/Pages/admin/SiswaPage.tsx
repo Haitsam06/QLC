@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Head, router, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
-import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, GraduationCap, Loader2, AlertCircle, CheckCircle2, Calendar, Filter, ChevronDown, Users, FileText, ExternalLink, Clock, CheckCheck, XCircle, Check, Activity, Upload } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, GraduationCap, Loader2, AlertCircle, CheckCircle2, Calendar, Filter, ChevronDown, Users, FileText, ExternalLink, Clock, CheckCheck, XCircle, Check, Activity, Upload, Camera } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -23,6 +23,7 @@ interface Student {
     tanggal_lahir: string;
     enrollment_status: EnrollmentStatus;
     bukti_pembayaran: string | null;
+    foto: string | null;
     created_at: string | null;
 }
 
@@ -478,6 +479,9 @@ export default function SiswaPage() {
     const [sel, setSel] = useState<Student | null>(null);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
+    const fotoInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingFotoId, setUploadingFotoId] = useState<string | null>(null);
+
     const dSearch = useDebounce(search);
 
     const loadOptions = useCallback(async () => {
@@ -595,6 +599,32 @@ export default function SiswaPage() {
             load(data.length === 1 && meta.page > 1 ? meta.page - 1 : meta.page);
         } else {
             setToast({ msg: j.message ?? 'Gagal menghapus.', type: 'error' });
+        }
+    };
+
+    const handleFotoClick = (studentId: string) => {
+        setUploadingFotoId(studentId);
+        fotoInputRef.current?.click();
+    };
+
+    const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !uploadingFotoId) return;
+        e.target.value = '';
+        const fd = new FormData();
+        fd.append('foto', file);
+        try {
+            const j = await (await fetch(`${API}/${uploadingFotoId}/foto`, { method: 'POST', headers: { Accept: 'application/json' }, body: fd })).json();
+            if (j.success) {
+                setData((prev) => prev.map((s) => s.id === uploadingFotoId ? { ...s, foto: j.foto } : s));
+                setToast({ msg: 'Foto berhasil diperbarui.', type: 'success' });
+            } else {
+                setToast({ msg: j.message ?? 'Gagal mengupload foto.', type: 'error' });
+            }
+        } catch {
+            setToast({ msg: 'Gagal mengupload foto.', type: 'error' });
+        } finally {
+            setUploadingFotoId(null);
         }
     };
 
@@ -762,11 +792,26 @@ export default function SiswaPage() {
                                                 {/* Siswa */}
                                                 <td className="px-5 lg:px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div
-                                                            className={`w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center font-black text-[15px] text-white tracking-wide shadow-md ${s.enrollment_status === 'pending' ? 'bg-amber-400 shadow-amber-400/20' : 'bg-amber-500 shadow-amber-500/20'}`}
+                                                        <button
+                                                            className="relative w-11 h-11 rounded-2xl shrink-0 overflow-hidden group/avatar focus:outline-none"
+                                                            title="Klik untuk ganti foto"
+                                                            onClick={() => handleFotoClick(s.id)}
+                                                            disabled={uploadingFotoId === s.id}
                                                         >
-                                                            {initials(s.nama)}
-                                                        </div>
+                                                            {s.foto ? (
+                                                                <img src={s.foto} alt={s.nama} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className={`w-full h-full flex items-center justify-center font-black text-[15px] text-white tracking-wide shadow-md ${s.enrollment_status === 'pending' ? 'bg-amber-400' : 'bg-amber-500'}`}>
+                                                                    {initials(s.nama)}
+                                                                </div>
+                                                            )}
+                                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                                                                {uploadingFotoId === s.id
+                                                                    ? <Loader2 size={14} className="text-white animate-spin" />
+                                                                    : <Camera size={14} className="text-white" />
+                                                                }
+                                                            </div>
+                                                        </button>
                                                         <div className="min-w-0">
                                                             <div className="text-[14px] font-black text-slate-900 tracking-tight truncate max-w-[150px] lg:max-w-[200px]">{s.nama}</div>
                                                             <div className="text-[11.5px] font-bold text-slate-500 mt-0.5 truncate">
@@ -918,6 +963,8 @@ export default function SiswaPage() {
             {modal === 'delete' && sel && <DeleteModal student={sel} onClose={() => setModal(null)} onConfirm={del} />}
 
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+
+            <input ref={fotoInputRef} type="file" accept="image/jpg,image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoChange} />
         </>
     );
 }

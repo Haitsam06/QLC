@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProgressReportExport;
 use App\Models\Notification;
 use App\Models\Parents;
 use App\Models\ProgressReport;
@@ -10,8 +11,10 @@ use App\Models\Student;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProgressReportController extends Controller
 {
@@ -433,6 +436,116 @@ class ProgressReportController extends Controller
 
         $report->delete();
         return response()->json(['message' => 'Laporan berhasil dihapus.']);
+    }
+
+    public function adminExport(Request $request)
+    {
+        $search    = trim($request->query('search', ''));
+        $programId = trim($request->query('program_id', ''));
+
+        $studentIdFilter = null;
+        if ($search !== '' || $programId !== '') {
+            $sQuery = Student::query();
+            if ($search !== '') {
+                $regex = new \MongoDB\BSON\Regex(preg_quote($search, '/'), 'i');
+                $sQuery->where('nama', $regex);
+            }
+            if ($programId !== '') {
+                $sQuery->where('program_id', $programId);
+            }
+            $studentIdFilter = $sQuery->get(['_id'])->map(fn($s) => (string) $s->_id)->toArray();
+            if (empty($studentIdFilter)) {
+                $rows = collect([]);
+                $filename = 'laporan-perkembangan-siswa.xlsx';
+                return Excel::download(new ProgressReportExport($rows), $filename);
+            }
+        }
+
+        $query = ProgressReport::orderBy('date', 'desc');
+        if ($studentIdFilter !== null) {
+            $query->whereIn('student_id', $studentIdFilter);
+        }
+        $reports = $query->get();
+
+        $allStudentIds = $reports->pluck('student_id')->filter()->unique()->values()->toArray();
+        $allTeacherIds = $reports->pluck('teacher_id')->filter()->unique()->values()->toArray();
+
+        $studentNameMap      = $this->buildStudentNameMap($allStudentIds);
+        $teacherMap          = $this->buildTeacherMap($allTeacherIds);
+        $programByStudentMap = $this->buildProgramByStudentMap($allStudentIds);
+
+        $attendanceLabel = ['hadir' => 'Hadir', 'izin' => 'Izin', 'sakit' => 'Sakit', 'alpha' => 'Alpha'];
+        $reportTypeLabel = ['hafalan' => 'Hafalan', 'tilawah' => 'Tilawah', 'yanbua' => "Yanbu'a"];
+        $kualitasLabel   = ['sangat_lancar' => 'Sangat Lancar', 'lancar' => 'Lancar', 'mengulang' => 'Mengulang'];
+
+        $rows = $reports->values()->map(function ($r, $i) use ($studentNameMap, $teacherMap, $programByStudentMap, $attendanceLabel, $reportTypeLabel, $kualitasLabel) {
+            $sid = (string) ($r->student_id ?? '');
+            $tid = (string) ($r->teacher_id ?? '');
+            return [
+                $i + 1,
+                $r->date ?? '',
+                $studentNameMap[$sid] ?? '—',
+                $programByStudentMap[$sid] ?? '—',
+                $teacherMap[$tid] ?? '—',
+                $attendanceLabel[$r->attendance ?? ''] ?? ($r->attendance ?? '—'),
+                $reportTypeLabel[$r->report_type ?? ''] ?? ($r->report_type ? ucfirst($r->report_type) : '—'),
+                $kualitasLabel[$r->kualitas ?? ''] ?? ($r->kualitas ? ucfirst($r->kualitas) : '—'),
+                $r->hafalan_target       ?? '—',
+                $r->hafalan_achievement  ?? '—',
+                $r->teacher_notes        ?? '—',
+            ];
+        });
+
+        $filename = 'laporan-perkembangan-siswa-' . now()->format('Ymd') . '.xlsx';
+        return Excel::download(new ProgressReportExport(collect($rows)), $filename);
+    }
+
+    public function teacherExport(Request $request)
+    {
+        $teacher = $this->resolveTeacher();
+        if (!$teacher) {
+            abort(404, 'Profil guru tidak ditemukan.');
+        }
+
+        $studentId = trim($request->query('student_id', ''));
+
+        $query = ProgressReport::where('teacher_id', (string) $teacher->_id)->orderBy('date', 'desc');
+        if ($studentId !== '') {
+            $query->where('student_id', $studentId);
+        }
+        $reports = $query->get();
+
+        $allStudentIds = $reports->pluck('student_id')->filter()->unique()->values()->toArray();
+        $allTeacherIds = [(string) $teacher->_id];
+
+        $studentNameMap      = $this->buildStudentNameMap($allStudentIds);
+        $teacherMap          = $this->buildTeacherMap($allTeacherIds);
+        $programByStudentMap = $this->buildProgramByStudentMap($allStudentIds);
+
+        $attendanceLabel = ['hadir' => 'Hadir', 'izin' => 'Izin', 'sakit' => 'Sakit', 'alpha' => 'Alpha'];
+        $reportTypeLabel = ['hafalan' => 'Hafalan', 'tilawah' => 'Tilawah', 'yanbua' => "Yanbu'a"];
+        $kualitasLabel   = ['sangat_lancar' => 'Sangat Lancar', 'lancar' => 'Lancar', 'mengulang' => 'Mengulang'];
+
+        $rows = $reports->values()->map(function ($r, $i) use ($studentNameMap, $teacherMap, $programByStudentMap, $attendanceLabel, $reportTypeLabel, $kualitasLabel) {
+            $sid = (string) ($r->student_id ?? '');
+            $tid = (string) ($r->teacher_id ?? '');
+            return [
+                $i + 1,
+                $r->date ?? '',
+                $studentNameMap[$sid] ?? '—',
+                $programByStudentMap[$sid] ?? '—',
+                $teacherMap[$tid] ?? '—',
+                $attendanceLabel[$r->attendance ?? ''] ?? ($r->attendance ?? '—'),
+                $reportTypeLabel[$r->report_type ?? ''] ?? ($r->report_type ? ucfirst($r->report_type) : '—'),
+                $kualitasLabel[$r->kualitas ?? ''] ?? ($r->kualitas ? ucfirst($r->kualitas) : '—'),
+                $r->hafalan_target       ?? '—',
+                $r->hafalan_achievement  ?? '—',
+                $r->teacher_notes        ?? '—',
+            ];
+        });
+
+        $filename = 'laporan-guru-' . now()->format('Ymd') . '.xlsx';
+        return Excel::download(new ProgressReportExport(collect($rows)), $filename);
     }
 
     /* ═══════════════════════════════════════════════════════════

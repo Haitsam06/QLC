@@ -212,6 +212,13 @@ function TabSiswa({ programs, onOpenDetail }: { programs: Option[]; onOpenDetail
         load();
     }, [load]);
 
+    const handleExport = () => {
+        const p = new URLSearchParams();
+        if (search) p.set('search', search);
+        if (programId) p.set('program_id', programId);
+        window.location.href = `/api/admin/progress/export?${p}`;
+    };
+
     return (
         <>
             <div className="flex gap-3 flex-wrap items-center p-5 lg:px-6 border-b border-slate-100 bg-slate-50/50 flex-col sm:flex-row">
@@ -233,6 +240,13 @@ function TabSiswa({ programs, onOpenDetail }: { programs: Option[]; onOpenDetail
                     )}
                 </div>
                 <ProgramFilter programs={programs} value={programId} onChange={setProgramId} />
+                <button
+                    onClick={handleExport}
+                    className="flex items-center gap-2 h-11 px-4 rounded-xl bg-emerald-600 text-white text-[13px] font-bold shadow-sm shadow-emerald-600/20 hover:bg-emerald-700 transition-colors focus:outline-none whitespace-nowrap"
+                    title="Export semua laporan ke Excel"
+                >
+                    <Download size={15} /> Export XLSX
+                </button>
             </div>
 
             {error && (

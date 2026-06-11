@@ -16,5 +16,6 @@ class Teacher extends Model
         'phone',
         'email',
         'bidang',
+        'tanggal_masuk',
     ];
 }

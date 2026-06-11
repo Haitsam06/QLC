@@ -13,6 +13,7 @@ interface Teacher {
     phone: string;
     email: string | null;
     spesialisasi: string;
+    tanggal_masuk: string | null;
     created_at: string | null;
 }
 interface Meta {
@@ -28,6 +29,7 @@ interface AddFormData {
     username: string;
     password: string;
     email: string;
+    tanggal_masuk: string;
 }
 interface EditFormData {
     nama_guru: string;
@@ -35,12 +37,13 @@ interface EditFormData {
     spesialisasi: string;
     username: string;
     email: string;
+    tanggal_masuk: string;
 }
 
 type FormData = AddFormData | EditFormData;
 
-const EMPTY_ADD: AddFormData = { nama_guru: '', phone: '', spesialisasi: '', username: '', password: '', email: '' };
-const EMPTY_EDIT: EditFormData = { nama_guru: '', phone: '', spesialisasi: '', username: '', email: '' };
+const EMPTY_ADD: AddFormData = { nama_guru: '', phone: '', spesialisasi: '', username: '', password: '', email: '', tanggal_masuk: '' };
+const EMPTY_EDIT: EditFormData = { nama_guru: '', phone: '', spesialisasi: '', username: '', email: '', tanggal_masuk: '' };
 const API = '/api/teachers';
 
 /* ── Helpers ── */
@@ -170,6 +173,18 @@ function AddModal({ specs, onClose, onSave }: { specs: string[]; onClose: () => 
                             </datalist>
                             {e.spesialisasi && <span className="text-[11px] text-red-600 font-bold mt-0.5">{e.spesialisasi}</span>}
                         </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                            Tanggal Masuk <span className="text-slate-400 font-medium normal-case tracking-normal">(opsional)</span>
+                        </label>
+                        <input
+                            type="date"
+                            className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 focus:border-teal-600 focus:ring-teal-600/15"
+                            value={f.tanggal_masuk}
+                            onChange={upd('tanggal_masuk')}
+                        />
                     </div>
 
                     {/* ── Akun ── */}
@@ -317,6 +332,18 @@ function EditModal({ init, specs, onClose, onSave }: { init: EditFormData; specs
                             <datalist id="sl-edit">{specs.map((s) => <option key={s} value={s} />)}</datalist>
                             {e.spesialisasi && <span className="text-[11px] text-red-600 font-bold">{e.spesialisasi}</span>}
                         </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                            Tanggal Masuk <span className="text-slate-400 font-medium normal-case tracking-normal">(opsional)</span>
+                        </label>
+                        <input
+                            type="date"
+                            className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-medium text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 focus:border-teal-600 focus:ring-teal-600/15"
+                            value={f.tanggal_masuk}
+                            onChange={(ev) => { setF((p) => ({ ...p, tanggal_masuk: ev.target.value })); }}
+                        />
                     </div>
 
                     {/* Kredensial */}
@@ -696,7 +723,7 @@ export default function GuruPage() {
                                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap">Guru</th>
                                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap">Spesialisasi</th>
                                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap hidden md:table-cell">Telepon</th>
-                                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap hidden lg:table-cell">Terdaftar</th>
+                                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap hidden lg:table-cell">Tgl Masuk</th>
                                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap text-right">Aksi</th>
                                 </tr>
                             </thead>
@@ -729,7 +756,7 @@ export default function GuruPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-[13px] font-semibold text-slate-500 hidden lg:table-cell">
-                                                {t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                                                {t.tanggal_masuk ? new Date(t.tanggal_masuk).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
@@ -832,7 +859,7 @@ export default function GuruPage() {
 
             {/* Modals */}
             {modal === 'add' && <AddModal specs={specs} onClose={() => setModal(null)} onSave={post} />}
-            {modal === 'edit' && sel && <EditModal init={{ nama_guru: sel.nama_guru ?? '', phone: sel.phone ?? '', spesialisasi: sel.spesialisasi ?? '', username: sel.username ?? '', email: sel.email ?? '' }} specs={specs} onClose={() => setModal(null)} onSave={put} />}
+            {modal === 'edit' && sel && <EditModal init={{ nama_guru: sel.nama_guru ?? '', phone: sel.phone ?? '', spesialisasi: sel.spesialisasi ?? '', username: sel.username ?? '', email: sel.email ?? '', tanggal_masuk: sel.tanggal_masuk ?? '' }} specs={specs} onClose={() => setModal(null)} onSave={put} />}
             {modal === 'delete' && sel && <DeleteModal teacher={sel} onClose={() => setModal(null)} onConfirm={del} />}
             {modal === 'reset' && sel && <ResetPasswordModal teacher={sel} onClose={() => setModal(null)} onConfirm={resetPw} />}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, BookOpen, X, Save, FileText, User, Calendar, CheckCircle2, AlertCircle, ChevronRight, Clock, TrendingUp, Award, Eye, ArrowLeft, Target, Star, BarChart2, Loader2, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, BookOpen, X, Save, FileText, User, Calendar, CheckCircle2, AlertCircle, ChevronRight, Clock, TrendingUp, Award, Eye, ArrowLeft, Target, Star, BarChart2, Loader2, AlertTriangle, Pencil, Trash2, Download } from 'lucide-react';
 import axios from 'axios';
 
 /* ═══════════════════════════════════════════════════════════
@@ -131,6 +131,13 @@ function DetailPanel({ student, onClose, onAddReport, onReportChanged }: { stude
                             <h2 className="text-sm font-bold text-gray-900 truncate">{student.nama}</h2>
                             <p className="text-[11px] text-gray-500 font-medium">{student.program}</p>
                         </div>
+                        <button
+                            onClick={() => { window.location.href = `/api/teacher/reports/export?student_id=${student.id}`; }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold hover:bg-emerald-200 transition-colors shrink-0"
+                            title="Export laporan siswa ini ke Excel"
+                        >
+                            <Download size={13} /> XLSX
+                        </button>
                         <button onClick={onAddReport} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors shrink-0">
                             <Plus size={13} /> Input
                         </button>
@@ -764,6 +771,13 @@ export default function LaporanGuruPage() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+                <button
+                    onClick={() => { window.location.href = '/api/teacher/reports/export'; }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-[13px] font-bold hover:bg-emerald-700 transition-colors focus:outline-none whitespace-nowrap shrink-0"
+                    title="Export semua laporan saya ke Excel"
+                >
+                    <Download size={14} /> Export XLSX
+                </button>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

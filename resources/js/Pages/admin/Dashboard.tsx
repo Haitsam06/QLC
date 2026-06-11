@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
 import axios from 'axios';
-import { LayoutDashboard, BookOpen, Users, CalendarDays, Bell, Settings, LogOut, ChevronLeft, ChevronRight, GraduationCap, CheckCircle2, Clock, TrendingUp, Award, Star, Menu, FileText, ShieldUser, Info, Handshake, ArrowUpRight, ArrowRight, UserPlus, Search, Loader2 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, CalendarDays, Bell, Settings, LogOut, ChevronLeft, ChevronRight, GraduationCap, CheckCircle2, Clock, TrendingUp, Award, Star, Menu, FileText, ShieldUser, Info, Handshake, ArrowUpRight, ArrowRight, UserPlus, Search, Loader2, CreditCard } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 import GuruPage from './GuruPage';
@@ -12,6 +12,7 @@ import SiswaPage from './SiswaPage';
 import InfoPage from './InfoPage';
 import AgendaPage from './AgendaPage';
 import ProgressPage from './ProgressPage';
+import SppPage from './SppPage';
 import PengaturanPage from './PengaturanPage';
 import NotificationBell from '@/Components/NotificationBell';
 
@@ -119,6 +120,7 @@ export default function DashboardAdmin() {
         { id: 'wali_murid', l: 'Wali Murid', i: ShieldUser, badge: 0 },
         { id: 'siswa', l: 'Data Siswa', i: Users, badge: stats?.total_pending ?? 0 },
         { id: 'progress', l: 'Laporan Progress', i: BookOpen, badge: 0 },
+        { id: 'spp', l: 'Pembayaran SPP', i: CreditCard, badge: 0 },
         { id: 'info', l: 'Info Landing Page', i: Info, badge: 0 },
         { id: 'pengaturan', l: 'Pengaturan', i: Settings, badge: 0 },
     ];
@@ -228,6 +230,8 @@ export default function DashboardAdmin() {
                             <AgendaPage />
                         ) : active === 'progress' ? (
                             <ProgressPage />
+                        ) : active === 'spp' ? (
+                            <SppPage />
                         ) : active === 'pengaturan' ? (
                             <PengaturanPage />
                         ) : (

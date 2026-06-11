@@ -12,6 +12,7 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\MitraDashboardController;
 use App\Http\Controllers\Admin\MitraReportController;
 use App\Http\Controllers\Api\ForgotPasswordController;
+use App\Http\Controllers\SppController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +69,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // ── Students ──────────────────────────────────────────────────
     Route::get('students/options', [StudentController::class, 'options']);
+    Route::post('students/{id}/foto', [StudentController::class, 'uploadFoto']);
     Route::apiResource('students', StudentController::class)
         ->parameters(['students' => 'id']);
 
@@ -117,12 +119,19 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::delete('reports/{reportId}',     [MitraReportController::class, 'destroy']);
     });
 
+    // ── SPP (Pembayaran) ──────────────────────────────────────────
+    Route::get('spp/student-options',  [SppController::class, 'studentOptions']);
+    Route::get('spp/summary',          [SppController::class, 'summary']);
+    Route::apiResource('spp', SppController::class)
+        ->parameters(['spp' => 'id']);
+
     // ── Admin Progress Reports ─────────────────────────────────────
     Route::prefix('admin/progress')->group(function () {
         Route::get('options',                           [ProgressReportController::class, 'adminOptions']);
         Route::get('students',                          [ProgressReportController::class, 'adminStudents']);
         Route::get('students/{studentId}/reports',      [ProgressReportController::class, 'adminStudentReports']);
         Route::get('reports',                           [ProgressReportController::class, 'adminReports']);
+        Route::get('export',                            [ProgressReportController::class, 'adminExport']);
         Route::post('reports',                          [ProgressReportController::class, 'adminStore']);
         Route::put('reports/{id}',                      [ProgressReportController::class, 'adminUpdate']);
         Route::delete('reports/{id}',                   [ProgressReportController::class, 'adminDestroy']);
@@ -146,6 +155,7 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->group(function (
     Route::get('students',                          [ProgressReportController::class, 'teacherStudents']);
     Route::get('students/{studentId}/reports',      [ProgressReportController::class, 'teacherStudentReports']);
     Route::post('reports',                          [ProgressReportController::class, 'teacherStore']);
+    Route::get('reports/export',                    [ProgressReportController::class, 'teacherExport']);
     Route::get('reports/{id}',                      [ProgressReportController::class, 'teacherShow']);
     Route::put('reports/{id}',                      [ProgressReportController::class, 'teacherUpdate']);
     Route::delete('reports/{id}',                   [ProgressReportController::class, 'teacherDestroy']);
@@ -157,6 +167,9 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->group(function (
 Route::middleware(['auth', 'role:parents'])->prefix('parent')->group(function () {
     Route::get('children',                          [ProgressReportController::class, 'parentChildren']);
     Route::get('children/{studentId}/reports',      [ProgressReportController::class, 'parentChildReports']);
+    Route::post('children/{studentId}/foto',        [StudentController::class,        'parentUploadFoto']);
+    Route::get('spp',                               [SppController::class,            'parentIndex']);
+    Route::post('spp/{id}/pay',                     [SppController::class,            'parentPay']);
 });
 
 // ══════════════════════════════════════════════════════════════════════

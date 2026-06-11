@@ -36,6 +36,7 @@ class ParentDashboardController extends Controller
                 'program_name'      => $programName,
                 'enrollment_status' => $doc->enrollment_status ?? 'pending',
                 'bukti_pembayaran'  => $doc->bukti_pembayaran  ?? null,
+                'foto'              => $doc->foto              ?? null,
                 'created_at'        => $doc->created_at?->format('Y-m-d H:i:s'),
             ];
         })->values()->toArray();
