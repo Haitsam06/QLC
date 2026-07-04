@@ -14,19 +14,38 @@ class SppController extends Controller
 {
     private function format(SppPayment $p): array
     {
+        $tahun = (int) $p->tahun;
+        $bulan = (int) $p->bulan;
+
+        $dueBulan = $bulan + 1;
+        $dueTahun = $tahun;
+        if ($dueBulan > 12) {
+            $dueBulan = 1;
+            $dueTahun++;
+        }
+        $dueDateStr = sprintf('%04d-%02d-05', $dueTahun, $dueBulan);
+
+        $isOverdue = false;
+        if (in_array($p->status, ['belum', 'cicilan'])) {
+            $today = date('Y-m-d');
+            $isOverdue = ($today > $dueDateStr);
+        }
+
         return [
             'id'            => (string) $p->_id,
             'student_id'    => $p->student_id,
             'student_name'  => $p->student_name,
             'parent_id'     => $p->parent_id,
-            'tahun'         => (int) $p->tahun,
-            'bulan'         => (int) $p->bulan,
+            'tahun'         => $tahun,
+            'bulan'         => $bulan,
             'nominal'       => (int) $p->nominal,
             'status'        => $p->status,
             'tanggal_bayar' => $p->tanggal_bayar,
             'keterangan'    => $p->keterangan,
             'bukti_bayar'   => $p->bukti_bayar,
             'created_at'    => $p->created_at?->format('Y-m-d'),
+            'jatuh_tempo'   => $dueDateStr,
+            'is_overdue'    => $isOverdue,
         ];
     }
 
@@ -200,15 +219,7 @@ class SppController extends Controller
             return [
                 'student_id'   => $cid,
                 'student_name' => $child->nama ?? '',
-                'payments'     => $childPayments->map(fn($p) => [
-                    'id'            => (string) $p->_id,
-                    'tahun'         => (int) $p->tahun,
-                    'bulan'         => (int) $p->bulan,
-                    'nominal'       => (int) $p->nominal,
-                    'status'        => $p->status,
-                    'tanggal_bayar' => $p->tanggal_bayar,
-                    'keterangan'    => $p->keterangan,
-                ])->values(),
+                'payments'     => $childPayments->map(fn($p) => $this->format($p))->values(),
             ];
         });
 

@@ -18,6 +18,8 @@ interface SppPayment {
     keterangan: string | null;
     bukti_bayar: string | null;
     created_at: string | null;
+    jatuh_tempo: string;
+    is_overdue: boolean;
 }
 interface Meta { total: number; page: number; per_page: number; last_page: number; }
 interface Summary { total: number; lunas: number; belum: number; cicilan: number; nominal_lunas: number; nominal_all: number; }
@@ -649,7 +651,7 @@ export default function SppPage() {
                         />
                     </div>
                     <select
-                        className="border border-slate-300 rounded-lg px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white"
+                        className="border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white cursor-pointer"
                         value={filterTahun}
                         onChange={(e) => setFilterTahun(e.target.value)}
                     >
@@ -657,7 +659,7 @@ export default function SppPage() {
                         {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                     </select>
                     <select
-                        className="border border-slate-300 rounded-lg px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white"
+                        className="border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white cursor-pointer"
                         value={filterBulan}
                         onChange={(e) => setFilterBulan(e.target.value)}
                     >
@@ -665,7 +667,7 @@ export default function SppPage() {
                         {BULAN.slice(1).map((b, i) => <option key={i + 1} value={i + 1}>{b}</option>)}
                     </select>
                     <select
-                        className="border border-slate-300 rounded-lg px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white"
+                        className="border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white cursor-pointer"
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
                     >
@@ -719,15 +721,33 @@ export default function SppPage() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-slate-600 font-semibold whitespace-nowrap">
-                                                {BULAN[p.bulan]} {p.tahun}
+                                                <div>{BULAN[p.bulan]} {p.tahun}</div>
+                                                <div className="text-[11px] text-slate-400 font-medium">
+                                                    {(() => {
+                                                        if (!p.jatuh_tempo) {
+                                                            const nextMonth = p.bulan + 1 > 12 ? 1 : p.bulan + 1;
+                                                            const nextYear = p.bulan + 1 > 12 ? p.tahun + 1 : p.tahun;
+                                                            return `Jatuh Tempo: 05/${String(nextMonth).padStart(2, '0')}/${nextYear}`;
+                                                        }
+                                                        const [year, month, day] = p.jatuh_tempo.split('-');
+                                                        return `Jatuh Tempo: ${day}/${month}/${year}`;
+                                                    })()}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-right font-bold text-slate-900 whitespace-nowrap">
                                                 {fmtRupiah(p.nominal)}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wide ${STATUS_STYLE[p.status]}`}>
-                                                    {STATUS_LABEL[p.status]}
-                                                </span>
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wide ${STATUS_STYLE[p.status]}`}>
+                                                        {STATUS_LABEL[p.status]}
+                                                    </span>
+                                                    {p.is_overdue && (
+                                                        <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
+                                                            Terlambat
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-slate-500 font-medium whitespace-nowrap">
                                                 {p.tanggal_bayar ?? '—'}

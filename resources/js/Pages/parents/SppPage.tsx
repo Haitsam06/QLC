@@ -14,6 +14,8 @@ interface SppItem {
     tanggal_bayar: string | null;
     keterangan: string | null;
     bukti_bayar: string | null;
+    jatuh_tempo: string;
+    is_overdue: boolean;
 }
 interface ChildSpp {
     student_id: string;
@@ -240,12 +242,27 @@ function ChildCard({ child, onRefresh }: { child: ChildSpp; onRefresh: () => voi
                                         <div className="text-[11.5px] font-bold text-slate-400">
                                             {fmtRupiah(p.nominal)}
                                         </div>
+                                         <div className="text-[10.5px] font-bold text-slate-400 mt-0.5">
+                                             {(() => {
+                                                 const [dueYear, dueMonth, dueDay] = p.jatuh_tempo 
+                                                     ? p.jatuh_tempo.split('-').map(Number)
+                                                     : [p.tahun, p.bulan + 1 > 12 ? 1 : p.bulan + 1, 5];
+                                                 return `Jatuh Tempo: ${dueDay} ${BULAN[dueMonth]} ${dueYear}`;
+                                             })()}
+                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1.5 shrink-0 ml-3">
-                                    <span className={`text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide ${cfg.badge}`}>
-                                        {cfg.label}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        {p.is_overdue && (
+                                            <span className="text-[10px] font-black bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded-lg">
+                                                Terlambat
+                                            </span>
+                                        )}
+                                        <span className={`text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide ${cfg.badge}`}>
+                                            {cfg.label}
+                                        </span>
+                                    </div>
                                     {p.tanggal_bayar && (
                                         <span className="text-[10px] font-bold text-slate-400">{p.tanggal_bayar}</span>
                                     )}
@@ -322,7 +339,7 @@ export default function SppParentPage() {
                     </p>
                 </div>
                 <select
-                    className="border border-slate-200 rounded-2xl px-4 py-2 text-sm font-black text-slate-700 outline-none focus:border-[#1B6B3A] bg-white shadow-sm"
+                    className="border border-slate-200 rounded-2xl pl-4 pr-10 py-2 text-sm font-black text-slate-700 outline-none focus:border-[#1B6B3A] bg-white shadow-sm cursor-pointer"
                     value={filterTahun}
                     onChange={(e) => setFilterTahun(e.target.value)}
                 >
