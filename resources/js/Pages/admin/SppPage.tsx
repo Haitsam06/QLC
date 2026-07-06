@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, CreditCard, Loader2, AlertCircle, CheckCircle2, Eye, ShieldCheck, ShieldX } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, CreditCard, Loader2, AlertCircle, CheckCircle2, Eye, ShieldCheck, ShieldX, Filter, Check, Calendar } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -47,10 +47,10 @@ const EMPTY_ADD: AddForm = { periode: nowM, nominal: '', keterangan: '' };
 const EMPTY_EDIT: EditForm = { nominal: '', status: 'belum', tanggal_bayar: '', keterangan: '' };
 
 const STATUS_STYLE: Record<string, string> = {
-    lunas:    'bg-green-100 text-green-700',
-    belum:    'bg-red-100 text-red-600',
-    cicilan:  'bg-amber-100 text-amber-700',
-    menunggu: 'bg-blue-100 text-blue-700',
+    lunas:    'bg-green-50 border border-green-200 text-green-700',
+    belum:    'bg-red-50 border border-red-200 text-red-600',
+    cicilan:  'bg-amber-50 border border-amber-200 text-amber-700',
+    menunggu: 'bg-blue-50 border border-blue-200 text-blue-700',
 };
 const STATUS_LABEL: Record<string, string> = { lunas: 'Lunas', belum: 'Belum Bayar', cicilan: 'Cicilan', menunggu: 'Menunggu' };
 
@@ -553,6 +553,10 @@ export default function SppPage() {
     const [filterTahun, setFilterTahun] = useState('');
     const [filterBulan, setFilterBulan] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    
+    const [tahunOpen, setTahunOpen] = useState(false);
+    const [bulanOpen, setBulanOpen] = useState(false);
+    const [statusOpen, setStatusOpen] = useState(false);
     const [page, setPage]               = useState(1);
     const debouncedSearch               = useDebounce(search, 400);
 
@@ -604,20 +608,14 @@ export default function SppPage() {
             <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
             <div className="flex flex-col gap-5">
-                {/* ── Header ── */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h1 className="text-[20px] font-extrabold text-slate-900 flex items-center gap-2">
-                            <CreditCard size={22} className="text-teal-700" /> Pembayaran SPP
-                        </h1>
-                        <p className="text-[12.5px] text-slate-500 font-medium mt-0.5">Kelola tagihan SPP siswa</p>
+                {/* ════ HEADER & STATS ════ */}
+                <div className="flex flex-col gap-5">
+                    <div className="flex justify-between items-end flex-wrap gap-3">
+                        <div>
+                            <div className="text-[24px] md:text-[28px] font-black text-slate-900 tracking-tight leading-none">Pembayaran SPP</div>
+                            <div className="text-[13px] text-slate-500 mt-1.5 font-bold">Kelola tagihan SPP siswa</div>
+                        </div>
                     </div>
-                    <button
-                        className="flex items-center gap-2 bg-teal-700 hover:bg-teal-600 text-white font-bold text-[13px] px-4 py-2.5 rounded-xl shadow-sm transition-colors"
-                        onClick={() => setShowAdd(true)}
-                    >
-                        <Plus size={16} /> Tambah Tagihan
-                    </button>
                 </div>
 
                 {/* ── Stats Bar ── */}
@@ -639,58 +637,145 @@ export default function SppPage() {
                     ))}
                 </div>
 
-                {/* ── Filters ── */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative flex-1 min-w-[180px]">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        <input
-                            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
-                            placeholder="Cari nama siswa..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                {/* ════ TOOLBAR ════ */}
+                <div className="flex gap-3 flex-wrap items-center flex-col sm:flex-row mt-2">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-[220px] w-full sm:w-auto h-12 px-4 bg-white border border-slate-300 rounded-[1.2rem] transition-all focus-within:ring-4 focus-within:ring-amber-500/10 focus-within:border-amber-500 focus-within:shadow-sm">
+                        <Search size={18} className="text-slate-400 shrink-0" />
+                        <input placeholder="Cari nama siswa..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1 text-[14px] font-bold text-slate-900 bg-transparent border-none outline-none focus:ring-0 w-full placeholder:text-slate-400 placeholder:font-medium" />
+                        {search && (
+                            <button onClick={() => setSearch('')} className="text-slate-400 flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 transition-colors hover:bg-red-100 hover:text-red-600 cursor-pointer focus:outline-none">
+                                <X size={14} strokeWidth={2.5} />
+                            </button>
+                        )}
                     </div>
-                    <select
-                        className="border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white cursor-pointer"
-                        value={filterTahun}
-                        onChange={(e) => setFilterTahun(e.target.value)}
+
+                    <div className="relative w-full sm:w-auto">
+                        <div
+                            className={`flex items-center gap-2 h-12 px-4 min-w-[160px] bg-white border rounded-[1.2rem] cursor-pointer select-none transition-all hover:bg-slate-50 ${tahunOpen ? 'ring-4 ring-amber-500/10 border-amber-500' : 'border-slate-300'}`}
+                            onClick={() => setTahunOpen(!tahunOpen)}
+                        >
+                            <Calendar size={16} className="text-slate-400 shrink-0" />
+                            <span className="flex-1 text-[13.5px] font-bold text-slate-700 text-left truncate">{filterTahun || 'Semua Tahun'}</span>
+                            <ChevronDown size={18} className={`text-slate-400 shrink-0 transition-transform ${tahunOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                        {tahunOpen && (
+                            <>
+                                <div className="fixed inset-0 z-[99]" onClick={() => setTahunOpen(false)} />
+                                <div className="absolute top-[calc(100%+8px)] right-0 min-w-[200px] bg-white border border-slate-200 rounded-[1.2rem] shadow-xl p-2 flex flex-col gap-1 z-[100] animate-[fadeIn_0.15s_ease-out] max-h-[300px] overflow-y-auto scrollbar-hide">
+                                    <div
+                                        className={`p-3 rounded-xl text-[13px] font-bold cursor-pointer transition-colors flex items-center justify-between ${filterTahun === '' ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-amber-700'}`}
+                                        onClick={() => { setFilterTahun(''); setTahunOpen(false); }}
+                                    >
+                                        <span>Semua Tahun</span>
+                                        {filterTahun === '' && <Check size={16} />}
+                                    </div>
+                                    {YEARS.map((y) => (
+                                        <div
+                                            key={y}
+                                            className={`p-3 rounded-xl text-[13px] font-bold cursor-pointer transition-colors flex items-center justify-between ${filterTahun === String(y) ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-amber-700'}`}
+                                            onClick={() => { setFilterTahun(String(y)); setTahunOpen(false); }}
+                                        >
+                                            <span>{y}</span>
+                                            {filterTahun === String(y) && <Check size={16} />}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <div className="relative w-full sm:w-auto">
+                        <div
+                            className={`flex items-center gap-2 h-12 px-4 min-w-[160px] bg-white border rounded-[1.2rem] cursor-pointer select-none transition-all hover:bg-slate-50 ${bulanOpen ? 'ring-4 ring-amber-500/10 border-amber-500' : 'border-slate-300'}`}
+                            onClick={() => setBulanOpen(!bulanOpen)}
+                        >
+                            <Calendar size={16} className="text-slate-400 shrink-0" />
+                            <span className="flex-1 text-[13.5px] font-bold text-slate-700 text-left truncate">{filterBulan ? BULAN[Number(filterBulan)] : 'Semua Bulan'}</span>
+                            <ChevronDown size={18} className={`text-slate-400 shrink-0 transition-transform ${bulanOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                        {bulanOpen && (
+                            <>
+                                <div className="fixed inset-0 z-[99]" onClick={() => setBulanOpen(false)} />
+                                <div className="absolute top-[calc(100%+8px)] right-0 min-w-[200px] bg-white border border-slate-200 rounded-[1.2rem] shadow-xl p-2 flex flex-col gap-1 z-[100] animate-[fadeIn_0.15s_ease-out] max-h-[300px] overflow-y-auto scrollbar-hide">
+                                    <div
+                                        className={`p-3 rounded-xl text-[13px] font-bold cursor-pointer transition-colors flex items-center justify-between ${filterBulan === '' ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-amber-700'}`}
+                                        onClick={() => { setFilterBulan(''); setBulanOpen(false); }}
+                                    >
+                                        <span>Semua Bulan</span>
+                                        {filterBulan === '' && <Check size={16} />}
+                                    </div>
+                                    {BULAN.slice(1).map((b, i) => (
+                                        <div
+                                            key={i + 1}
+                                            className={`p-3 rounded-xl text-[13px] font-bold cursor-pointer transition-colors flex items-center justify-between ${filterBulan === String(i + 1) ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-amber-700'}`}
+                                            onClick={() => { setFilterBulan(String(i + 1)); setBulanOpen(false); }}
+                                        >
+                                            <span>{b}</span>
+                                            {filterBulan === String(i + 1) && <Check size={16} />}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <div className="relative w-full sm:w-auto">
+                        <div
+                            className={`flex items-center gap-2 h-12 px-4 min-w-[170px] bg-white border rounded-[1.2rem] cursor-pointer select-none transition-all hover:bg-slate-50 ${statusOpen ? 'ring-4 ring-amber-500/10 border-amber-500' : 'border-slate-300'}`}
+                            onClick={() => setStatusOpen(!statusOpen)}
+                        >
+                            <Filter size={16} className="text-slate-400 shrink-0" />
+                            <span className="flex-1 text-[13.5px] font-bold text-slate-700 text-left truncate">{filterStatus === 'lunas' ? 'Lunas' : filterStatus === 'belum' ? 'Belum Bayar' : filterStatus === 'cicilan' ? 'Cicilan' : 'Semua Status'}</span>
+                            <ChevronDown size={18} className={`text-slate-400 shrink-0 transition-transform ${statusOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                        {statusOpen && (
+                            <>
+                                <div className="fixed inset-0 z-[99]" onClick={() => setStatusOpen(false)} />
+                                <div className="absolute top-[calc(100%+8px)] right-0 min-w-[200px] bg-white border border-slate-200 rounded-[1.2rem] shadow-xl p-2 flex flex-col gap-1 z-[100] animate-[fadeIn_0.15s_ease-out]">
+                                    {[
+                                        { val: '', label: 'Semua Status' },
+                                        { val: 'lunas', label: 'Lunas' },
+                                        { val: 'belum', label: 'Belum Bayar' },
+                                        { val: 'cicilan', label: 'Cicilan' },
+                                    ].map((opt) => (
+                                        <div
+                                            key={opt.val}
+                                            className={`p-3 rounded-xl text-[13px] font-bold cursor-pointer transition-colors flex items-center justify-between ${filterStatus === opt.val ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-amber-700'}`}
+                                            onClick={() => {
+                                                setFilterStatus(opt.val);
+                                                setStatusOpen(false);
+                                            }}
+                                        >
+                                            <span>{opt.label}</span>
+                                            {filterStatus === opt.val && <Check size={16} />}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <button
+                        className="sm:ml-auto w-full sm:w-auto flex items-center justify-center gap-2 h-12 px-6 rounded-[1.2rem] bg-[#1B6B3A] text-white text-[14px] font-black shadow-lg shadow-green-900/20 transition-all hover:bg-[#14522d] active:scale-95 focus:outline-none"
+                        onClick={() => setShowAdd(true)}
                     >
-                        <option value="">Semua Tahun</option>
-                        {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                    <select
-                        className="border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white cursor-pointer"
-                        value={filterBulan}
-                        onChange={(e) => setFilterBulan(e.target.value)}
-                    >
-                        <option value="">Semua Bulan</option>
-                        {BULAN.slice(1).map((b, i) => <option key={i + 1} value={i + 1}>{b}</option>)}
-                    </select>
-                    <select
-                        className="border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-[13px] outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 bg-white cursor-pointer"
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                    >
-                        <option value="">Semua Status</option>
-                        <option value="lunas">Lunas</option>
-                        <option value="belum">Belum Bayar</option>
-                        <option value="cicilan">Cicilan</option>
-                    </select>
+                        <Plus size={18} strokeWidth={3} /> Tambah Tagihan
+                    </button>
                 </div>
 
-                {/* ── Table ── */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-[13px]">
+                {/* ════ TABLE ════ */}
+                <div className="relative bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="overflow-x-auto relative z-10 w-full scrollbar-hide">
+                        <table className="w-full border-collapse text-left">
                             <thead>
-                                <tr className="border-b border-slate-100 bg-slate-50/60">
-                                    <th className="text-left px-4 py-3 font-extrabold text-slate-500 uppercase text-[11px] tracking-wide">Siswa</th>
-                                    <th className="text-left px-4 py-3 font-extrabold text-slate-500 uppercase text-[11px] tracking-wide">Periode</th>
-                                    <th className="text-right px-4 py-3 font-extrabold text-slate-500 uppercase text-[11px] tracking-wide">Nominal</th>
-                                    <th className="text-center px-4 py-3 font-extrabold text-slate-500 uppercase text-[11px] tracking-wide">Status</th>
-                                    <th className="text-left px-4 py-3 font-extrabold text-slate-500 uppercase text-[11px] tracking-wide">Tgl Bayar</th>
-                                    <th className="text-left px-4 py-3 font-extrabold text-slate-500 uppercase text-[11px] tracking-wide">Keterangan</th>
-                                    <th className="px-4 py-3 w-20"></th>
+                                <tr className="bg-slate-50 border-b border-slate-200">
+                                    <th className="px-5 lg:px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap">Siswa</th>
+                                    <th className="px-5 lg:px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap">Periode</th>
+                                    <th className="px-5 lg:px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap text-right">Nominal</th>
+                                    <th className="px-5 lg:px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap text-center">Status</th>
+                                    <th className="px-5 lg:px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap hidden md:table-cell">Tgl Bayar</th>
+                                    <th className="px-5 lg:px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap hidden lg:table-cell">Keterangan</th>
+                                    <th className="px-5 lg:px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 whitespace-nowrap text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -711,18 +796,18 @@ export default function SppPage() {
                                     </tr>
                                 ) : (
                                     payments.map((p) => (
-                                        <tr key={p.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition-colors">
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-lg bg-teal-700/10 text-teal-700 flex items-center justify-center font-extrabold text-[12px] shrink-0">
-                                                        {p.student_name.charAt(0).toUpperCase()}
+                                        <tr key={p.id} className="transition-colors hover:bg-slate-50 group border-b border-slate-100 last:border-0">
+                                            <td className="px-5 lg:px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative w-11 h-11 rounded-2xl shrink-0 overflow-hidden bg-amber-500 flex items-center justify-center shadow-md">
+                                                        <span className="font-black text-[15px] text-white tracking-wide">{p.student_name.charAt(0).toUpperCase()}</span>
                                                     </div>
-                                                    <span className="font-bold text-slate-900 truncate max-w-[150px]">{p.student_name}</span>
+                                                    <span className="text-[14px] font-black text-slate-900 tracking-tight truncate max-w-[150px] lg:max-w-[200px]">{p.student_name}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-slate-600 font-semibold whitespace-nowrap">
+                                            <td className="px-5 lg:px-6 py-4 text-[13px] text-slate-600 font-bold whitespace-nowrap">
                                                 <div>{BULAN[p.bulan]} {p.tahun}</div>
-                                                <div className="text-[11px] text-slate-400 font-medium">
+                                                <div className="text-[11.5px] font-bold text-slate-500 mt-0.5">
                                                     {(() => {
                                                         if (!p.jatuh_tempo) {
                                                             const nextMonth = p.bulan + 1 > 12 ? 1 : p.bulan + 1;
@@ -734,49 +819,49 @@ export default function SppPage() {
                                                     })()}
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-right font-bold text-slate-900 whitespace-nowrap">
+                                            <td className="px-5 lg:px-6 py-4 text-right font-bold text-slate-900 whitespace-nowrap">
                                                 {fmtRupiah(p.nominal)}
                                             </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wide ${STATUS_STYLE[p.status]}`}>
+                                            <td className="px-5 lg:px-6 py-4 text-center">
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest ${STATUS_STYLE[p.status]}`}>
                                                         {STATUS_LABEL[p.status]}
                                                     </span>
                                                     {p.is_overdue && (
-                                                        <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
+                                                        <span className="text-[10px] font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md uppercase tracking-wider">
                                                             Terlambat
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-slate-500 font-medium whitespace-nowrap">
+                                            <td className="px-5 lg:px-6 py-4 text-[13px] text-slate-500 font-bold whitespace-nowrap hidden md:table-cell">
                                                 {p.tanggal_bayar ?? '—'}
                                             </td>
-                                            <td className="px-4 py-3 text-slate-400 font-medium max-w-[160px] truncate">
+                                            <td className="px-5 lg:px-6 py-4 text-[13px] text-slate-400 font-bold max-w-[160px] truncate hidden lg:table-cell">
                                                 {p.keterangan ?? '—'}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center justify-end gap-1">
+                                            <td className="px-5 lg:px-6 py-4">
+                                                <div className="flex items-center justify-end gap-1.5">
                                                     {p.status === 'menunggu' && (
                                                         <button
-                                                            className="w-8 h-8 rounded-lg flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none"
                                                             title="Verifikasi bukti bayar"
                                                             onClick={() => setReviewTarget(p)}
                                                         >
-                                                            <Eye size={15} />
+                                                            <Eye size={16} />
                                                         </button>
                                                     )}
                                                     <button
-                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-teal-50 transition-colors"
+                                                        className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-[#1B6B3A] hover:bg-green-50 transition-colors focus:outline-none"
                                                         onClick={() => setEditTarget(p)}
                                                     >
-                                                        <Pencil size={15} />
+                                                        <Pencil size={16} />
                                                     </button>
                                                     <button
-                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                        className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors focus:outline-none"
                                                         onClick={() => setDeleteTarget(p)}
                                                     >
-                                                        <Trash2 size={15} />
+                                                        <Trash2 size={16} />
                                                     </button>
                                                 </div>
                                             </td>
