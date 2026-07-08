@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, CreditCard, Loader2, AlertCircle, CheckCircle2, Eye, ShieldCheck, ShieldX, Filter, Check, Calendar } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, CreditCard, Loader2, AlertCircle, CheckCircle2, Filter, Check, Calendar } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -51,8 +51,9 @@ const STATUS_STYLE: Record<string, string> = {
     belum:    'bg-red-50 border border-red-200 text-red-600',
     cicilan:  'bg-amber-50 border border-amber-200 text-amber-700',
     menunggu: 'bg-blue-50 border border-blue-200 text-blue-700',
+    ditolak:  'bg-rose-50 border border-rose-200 text-rose-700',
 };
-const STATUS_LABEL: Record<string, string> = { lunas: 'Lunas', belum: 'Belum Bayar', cicilan: 'Cicilan', menunggu: 'Menunggu' };
+const STATUS_LABEL: Record<string, string> = { lunas: 'Lunas', belum: 'Belum Bayar', cicilan: 'Cicilan', menunggu: 'Menunggu', ditolak: 'Ditolak' };
 
 /* ═══════════════════════════════════════════════════════════
    HELPERS
@@ -256,6 +257,7 @@ function EditModal({ payment, onClose, onSaved }: { payment: SppPayment; onClose
         const e: Record<string, string> = {};
         if (!form.nominal || isNaN(Number(form.nominal)) || Number(form.nominal) < 0) e.nominal = 'Nominal harus berupa angka ≥ 0.';
         if (!form.status) e.status = 'Status wajib dipilih.';
+        if (form.status === 'ditolak' && !form.keterangan.trim()) e.keterangan = 'Keterangan alasan penolakan wajib diisi.';
         if (Object.keys(e).length) { setErrors(e); return; }
         setLoading(true);
         try {
@@ -345,6 +347,7 @@ function EditModal({ payment, onClose, onSaved }: { payment: SppPayment; onClose
                             <option value="belum">Belum Bayar</option>
                             <option value="cicilan">Cicilan</option>
                             <option value="lunas">Lunas</option>
+                            <option value="ditolak">Ditolak (Tolak Bukti Bayar)</option>
                         </select>
                     </Field>
 
@@ -352,10 +355,11 @@ function EditModal({ payment, onClose, onSaved }: { payment: SppPayment; onClose
                         <input type="date" className={inputCls(errors.tanggal_bayar)} value={form.tanggal_bayar} onChange={(e) => set('tanggal_bayar', e.target.value)} />
                     </Field>
 
-                    <Field label="Keterangan" error={errors.keterangan}>
+                    <Field label={form.status === 'ditolak' ? 'Keterangan (Alasan Penolakan)' : 'Keterangan'} required={form.status === 'ditolak'} error={errors.keterangan}>
                         <textarea
                             className={inputCls(errors.keterangan) + ' resize-none'}
-                            rows={2}
+                            rows={form.status === 'ditolak' ? 3 : 2}
+                            placeholder={form.status === 'ditolak' ? 'Contoh: Nominal tidak sesuai, bukti transfer buram...' : 'Opsional...'}
                             value={form.keterangan}
                             onChange={(e) => set('keterangan', e.target.value)}
                         />
@@ -439,109 +443,6 @@ function DeleteConfirm({ payment, onClose, onDeleted }: { payment: SppPayment; o
 }
 
 /* ═══════════════════════════════════════════════════════════
-   REVIEW MODAL — verifikasi bukti bayar
-═══════════════════════════════════════════════════════════ */
-function ReviewModal({ payment, onClose, onDone }: { payment: SppPayment; onClose: () => void; onDone: (msg: string) => void }) {
-    const [loading, setLoading] = useState<'confirm' | 'reject' | null>(null);
-    const [error, setError] = useState('');
-
-    const updateStatus = async (status: 'lunas' | 'belum') => {
-        setLoading(status === 'lunas' ? 'confirm' : 'reject');
-        setError('');
-        try {
-            const res = await fetch(`/api/spp/${payment.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ status }),
-            });
-            const data = await res.json();
-            if (!res.ok) { setError(data.message ?? 'Terjadi kesalahan.'); return; }
-            onDone(status === 'lunas' ? 'Pembayaran dikonfirmasi lunas.' : 'Bukti bayar ditolak.');
-        } catch {
-            setError('Koneksi gagal.');
-        } finally {
-            setLoading(null);
-        }
-    };
-
-    return createPortal(
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm z-10">
-                {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                    <div className="text-[15px] font-extrabold text-slate-900 flex items-center gap-2">
-                        <Eye size={17} className="text-blue-600" /> Verifikasi Bukti Bayar
-                    </div>
-                    <button className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" onClick={onClose}>
-                        <X size={17} />
-                    </button>
-                </div>
-
-                {/* Info */}
-                <div className="px-5 pt-4 pb-0">
-                    <div className="text-[13px] font-bold text-slate-900">{payment.student_name}</div>
-                    <div className="text-[12px] text-slate-500 font-medium mt-0.5">
-                        {BULAN[payment.bulan]} {payment.tahun} · {fmtRupiah(payment.nominal)}
-                    </div>
-                    {payment.keterangan && (
-                        <div className="mt-2 text-[12px] text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-                            <span className="font-bold text-slate-500">Catatan wali:</span> {payment.keterangan}
-                        </div>
-                    )}
-                </div>
-
-                {/* Bukti bayar image */}
-                <div className="px-5 pt-3 pb-2">
-                    {payment.bukti_bayar ? (
-                        <a href={payment.bukti_bayar} target="_blank" rel="noopener noreferrer" className="block group">
-                            <img
-                                src={payment.bukti_bayar}
-                                alt="Bukti bayar"
-                                className="w-full rounded-xl border border-slate-200 object-cover max-h-72 group-hover:opacity-90 transition-opacity cursor-zoom-in"
-                            />
-                            <p className="text-center text-[11px] text-slate-400 mt-1.5 font-medium">Klik untuk buka ukuran penuh</p>
-                        </a>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
-                            <AlertCircle size={20} className="mb-1.5" />
-                            <span className="text-[12px] font-semibold">Bukti bayar tidak tersedia</span>
-                        </div>
-                    )}
-                </div>
-
-                {error && (
-                    <div className="mx-5 mb-2 text-[12px] text-red-500 font-semibold bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center gap-1.5">
-                        <AlertCircle size={13} /> {error}
-                    </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-2 px-5 pb-5 pt-1">
-                    <button
-                        className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-red-100 transition-colors disabled:opacity-50 border border-red-200"
-                        onClick={() => updateStatus('belum')}
-                        disabled={loading !== null}
-                    >
-                        {loading === 'reject' ? <Loader2 size={15} className="animate-spin" /> : <ShieldX size={15} />}
-                        Tolak
-                    </button>
-                    <button
-                        className="flex-1 py-2.5 rounded-xl bg-teal-700 text-white text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-teal-600 transition-colors disabled:opacity-50"
-                        onClick={() => updateStatus('lunas')}
-                        disabled={loading !== null}
-                    >
-                        {loading === 'confirm' ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
-                        Konfirmasi Lunas
-                    </button>
-                </div>
-            </div>
-        </div>,
-        document.body,
-    );
-}
-
-/* ═══════════════════════════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════════════════════════ */
 export default function SppPage() {
@@ -564,7 +465,6 @@ export default function SppPage() {
     const [showAdd, setShowAdd]           = useState(false);
     const [editTarget, setEditTarget]     = useState<SppPayment | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<SppPayment | null>(null);
-    const [reviewTarget, setReviewTarget] = useState<SppPayment | null>(null);
     const [toast, setToast]               = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
     const showToast = (msg: string, type: 'success' | 'error' = 'success') => setToast({ msg, type });
@@ -725,7 +625,7 @@ export default function SppPage() {
                             onClick={() => setStatusOpen(!statusOpen)}
                         >
                             <Filter size={16} className="text-slate-400 shrink-0" />
-                            <span className="flex-1 text-[13.5px] font-bold text-slate-700 text-left truncate">{filterStatus === 'lunas' ? 'Lunas' : filterStatus === 'belum' ? 'Belum Bayar' : filterStatus === 'cicilan' ? 'Cicilan' : 'Semua Status'}</span>
+                            <span className="flex-1 text-[13.5px] font-bold text-slate-700 text-left truncate">{filterStatus === 'lunas' ? 'Lunas' : filterStatus === 'belum' ? 'Belum Bayar' : filterStatus === 'cicilan' ? 'Cicilan' : filterStatus === 'ditolak' ? 'Ditolak' : 'Semua Status'}</span>
                             <ChevronDown size={18} className={`text-slate-400 shrink-0 transition-transform ${statusOpen ? 'rotate-180' : ''}`} />
                         </div>
                         {statusOpen && (
@@ -737,6 +637,7 @@ export default function SppPage() {
                                         { val: 'lunas', label: 'Lunas' },
                                         { val: 'belum', label: 'Belum Bayar' },
                                         { val: 'cicilan', label: 'Cicilan' },
+                                        { val: 'ditolak', label: 'Ditolak' },
                                     ].map((opt) => (
                                         <div
                                             key={opt.val}
@@ -842,15 +743,6 @@ export default function SppPage() {
                                             </td>
                                             <td className="px-5 lg:px-6 py-4">
                                                 <div className="flex items-center justify-end gap-1.5">
-                                                    {p.status === 'menunggu' && (
-                                                        <button
-                                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none"
-                                                            title="Verifikasi bukti bayar"
-                                                            onClick={() => setReviewTarget(p)}
-                                                        >
-                                                            <Eye size={16} />
-                                                        </button>
-                                                    )}
                                                     <button
                                                         className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-[#1B6B3A] hover:bg-green-50 transition-colors focus:outline-none"
                                                         onClick={() => setEditTarget(p)}
@@ -918,13 +810,6 @@ export default function SppPage() {
                     payment={deleteTarget}
                     onClose={() => setDeleteTarget(null)}
                     onDeleted={() => { setDeleteTarget(null); fetchData(); showToast('Tagihan berhasil dihapus.'); }}
-                />
-            )}
-            {reviewTarget && (
-                <ReviewModal
-                    payment={reviewTarget}
-                    onClose={() => setReviewTarget(null)}
-                    onDone={(msg) => { setReviewTarget(null); fetchData(); showToast(msg); }}
                 />
             )}
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}

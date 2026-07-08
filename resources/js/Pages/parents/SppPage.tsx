@@ -10,7 +10,7 @@ interface SppItem {
     tahun: number;
     bulan: number;
     nominal: number;
-    status: 'lunas' | 'belum' | 'cicilan' | 'menunggu';
+    status: 'lunas' | 'belum' | 'cicilan' | 'menunggu' | 'ditolak';
     tanggal_bayar: string | null;
     keterangan: string | null;
     bukti_bayar: string | null;
@@ -35,6 +35,7 @@ const STATUS_CFG: Record<string, { label: string; badge: string; dot: string; nu
     belum:    { label: 'Belum Bayar',            badge: 'bg-red-100 text-red-600',     dot: 'bg-red-500',    num: 'bg-red-50 text-red-600' },
     cicilan:  { label: 'Cicilan',               badge: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500',  num: 'bg-amber-50 text-amber-700' },
     menunggu: { label: 'Menunggu Konfirmasi',   badge: 'bg-blue-100 text-blue-700',   dot: 'bg-blue-500',   num: 'bg-blue-50 text-blue-700' },
+    ditolak:  { label: 'Ditolak',               badge: 'bg-rose-100 text-rose-700',    dot: 'bg-rose-500',   num: 'bg-rose-50 text-rose-700' },
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -266,12 +267,17 @@ function ChildCard({ child, onRefresh }: { child: ChildSpp; onRefresh: () => voi
                                     {p.tanggal_bayar && (
                                         <span className="text-[10px] font-bold text-slate-400">{p.tanggal_bayar}</span>
                                     )}
-                                    {(p.status === 'belum' || p.status === 'cicilan') && (
+                                    {p.status === 'ditolak' && p.keterangan && (
+                                        <div className="text-[10px] font-bold text-rose-600 max-w-[200px] text-right leading-tight">
+                                            Alasan: {p.keterangan}
+                                        </div>
+                                    )}
+                                    {(p.status === 'belum' || p.status === 'cicilan' || p.status === 'ditolak') && (
                                         <button
                                             className="text-[11px] font-black text-white bg-[#1B6B3A] px-3 py-1.5 rounded-xl hover:bg-[#14522d] active:scale-95 transition-all flex items-center gap-1"
                                             onClick={() => setBayar(p)}
                                         >
-                                            <Upload size={11} /> Bayar
+                                            <Upload size={11} /> {p.status === 'ditolak' ? 'Upload Ulang' : 'Bayar'}
                                         </button>
                                     )}
                                 </div>

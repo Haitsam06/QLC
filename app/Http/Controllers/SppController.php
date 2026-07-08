@@ -244,7 +244,7 @@ class SppController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nominal'       => 'sometimes|integer|min:0',
-            'status'        => 'sometimes|in:lunas,belum,cicilan,menunggu',
+            'status'        => 'sometimes|in:lunas,belum,cicilan,menunggu,ditolak',
             'tanggal_bayar' => 'nullable|date_format:Y-m-d',
             'keterangan'    => 'nullable|string|max:500',
         ]);
@@ -273,11 +273,11 @@ class SppController extends Controller
                     "Pembayaran SPP {$payment->student_name} bulan {$bln[(int)$payment->bulan]} {$payment->tahun} telah dikonfirmasi lunas.",
                     '?tab=spp'
                 );
-            } elseif ($update['status'] === 'belum' && $oldStatus === 'menunggu') {
+            } elseif ($update['status'] === 'ditolak' && $oldStatus === 'menunggu') {
                 Notification::send(
                     (string) $payment->parent_id, 'spp',
                     'Bukti Bayar Ditolak',
-                    "Bukti pembayaran SPP {$payment->student_name} bulan {$bln[(int)$payment->bulan]} {$payment->tahun} tidak valid. Silakan upload ulang.",
+                    "Bukti pembayaran SPP {$payment->student_name} bulan {$bln[(int)$payment->bulan]} {$payment->tahun} ditolak dengan alasan: " . ($update['keterangan'] ?? 'Tidak valid') . ". Silakan upload ulang.",
                     '?tab=spp'
                 );
             }
@@ -351,7 +351,7 @@ class SppController extends Controller
         $url  = url('storage/' . $path);
 
         $update = ['bukti_bayar' => $url, 'status' => 'menunggu'];
-        if ($request->filled('keterangan')) $update['keterangan'] = $request->keterangan;
+        $update['keterangan'] = $request->filled('keterangan') ? $request->keterangan : null;
 
         $payment->update($update);
 
