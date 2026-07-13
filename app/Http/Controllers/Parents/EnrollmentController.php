@@ -77,8 +77,8 @@ class EnrollmentController extends Controller
             return back()->withErrors(['nama' => 'Anak ini sudah terdaftar atau sedang menunggu verifikasi untuk program yang sama.'])->withInput();
         }
 
-        $path    = $request->file('bukti_pembayaran')->store('enrollments/payments', 'public');
-        $fileUrl = url('storage/' . $path);
+        $path    = $request->file('bukti_pembayaran')->store('enrollments/payments', config('filesystems.default'));
+        $fileUrl = $path;
 
         $user       = Auth::user();
         $userId     = (string) $user->_id;

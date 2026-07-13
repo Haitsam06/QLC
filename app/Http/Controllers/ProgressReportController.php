@@ -193,6 +193,7 @@ class ProgressReportController extends Controller
                 'nama'              => $s->nama ?? '',
                 'program_name'      => $programMap[$s->program_id ?? ''] ?? '—',
                 'enrollment_status' => $s->enrollment_status ?? 'pending',
+                'foto'              => $this->getStorageUrl($s->foto ?? null),
             ];
         })->values();
 

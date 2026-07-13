@@ -42,7 +42,7 @@ class SppController extends Controller
             'status'        => $p->status,
             'tanggal_bayar' => $p->tanggal_bayar,
             'keterangan'    => $p->keterangan,
-            'bukti_bayar'   => $p->bukti_bayar,
+            'bukti_bayar'   => $this->getStorageUrl($p->bukti_bayar),
             'created_at'    => $p->created_at?->format('Y-m-d'),
             'jatuh_tempo'   => $dueDateStr,
             'is_overdue'    => $isOverdue,
@@ -343,14 +343,12 @@ class SppController extends Controller
 
         // Hapus bukti lama jika ada
         if (!empty($payment->bukti_bayar)) {
-            $oldPath = str_replace(url('storage/'), '', $payment->bukti_bayar);
-            Storage::disk('public')->delete(ltrim($oldPath, '/'));
+            $this->deleteStorageFile($payment->bukti_bayar);
         }
 
-        $path = $request->file('bukti_bayar')->store('spp/bukti', 'public');
-        $url  = url('storage/' . $path);
+        $path = $request->file('bukti_bayar')->store('spp/bukti', config('filesystems.default'));
 
-        $update = ['bukti_bayar' => $url, 'status' => 'menunggu'];
+        $update = ['bukti_bayar' => $path, 'status' => 'menunggu'];
         $update['keterangan'] = $request->filled('keterangan') ? $request->keterangan : null;
 
         $payment->update($update);

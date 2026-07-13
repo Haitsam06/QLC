@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, X, Pencil, Trash2, Loader2, CheckCircle2, MapPin, Link, Eye, Calendar, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Pencil, Trash2, Loader2, CheckCircle2, MapPin, Link, Eye, Calendar, Plus, Upload } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -16,6 +16,7 @@ interface Agenda {
     location: string;
     registration_link: string;
     visibility: Visibility;
+    image?: string | null;
     created_at?: string;
 }
 
@@ -78,6 +79,9 @@ interface FormState {
     location: string;
     registration_link: string;
     visibility: Visibility;
+    image?: File | null;
+    image_url?: string | null;
+    remove_image?: boolean;
 }
 
 const emptyForm = (date = ''): FormState => ({
@@ -87,6 +91,9 @@ const emptyForm = (date = ''): FormState => ({
     location: '',
     registration_link: '',
     visibility: 'umum',
+    image: null,
+    image_url: null,
+    remove_image: false,
 });
 
 /* ═══════════════════════════════════════════════════════════
@@ -97,6 +104,7 @@ function AgendaModal({ init, onClose, onSave }: { init: FormState & { id?: strin
     const [e, setE] = useState<Partial<Record<keyof FormState, string>>>({});
     const [busy, setBusy] = useState(false);
     const isEdit = Boolean(init.id);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const upd = (k: keyof FormState) => (ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setF((p) => ({ ...p, [k]: ev.target.value }));
@@ -207,6 +215,74 @@ function AgendaModal({ init, onClose, onSave }: { init: FormState & { id?: strin
                             onChange={upd('registration_link')}
                         />
                         {e.registration_link && <span className="text-[11px] text-rose-500 font-bold mt-1 block">{e.registration_link}</span>}
+                    </div>
+
+                    {/* Poster/Flyer Upload */}
+                    <div>
+                        <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">
+                            Poster / Flyer Agenda <span className="font-medium normal-case text-slate-400 ml-1">(Maks 2MB, JPG/PNG/WEBP)</span>
+                        </label>
+                        
+                        {f.image_url || f.image ? (
+                            <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex flex-col items-center p-3.5 gap-2">
+                                <img
+                                    src={f.image ? URL.createObjectURL(f.image) : f.image_url || ''}
+                                    alt="Preview poster"
+                                    className="max-h-48 object-contain rounded-lg shadow-sm border border-slate-100 bg-white"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setF(p => ({
+                                            ...p,
+                                            image: null,
+                                            image_url: null,
+                                            remove_image: isEdit ? true : false
+                                        }));
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-100 text-xs font-bold hover:bg-rose-100 hover:text-rose-700 transition-colors flex items-center gap-1 cursor-pointer focus:outline-none"
+                                >
+                                    <X size={12} strokeWidth={2.5} /> Hapus Poster
+                                </button>
+                            </div>
+                        ) : (
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-xl p-5 text-center cursor-pointer transition-colors bg-slate-50 hover:bg-slate-100/50"
+                            >
+                                <Upload size={20} className="text-slate-400 mx-auto mb-1.5" />
+                                <p className="text-xs font-bold text-slate-600">Klik untuk unggah poster</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">Format: JPG, JPEG, PNG, WEBP (Maks 2MB)</p>
+                            </div>
+                        )}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpg,image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                e.target.value = '';
+
+                                // Validasi format file
+                                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                                if (!validTypes.includes(file.type)) {
+                                    setE(err => ({ ...err, image: 'Format gambar tidak didukung.' }));
+                                    return;
+                                }
+
+                                // Validasi ukuran file (2MB)
+                                if (file.size > 2 * 1024 * 1024) {
+                                    setE(err => ({ ...err, image: 'Ukuran file maksimal 2MB.' }));
+                                    return;
+                                }
+
+                                setF(p => ({ ...p, image: file, remove_image: false }));
+                                setE(err => ({ ...err, image: '' }));
+                            }}
+                        />
+                        {e.image && <span className="text-[11px] text-rose-500 font-bold mt-1 block">{e.image}</span>}
                     </div>
 
                     {/* Visibility */}
@@ -411,7 +487,23 @@ export default function AgendaPage() {
 
     /* CRUD */
     const handleAdd = async (f: FormState) => {
-        const res = await fetch(`${BASE}/agenda`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) });
+        const formData = new FormData();
+        Object.keys(f).forEach((key) => {
+            const val = f[key as keyof FormState];
+            if (val !== null && val !== undefined && val !== '') {
+                if (key === 'image' && val instanceof File) {
+                    formData.append('image', val);
+                } else if (key !== 'image' && key !== 'image_url' && key !== 'remove_image') {
+                    formData.append(key, String(val));
+                }
+            }
+        });
+
+        const res = await fetch(`${BASE}/agenda`, {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            body: formData,
+        });
         const data = await res.json();
         if (data.success) {
             showToast('Agenda berhasil ditambahkan.');
@@ -421,7 +513,24 @@ export default function AgendaPage() {
     };
 
     const handleEdit = async (f: FormState) => {
-        const res = await fetch(`${BASE}/agenda/${editModal!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) });
+        const formData = new FormData();
+        Object.keys(f).forEach((key) => {
+            const val = f[key as keyof FormState];
+            if (key === 'image' && val instanceof File) {
+                formData.append('image', val);
+            } else if (key === 'remove_image' && val === true) {
+                formData.append('remove_image', '1');
+            } else if (key !== 'image' && key !== 'image_url' && key !== 'remove_image' && val !== null && val !== undefined) {
+                formData.append(key, String(val));
+            }
+        });
+        formData.append('_method', 'PUT');
+
+        const res = await fetch(`${BASE}/agenda/${editModal!.id}`, {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            body: formData,
+        });
         const data = await res.json();
         if (data.success) {
             showToast('Agenda berhasil diperbarui.');
@@ -647,7 +756,7 @@ export default function AgendaPage() {
                                                 <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         className="w-7 h-7 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-blue-600 shadow-sm transition-colors hover:bg-blue-50 hover:border-blue-200"
-                                                        onClick={() => setEditModal({ ...emptyForm(a.event_date), ...a, id: a.id })}
+                                                        onClick={() => setEditModal({ ...emptyForm(a.event_date), ...a, image_url: a.image, image: null, id: a.id })}
                                                     >
                                                         <Pencil size={12} strokeWidth={2.5} />
                                                     </button>

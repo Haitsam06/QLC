@@ -1,6 +1,8 @@
-import { router } from '@inertiajs/react';
-import { useRef, useState } from 'react';
-import { Plus, CheckCircle2, Clock, XCircle, GraduationCap, Calendar, FileText, ExternalLink, Baby, Camera, Loader2 } from 'lucide-react';
+import { router, usePage } from '@inertiajs/react';
+import { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Plus, CheckCircle2, Clock, XCircle, GraduationCap, Calendar, FileText, ExternalLink, Baby, Camera, Loader2, X, MessageCircle } from 'lucide-react';
+import ImageCropperModal from '@/Components/ImageCropperModal';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -70,18 +72,68 @@ export default function AnakPage({ anakList }: Props) {
     const fotoInputRef = useRef<HTMLInputElement>(null);
     const [uploadingId, setUploadingId] = useState<string | null>(null);
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+    const [cropFile, setCropFile] = useState<File | null>(null);
+    const [isCropperOpen, setIsCropperOpen] = useState(false);
+
+    const { auth } = usePage().props as { auth: { user: { name: string } } };
+    const parentName = auth?.user?.name || 'Wali Murid';
+
+    const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+    const [adminWa, setAdminWa] = useState('6281285723834'); // Default fallback
+
+    useEffect(() => {
+        fetch('/api/info/profile')
+            .then((r) => r.json())
+            .then((j) => {
+                if (!j.success || !j.data) return;
+                const d = j.data;
+                if (d.whatsapp) {
+                    const digits = d.whatsapp.replace(/\D/g, '');
+                    setAdminWa(digits.startsWith('0') ? '62' + digits.slice(1) : digits || '6281285723834');
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     const handleFotoClick = (id: string) => {
         setUploadingId(id);
         fotoInputRef.current?.click();
     };
 
-    const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !uploadingId) return;
         e.target.value = '';
+
+        // Validasi format file
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            setToast({ msg: 'Format file tidak didukung. Harap pilih gambar JPG, PNG, atau WEBP.', ok: false });
+            setUploadingId(null);
+            setTimeout(() => setToast(null), 3000);
+            return;
+        }
+
+        // Validasi ukuran file (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            setToast({ msg: 'Ukuran file terlalu besar. Maksimal ukuran adalah 2MB.', ok: false });
+            setUploadingId(null);
+            setTimeout(() => setToast(null), 3000);
+            return;
+        }
+
+        setCropFile(file);
+        setIsCropperOpen(true);
+    };
+
+    const handleCropComplete = async (croppedFile: File) => {
+        setIsCropperOpen(false);
+        setCropFile(null);
+
+        if (!uploadingId) return;
+
         const fd = new FormData();
-        fd.append('foto', file);
+        fd.append('foto', croppedFile);
         try {
             const j = await (await fetch(`/api/parent/children/${uploadingId}/foto`, { method: 'POST', headers: { Accept: 'application/json' }, body: fd })).json();
             if (j.success) {
@@ -96,6 +148,12 @@ export default function AnakPage({ anakList }: Props) {
             setUploadingId(null);
             setTimeout(() => setToast(null), 3000);
         }
+    };
+
+    const handleCropClose = () => {
+        setIsCropperOpen(false);
+        setCropFile(null);
+        setUploadingId(null);
     };
 
     return (
@@ -158,7 +216,11 @@ export default function AnakPage({ anakList }: Props) {
                     {children.map((child) => {
                         const st = STATUS_CONFIG[child.enrollment_status] ?? STATUS_CONFIG.pending;
                         return (
-                            <div key={child.id} className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm transition-transform active:scale-[0.98] flex flex-col">
+                            <div 
+                                key={child.id} 
+                                onClick={() => setSelectedChildId(child.id)}
+                                className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm transition-transform active:scale-[0.98] flex flex-col cursor-pointer"
+                            >
                                 {/* Card Header (Gradient) */}
                                 <div className="bg-gradient-to-br from-[#1B6B3A] via-[#0d5c56] to-blue-700 p-5 flex items-center gap-4 relative overflow-hidden">
                                     {/* Decor */}
@@ -168,7 +230,10 @@ export default function AnakPage({ anakList }: Props) {
                                     <button
                                         className="relative w-14 h-14 rounded-[1.2rem] shrink-0 overflow-hidden border-2 border-white/30 shadow-md z-10 group/av focus:outline-none"
                                         title="Klik untuk ganti foto"
-                                        onClick={() => handleFotoClick(child.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleFotoClick(child.id);
+                                        }}
                                         disabled={uploadingId === child.id}
                                     >
                                         {child.foto
@@ -223,6 +288,7 @@ export default function AnakPage({ anakList }: Props) {
                                             href={child.bukti_pembayaran}
                                             target="_blank"
                                             rel="noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
                                             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-100 text-[11px] font-black text-blue-700 hover:bg-blue-100 transition-colors active:scale-95 focus:outline-none"
                                         >
                                             <FileText size={14} />
@@ -247,6 +313,25 @@ export default function AnakPage({ anakList }: Props) {
 
         <input ref={fotoInputRef} type="file" accept="image/jpg,image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoChange} />
 
+        {isCropperOpen && cropFile && (
+            <ImageCropperModal
+                file={cropFile}
+                onClose={handleCropClose}
+                onCrop={handleCropComplete}
+            />
+        )}
+
+        {selectedChildId && children.find(c => c.id === selectedChildId) && (
+            <DetailAnakModal
+                child={children.find(c => c.id === selectedChildId)!}
+                onClose={() => setSelectedChildId(null)}
+                onGantiFoto={() => handleFotoClick(selectedChildId)}
+                uploading={uploadingId === selectedChildId}
+                adminWa={adminWa}
+                parentName={parentName}
+            />
+        )}
+
         {toast && (
             <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-2.5 py-3 px-5 rounded-xl text-[13.5px] font-bold text-white shadow-xl animate-[fadeIn_0.2s_ease-out] ${toast.ok ? 'bg-teal-700' : 'bg-red-600'}`}>
                 {toast.ok ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
@@ -254,5 +339,129 @@ export default function AnakPage({ anakList }: Props) {
             </div>
         )}
         </>
+    );
+}
+
+const MONTH_NAMES = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
+function DetailAnakModal({
+    child,
+    onClose,
+    onGantiFoto,
+    uploading,
+    adminWa,
+    parentName,
+}: {
+    child: Child;
+    onClose: () => void;
+    onGantiFoto: () => void;
+    uploading: boolean;
+    adminWa: string;
+    parentName: string;
+}) {
+    const displayBirthDate = fmtDate(child.tanggal_lahir);
+    
+    const waMessage = `Halo Admin QLC, saya ${parentName}, orang tua dari ${child.nama}. Saya ingin mengajukan perubahan data anak saya. Mohon bantuannya.`;
+    const waLink = `https://wa.me/${adminWa}?text=${encodeURIComponent(waMessage)}`;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity animate-[fadeIn_0.2s_ease-out]" onClick={onClose} />
+
+            {/* Modal Box */}
+            <div className="relative w-full max-w-[460px] bg-white border border-slate-200 rounded-[28px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-[slideUp_0.3s_ease-out] z-10">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+                    <span className="text-[17px] font-black text-slate-900">Detail Informasi Anak</span>
+                    <button 
+                        onClick={onClose}
+                        className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors focus:outline-none cursor-pointer"
+                    >
+                        <X size={16} strokeWidth={2.5} />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col items-center gap-6">
+                    
+                    {/* Foto Profil & Tombol Ganti */}
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative w-24 h-24 rounded-[2rem] overflow-hidden border-4 border-white shadow-lg ring-4 ring-teal-50 shrink-0">
+                            {child.foto ? (
+                                <img src={child.foto} alt={child.nama} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-[#1B6B3A] to-[#0d5c56] flex items-center justify-center text-[36px] font-black text-white">
+                                    {inits(child.nama)}
+                                </div>
+                            )}
+                            {uploading && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                    <Loader2 size={24} className="text-white animate-spin" />
+                                </div>
+                            )}
+                        </div>
+                        
+                        <button
+                            onClick={onGantiFoto}
+                            disabled={uploading}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-[#1B6B3A]/10 text-slate-700 hover:text-[#1B6B3A] text-xs font-bold transition-colors active:scale-95 focus:outline-none cursor-pointer"
+                        >
+                            <Camera size={14} /> Ganti Foto Profil
+                        </button>
+                    </div>
+
+                    {/* Data Grid */}
+                    <div className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-5 flex flex-col gap-4">
+                        <div className="grid grid-cols-3 text-[13px] border-b border-slate-200/60 pb-2.5 last:border-0 last:pb-0">
+                            <span className="font-bold text-slate-400">Nama</span>
+                            <span className="col-span-2 font-black text-slate-800 text-right">{child.nama}</span>
+                        </div>
+                        <div className="grid grid-cols-3 text-[13px] border-b border-slate-200/60 pb-2.5 last:border-0 last:pb-0">
+                            <span className="font-bold text-slate-400">Program</span>
+                            <span className="col-span-2 font-black text-teal-700 text-right bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100/50 w-fit ml-auto">
+                                {child.program_name || '—'}
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-3 text-[13px] border-b border-slate-200/60 pb-2.5 last:border-0 last:pb-0">
+                            <span className="font-bold text-slate-400">Tempat Lahir</span>
+                            <span className="col-span-2 font-black text-slate-800 text-right">{child.tempat_lahir}</span>
+                        </div>
+                        <div className="grid grid-cols-3 text-[13px] border-b border-slate-200/60 pb-2.5 last:border-0 last:pb-0">
+                            <span className="font-bold text-slate-400">Tgl Lahir</span>
+                            <span className="col-span-2 font-black text-slate-800 text-right">{displayBirthDate}</span>
+                        </div>
+                        <div className="grid grid-cols-3 text-[13px] border-b border-slate-200/60 pb-2.5 last:border-0 last:pb-0">
+                            <span className="font-bold text-slate-400">Usia</span>
+                            <span className="col-span-2 font-black text-slate-800 text-right">{child.usia ? `${child.usia} tahun` : '—'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-5 bg-slate-50 border-t border-slate-100 flex flex-col gap-3 rounded-b-[28px]">
+                    <a 
+                        href={waLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="h-12 w-full rounded-2xl bg-[#25D366] hover:bg-[#20ba5a] text-white text-[14px] font-black flex items-center justify-center gap-2 shadow-md shadow-green-600/10 transition-colors focus:outline-none cursor-pointer"
+                    >
+                        <MessageCircle size={18} strokeWidth={2.5} /> Hubungi Admin (Ubah Data)
+                    </a>
+                    <button 
+                        onClick={onClose}
+                        className="h-11 w-full rounded-xl text-slate-500 bg-white border border-slate-200 text-xs font-bold hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                    >
+                        Tutup
+                    </button>
+                </div>
+
+            </div>
+        </div>,
+        document.body
     );
 }

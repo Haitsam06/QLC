@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, MapPin, Link as LinkIcon, X, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Link as LinkIcon, X, Calendar as CalendarIcon, Image as ImageIcon } from 'lucide-react';
 import Navbar from '../../Components/Navbar';
 
 /* ═══════════════════════════════════════════════════════════
@@ -15,6 +15,7 @@ type Agenda = {
     location: string;
     registration_link: string;
     visibility: 'umum' | 'mitra' | 'keduanya';
+    image?: string | null;
 };
 
 const BASE = '/api';
@@ -43,6 +44,11 @@ function AgendaDetailModal({ agenda, onClose }: { agenda: Agenda; onClose: () =>
                     </button>
                 </div>
                 <div className="p-6 space-y-4">
+                    {agenda.image && (
+                        <div className="border border-gray-100 rounded-xl overflow-hidden bg-gray-50 flex justify-center p-2">
+                            <img src={agenda.image} alt={agenda.title} className="w-full max-h-64 object-contain rounded-lg bg-white shadow-sm" />
+                        </div>
+                    )}
                     {agenda.location && (
                         <div className="flex items-start gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                             <MapPin size={16} className="text-[#D4A017] shrink-0 mt-0.5" />
@@ -241,8 +247,15 @@ export default function AgendaLanding() {
                                         activeDateEvents.map((a) => (
                                             <div key={a.id} onClick={() => setSelected(a)} className="p-4 bg-white border border-gray-200 rounded-xl hover:border-[#1B6B3A] transition-colors cursor-pointer group shadow-sm">
                                                 <h4 className="font-bold text-gray-900 text-sm group-hover:text-[#1B6B3A] transition-colors mb-2 leading-tight">{a.title}</h4>
-                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
-                                                    <MapPin size={12} className="text-[#D4A017]" /> {a.location || 'Lokasi TBA'}
+                                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
+                                                        <MapPin size={12} className="text-[#D4A017]" /> {a.location || 'Lokasi TBA'}
+                                                    </div>
+                                                    {a.image && (
+                                                        <span className="flex items-center gap-1 text-[9px] font-extrabold text-[#1B6B3A] bg-green-50 border border-green-200/50 px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0">
+                                                            <ImageIcon size={10} /> Poster
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))

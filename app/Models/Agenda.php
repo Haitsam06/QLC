@@ -17,6 +17,7 @@ class Agenda extends Model
         'location',
         'registration_link',
         'visibility',
+        'image',
     ];
 
     public function scopeForVisibility($query, string $visibility)

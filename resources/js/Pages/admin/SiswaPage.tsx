@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Head, router, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
 import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, GraduationCap, Loader2, AlertCircle, CheckCircle2, Calendar, Filter, ChevronDown, Users, FileText, ExternalLink, Clock, CheckCheck, XCircle, Check, Activity, Upload, Camera } from 'lucide-react';
+import ImageCropperModal from '@/Components/ImageCropperModal';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -481,6 +482,8 @@ export default function SiswaPage() {
 
     const fotoInputRef = useRef<HTMLInputElement>(null);
     const [uploadingFotoId, setUploadingFotoId] = useState<string | null>(null);
+    const [cropFile, setCropFile] = useState<File | null>(null);
+    const [isCropperOpen, setIsCropperOpen] = useState(false);
 
     const dSearch = useDebounce(search);
 
@@ -607,12 +610,38 @@ export default function SiswaPage() {
         fotoInputRef.current?.click();
     };
 
-    const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !uploadingFotoId) return;
         e.target.value = '';
+
+        // Validasi format file
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            setToast({ msg: 'Format file tidak didukung. Harap pilih gambar JPG, PNG, atau WEBP.', type: 'error' });
+            setUploadingFotoId(null);
+            return;
+        }
+
+        // Validasi ukuran file (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            setToast({ msg: 'Ukuran file terlalu besar. Maksimal ukuran adalah 2MB.', type: 'error' });
+            setUploadingFotoId(null);
+            return;
+        }
+
+        setCropFile(file);
+        setIsCropperOpen(true);
+    };
+
+    const handleCropComplete = async (croppedFile: File) => {
+        setIsCropperOpen(false);
+        setCropFile(null);
+
+        if (!uploadingFotoId) return;
+
         const fd = new FormData();
-        fd.append('foto', file);
+        fd.append('foto', croppedFile);
         try {
             const j = await (await fetch(`${API}/${uploadingFotoId}/foto`, { method: 'POST', headers: { Accept: 'application/json' }, body: fd })).json();
             if (j.success) {
@@ -626,6 +655,12 @@ export default function SiswaPage() {
         } finally {
             setUploadingFotoId(null);
         }
+    };
+
+    const handleCropClose = () => {
+        setIsCropperOpen(false);
+        setCropFile(null);
+        setUploadingFotoId(null);
     };
 
     const pgs = () => {
@@ -961,6 +996,14 @@ export default function SiswaPage() {
             {modal === 'add' && <FormModal mode="add" init={EMPTY_FORM} student={null} parents={parents} programs={programs} onClose={() => setModal(null)} onSave={post} />}
             {modal === 'edit' && sel && <FormModal mode="edit" init={editInit} student={sel} parents={parents} programs={programs} onClose={() => setModal(null)} onSave={put} />}
             {modal === 'delete' && sel && <DeleteModal student={sel} onClose={() => setModal(null)} onConfirm={del} />}
+
+            {isCropperOpen && cropFile && (
+                <ImageCropperModal
+                    file={cropFile}
+                    onClose={handleCropClose}
+                    onCrop={handleCropComplete}
+                />
+            )}
 
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 

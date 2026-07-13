@@ -205,10 +205,10 @@ class StudentController extends Controller
         ProgressReport::where('student_id', $studentId)->delete();
 
         if (!empty($student->bukti_pembayaran)) {
-            $parsed = parse_url($student->bukti_pembayaran, PHP_URL_PATH);
-            if ($parsed) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
-            }
+            $this->deleteStorageFile($student->bukti_pembayaran);
+        }
+        if (!empty($student->foto)) {
+            $this->deleteStorageFile($student->foto);
         }
 
         $student->delete();
@@ -239,17 +239,14 @@ class StudentController extends Controller
         }
 
         if (!empty($student->foto)) {
-            $parsed = parse_url($student->foto, PHP_URL_PATH);
-            if ($parsed) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
-            }
+            $this->deleteStorageFile($student->foto);
         }
 
-        $path    = $request->file('foto')->store('students/foto', 'public');
-        $fotoUrl = url('storage/' . $path);
+        $path    = $request->file('foto')->store('students/foto', config('filesystems.default'));
+        $fotoUrl = $path;
         $student->update(['foto' => $fotoUrl]);
 
-        return response()->json(['success' => true, 'message' => 'Foto berhasil diperbarui.', 'foto' => $fotoUrl]);
+        return response()->json(['success' => true, 'message' => 'Foto berhasil diperbarui.', 'foto' => $this->getStorageUrl($fotoUrl)]);
     }
 
     public function parentUploadFoto(Request $request, string $studentId)
@@ -272,17 +269,14 @@ class StudentController extends Controller
         }
 
         if (!empty($student->foto)) {
-            $parsed = parse_url($student->foto, PHP_URL_PATH);
-            if ($parsed) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $parsed));
-            }
+            $this->deleteStorageFile($student->foto);
         }
 
-        $path    = $request->file('foto')->store('students/foto', 'public');
-        $fotoUrl = url('storage/' . $path);
+        $path    = $request->file('foto')->store('students/foto', config('filesystems.default'));
+        $fotoUrl = $path;
         $student->update(['foto' => $fotoUrl]);
 
-        return response()->json(['success' => true, 'message' => 'Foto berhasil diperbarui.', 'foto' => $fotoUrl]);
+        return response()->json(['success' => true, 'message' => 'Foto berhasil diperbarui.', 'foto' => $this->getStorageUrl($fotoUrl)]);
     }
 
     public function options(Request $request)
@@ -328,8 +322,8 @@ class StudentController extends Controller
             'tempat_lahir'      => $doc->tempat_lahir,
             'tanggal_lahir'     => $doc->tanggal_lahir,
             'enrollment_status' => $doc->enrollment_status,
-            'bukti_pembayaran'  => $doc->bukti_pembayaran ?? null,
-            'foto'              => $doc->foto ?? null,
+            'bukti_pembayaran'  => $this->getStorageUrl($doc->bukti_pembayaran ?? null),
+            'foto'              => $this->getStorageUrl($doc->foto ?? null),
             'created_at'        => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }

@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
 import {
     ChevronLeft, ChevronRight, Clock, MapPin, Link as LinkIcon,
-    Calendar, X, Eye, Plus, Pencil, Trash2, Loader2, CheckCircle2,
+    Calendar, X, Eye, Plus, Pencil, Trash2, Loader2, CheckCircle2, Upload,
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
@@ -20,6 +20,7 @@ type Agenda = {
     location:          string;
     registration_link: string;
     visibility:        Visibility;
+    image:             string | null;
 };
 
 interface FormState {
@@ -29,6 +30,9 @@ interface FormState {
     location:          string;
     registration_link: string;
     visibility:        Visibility;
+    image?:            File | null;
+    image_url?:        string | null;
+    remove_image?:     boolean;
 }
 
 const BASE = '/api';
@@ -50,6 +54,7 @@ const formatDisplay = (s: string) => {
 const emptyForm = (date = ''): FormState => ({
     title: '', event_date: date, description: '',
     location: '', registration_link: '', visibility: 'umum',
+    image: null, image_url: null, remove_image: false,
 });
 
 /* ── Visibility config ── */
@@ -93,6 +98,7 @@ function AgendaModal({ init, onClose, onSave }: {
     const [e, setE]       = useState<Partial<Record<keyof FormState, string>>>({});
     const [busy, setBusy] = useState(false);
     const isEdit = Boolean(init.id);
+    const fileInputRef    = useRef<HTMLInputElement>(null);
 
     const upd = (k: keyof FormState) =>
         (ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -210,6 +216,73 @@ function AgendaModal({ init, onClose, onSave }: {
                             onChange={upd('registration_link')}
                         />
                         {e.registration_link && <span className="text-xs text-red-500 font-semibold">{e.registration_link}</span>}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[10.5px] font-bold uppercase tracking-wider text-gray-400">
+                            Poster / Flyer Agenda <span className="font-normal normal-case text-gray-400">(Maks 2MB, JPG/PNG/WEBP)</span>
+                        </label>
+                        
+                        {f.image_url || f.image ? (
+                            <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col items-center p-3 gap-1.5">
+                                <img
+                                    src={f.image ? URL.createObjectURL(f.image) : f.image_url || ''}
+                                    alt="Preview poster"
+                                    className="max-h-40 object-contain rounded-lg shadow-sm border border-gray-100 bg-white"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setF(p => ({
+                                            ...p,
+                                            image: null,
+                                            image_url: null,
+                                            remove_image: isEdit ? true : false
+                                        }));
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-100 text-xs font-bold hover:bg-red-100 hover:text-red-700 transition-colors flex items-center gap-1 cursor-pointer focus:outline-none"
+                                >
+                                    <X size={12} /> Hapus Poster
+                                </button>
+                            </div>
+                        ) : (
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="border-2 border-dashed border-gray-200 hover:border-blue-400 rounded-xl p-4 text-center cursor-pointer transition-colors bg-gray-50 hover:bg-gray-100/50"
+                            >
+                                <Upload size={18} className="text-gray-400 mx-auto mb-1" />
+                                <p className="text-xs font-bold text-gray-600">Klik untuk unggah poster</p>
+                                <p className="text-[9.5px] text-gray-400 mt-0.5">JPG, JPEG, PNG, WEBP (Maks 2MB)</p>
+                            </div>
+                        )}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpg,image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                e.target.value = '';
+
+                                // Validasi format file
+                                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                                if (!validTypes.includes(file.type)) {
+                                    setE(err => ({ ...err, image: 'Format gambar tidak didukung.' }));
+                                    return;
+                                }
+
+                                // Validasi ukuran file (2MB)
+                                if (file.size > 2 * 1024 * 1024) {
+                                    setE(err => ({ ...err, image: 'Ukuran file maksimal 2MB.' }));
+                                    return;
+                                }
+
+                                setF(p => ({ ...p, image: file, remove_image: false }));
+                                setE(err => ({ ...err, image: '' }));
+                            }}
+                        />
+                        {e.image && <span className="text-xs text-red-500 font-semibold">{e.image}</span>}
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -336,6 +409,11 @@ function DetailModal({ agenda, canEdit, onClose, onEdit, onDelete }: {
                     )}
                     {agenda.description && (
                         <p className="text-sm text-gray-600 leading-relaxed">{agenda.description}</p>
+                    )}
+                    {agenda.image && (
+                        <div className="mt-2 border border-gray-100 rounded-xl overflow-hidden bg-slate-50 flex justify-center p-2">
+                            <img src={agenda.image} alt={agenda.title} className="max-h-60 object-contain rounded-lg bg-white" />
+                        </div>
                     )}
                     {agenda.registration_link && (
                         <a href={agenda.registration_link} target="_blank" rel="noreferrer"
@@ -471,10 +549,22 @@ export default function JadwalPage() {
         myUserId !== null && a.user_id !== null && a.user_id === myUserId;
 
     const handleAdd = async (f: FormState) => {
+        const formData = new FormData();
+        Object.keys(f).forEach((key) => {
+            const val = f[key as keyof FormState];
+            if (val !== null && val !== undefined && val !== '') {
+                if (key === 'image' && val instanceof File) {
+                    formData.append('image', val);
+                } else if (key !== 'image' && key !== 'image_url' && key !== 'remove_image') {
+                    formData.append(key, String(val));
+                }
+            }
+        });
+
         const res  = await fetch(`${BASE}/agenda`, {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(f),
+            headers: { Accept: 'application/json' },
+            body:    formData,
         });
         const data = await res.json();
         if (data.success) {
@@ -487,10 +577,23 @@ export default function JadwalPage() {
     };
 
     const handleEdit = async (f: FormState) => {
+        const formData = new FormData();
+        Object.keys(f).forEach((key) => {
+            const val = f[key as keyof FormState];
+            if (key === 'image' && val instanceof File) {
+                formData.append('image', val);
+            } else if (key === 'remove_image' && val === true) {
+                formData.append('remove_image', '1');
+            } else if (key !== 'image' && key !== 'image_url' && key !== 'remove_image' && val !== null && val !== undefined) {
+                formData.append(key, String(val));
+            }
+        });
+        formData.append('_method', 'PUT');
+
         const res  = await fetch(`${BASE}/agenda/${editModal!.id}`, {
-            method:  'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(f),
+            method:  'POST',
+            headers: { Accept: 'application/json' },
+            body:    formData,
         });
         const data = await res.json();
         if (data.success) {
@@ -518,6 +621,7 @@ export default function JadwalPage() {
         id: a.id, title: a.title, event_date: a.event_date,
         description: a.description, location: a.location,
         registration_link: a.registration_link, visibility: a.visibility,
+        image_url: a.image, image: null, remove_image: false,
     });
 
     return (

@@ -81,4 +81,21 @@ class User extends Authenticatable
     {
         return $this->getRoleName() === 'mitra';
     }
+
+    /**
+     * Get the user's profile photo URL dynamically.
+     *
+     * @param string|null $value
+     * @return string|null
+     */
+    public function getPhotoAttribute(?string $value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            return $value;
+        }
+        return \Illuminate\Support\Facades\Storage::url($value);
+    }
 }

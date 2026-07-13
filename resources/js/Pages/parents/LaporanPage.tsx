@@ -10,6 +10,7 @@ interface Child {
     nama: string;
     program_name: string;
     enrollment_status: 'active' | 'pending' | 'inactive';
+    foto?: string | null;
 }
 
 interface ProgressReport {
@@ -115,8 +116,14 @@ export default function LaporanPage() {
                                 onClick={() => setSelectedChild(child.id)}
                                 className={`flex items-center gap-3 px-4 py-2.5 rounded-[1.2rem] whitespace-nowrap shrink-0 transition-all active:scale-95 focus:outline-none border ${isActive ? 'bg-white border-slate-200 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-100'} ${isLocked ? 'opacity-70' : ''}`}
                             >
-                                <div className={`w-10 h-10 rounded-[0.8rem] flex items-center justify-center text-[15px] font-black transition-all ${isActive ? 'bg-gradient-to-br from-[#1B6B3A] to-blue-600 text-white shadow-md' : 'bg-teal-50 text-teal-700'}`}>
-                                    {child.nama.charAt(0).toUpperCase()}
+                                <div className="w-10 h-10 rounded-[0.8rem] shrink-0 overflow-hidden border border-slate-100 flex items-center justify-center text-[15px] font-black transition-all">
+                                    {child.foto ? (
+                                        <img src={child.foto} alt={child.nama} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className={`w-full h-full flex items-center justify-center ${isActive ? 'bg-gradient-to-br from-[#1B6B3A] to-blue-600 text-white shadow-md' : 'bg-teal-50 text-teal-700'}`}>
+                                            {child.nama.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex flex-col items-start text-left leading-tight">
                                     <span className={`text-[13.5px] transition-colors ${isActive ? 'font-black text-slate-900' : 'font-bold text-slate-600'}`}>{child.nama}</span>

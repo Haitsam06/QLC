@@ -211,14 +211,11 @@ class ParentController extends Controller
         $photoUrl = $user->photo ?? null;
 
         if ($request->hasFile('photo')) {
-            if ($photoUrl && str_contains($photoUrl, '/storage/')) {
-                $parsedPath = parse_url($photoUrl, PHP_URL_PATH);
-                if ($parsedPath) {
-                    Storage::disk('public')->delete(str_replace('/storage/', '', $parsedPath));
-                }
+            if ($photoUrl) {
+                $this->deleteStorageFile($photoUrl);
             }
-            $path     = $request->file('photo')->store('profile', 'public');
-            $photoUrl = url('storage/' . $path);
+            $path     = $request->file('photo')->store('profile', config('filesystems.default'));
+            $photoUrl = $path;
         }
 
         $user->update([

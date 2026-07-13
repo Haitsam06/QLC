@@ -17,6 +17,7 @@ class AgendaController extends Controller
             'location'          => 'nullable|string|max:300',
             'registration_link' => 'nullable|url|max:500',
             'visibility'        => 'required|in:umum,mitra,keduanya',
+            'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }
 
@@ -63,6 +64,11 @@ class AgendaController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
+        $imageUrl = null;
+        if ($request->hasFile('image')) {
+            $imageUrl = $request->file('image')->store('agenda/images', config('filesystems.default'));
+        }
+
         $agenda = Agenda::create([
             'user_id'           => auth()->check() ? (string) auth()->user()->_id : null,
             'title'             => $request->title,
@@ -71,6 +77,7 @@ class AgendaController extends Controller
             'location'          => $request->location ?? '',
             'registration_link' => $request->registration_link ?? '',
             'visibility'        => $request->visibility,
+            'image'             => $imageUrl,
         ]);
 
         return response()->json([
@@ -99,14 +106,28 @@ class AgendaController extends Controller
             return response()->json(['success' => false, 'message' => 'Anda tidak berhak mengubah agenda ini.'], 403);
         }
 
-        $agenda->update([
+        $updateData = [
             'title'             => $request->title,
             'event_date'        => $request->event_date,
             'description'       => $request->description ?? '',
             'location'          => $request->location ?? '',
             'registration_link' => $request->registration_link ?? '',
             'visibility'        => $request->visibility,
-        ]);
+        ];
+
+        if ($request->hasFile('image')) {
+            if (!empty($agenda->image)) {
+                $this->deleteStorageFile($agenda->image);
+            }
+            $updateData['image'] = $request->file('image')->store('agenda/images', config('filesystems.default'));
+        } elseif ($request->input('remove_image') === '1') {
+            if (!empty($agenda->image)) {
+                $this->deleteStorageFile($agenda->image);
+            }
+            $updateData['image'] = null;
+        }
+
+        $agenda->update($updateData);
 
         return response()->json([
             'success' => true,
@@ -128,6 +149,9 @@ class AgendaController extends Controller
             return response()->json(['success' => false, 'message' => 'Anda tidak berhak menghapus agenda ini.'], 403);
         }
 
+        if (!empty($agenda->image)) {
+            $this->deleteStorageFile($agenda->image);
+        }
         $agenda->delete();
 
         return response()->json(['success' => true, 'message' => 'Agenda berhasil dihapus.']);
@@ -144,6 +168,7 @@ class AgendaController extends Controller
             'location'          => $doc->location ?? '',
             'registration_link' => $doc->registration_link ?? '',
             'visibility'        => $doc->visibility,
+            'image'             => $this->getStorageUrl($doc->image ?? null),
             'created_at'        => $doc->created_at?->format('Y-m-d H:i:s'),
         ];
     }
