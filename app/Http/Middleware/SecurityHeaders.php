@@ -33,12 +33,12 @@ class SecurityHeaders
         if ($isProduction) {
             $response->headers->set(
                 'Content-Security-Policy',
-                "default-src 'self'; " .
-                "script-src 'self' 'nonce-{$nonce}'; " .
-                "style-src 'self' 'unsafe-inline' https://fonts.bunny.net; " .
+                "default-src 'self' https:; " .
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " .
+                "style-src 'self' 'unsafe-inline' https:; " .
                 "img-src 'self' data: blob: https:; " .
-                "font-src 'self' data: https://fonts.bunny.net; " .
-                "connect-src 'self'; " .
+                "font-src 'self' data: https:; " .
+                "connect-src 'self' https:; " .
                 "object-src 'none'; " .
                 "base-uri 'self';"
             );
