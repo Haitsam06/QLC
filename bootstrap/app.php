@@ -30,5 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Throwable $e) {
+            return response("ORIGINAL ERROR:\n" . $e->getMessage() . "\nFile: " . $e->getFile() . ":" . $e->getLine() . "\n\nTrace:\n" . $e->getTraceAsString(), 500)
+                ->header('Content-Type', 'text/plain');
+        });
     })->create();
