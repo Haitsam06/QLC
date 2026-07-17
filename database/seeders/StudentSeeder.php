@@ -13,11 +13,11 @@ class StudentSeeder extends Seeder
     {
         Student::truncate();
 
-        $parents  = Parents::orderBy('parent_name')->get();
-        $programs = Program::orderBy('name')->get();
+        $parents = Parents::orderBy('parent_name')->get();
+        $program = Program::where('name', 'QL-SCHOOL')->first();
 
-        if ($parents->isEmpty() || $programs->isEmpty()) {
-            $this->command->warn('StudentSeeder: data parent atau program belum ada, skip.');
+        if ($parents->isEmpty() || !$program) {
+            $this->command->warn('StudentSeeder: data parent atau program QL-SCHOOL belum ada, skip.');
             return;
         }
 
@@ -28,8 +28,7 @@ class StudentSeeder extends Seeder
                 'tanggal_lahir'     => '2015-03-12',
                 'usia'              => 10,
                 'enrollment_status' => 'active',
-                'parent_index'      => 0,
-                'program_index'     => 0,
+                'parent_email'      => 'wali1@qlc.id',
             ],
             [
                 'nama'              => 'Nadia Putri Salsabila',
@@ -37,8 +36,7 @@ class StudentSeeder extends Seeder
                 'tanggal_lahir'     => '2016-07-25',
                 'usia'              => 9,
                 'enrollment_status' => 'active',
-                'parent_index'      => 1,
-                'program_index'     => 3,
+                'parent_email'      => 'wali2@qlc.id',
             ],
             [
                 'nama'              => 'Muhammad Hafiz Firdaus',
@@ -46,17 +44,15 @@ class StudentSeeder extends Seeder
                 'tanggal_lahir'     => '2014-11-08',
                 'usia'              => 11,
                 'enrollment_status' => 'active',
-                'parent_index'      => 2,
-                'program_index'     => 0,
+                'parent_email'      => 'wali3@qlc.id',
             ],
             [
                 'nama'              => 'Fatimah Az-Zahra',
                 'tempat_lahir'      => 'Bogor',
                 'tanggal_lahir'     => '2016-02-14',
                 'usia'              => 9,
-                'enrollment_status' => 'pending',
-                'parent_index'      => 3,
-                'program_index'     => 4,
+                'enrollment_status' => 'active',
+                'parent_email'      => 'wali4@qlc.id',
             ],
             [
                 'nama'              => 'Umar Abdillah Hakim',
@@ -64,14 +60,46 @@ class StudentSeeder extends Seeder
                 'tanggal_lahir'     => '2015-09-30',
                 'usia'              => 10,
                 'enrollment_status' => 'active',
-                'parent_index'      => 4,
-                'program_index'     => 0,
+                'parent_email'      => 'wali5@qlc.id',
+            ],
+            [
+                'nama'              => 'Aisyah Humaira',
+                'tempat_lahir'      => 'Jakarta',
+                'tanggal_lahir'     => '2016-12-05',
+                'usia'              => 9,
+                'enrollment_status' => 'active',
+                'parent_email'      => 'wali6@qlc.id',
+            ],
+            [
+                'nama'              => 'Ali Zainal Abidin',
+                'tempat_lahir'      => 'Bekasi',
+                'tanggal_lahir'     => '2015-05-18',
+                'usia'              => 11,
+                'enrollment_status' => 'active',
+                'parent_email'      => 'wali7@qlc.id',
+            ],
+            [
+                'nama'              => 'Khadijah Al-Kubra',
+                'tempat_lahir'      => 'Depok',
+                'tanggal_lahir'     => '2014-10-22',
+                'usia'              => 11,
+                'enrollment_status' => 'active',
+                'parent_email'      => 'wali8@qlc.id',
             ],
         ];
 
+        $users = \App\Models\User::where('role_id', 'RL03')->get()->keyBy('email');
+
         foreach ($data as $s) {
-            $parent  = $parents[$s['parent_index']] ?? $parents->first();
-            $program = $programs[$s['program_index']] ?? $programs->first();
+            $user = $users[$s['parent_email']] ?? null;
+            if (!$user) {
+                continue;
+            }
+            
+            $parent = $parents->where('user_id', (string) $user->_id)->first();
+            if (!$parent) {
+                continue;
+            }
 
             Student::create([
                 'parent_id'         => (string) $parent->user_id,
@@ -85,5 +113,7 @@ class StudentSeeder extends Seeder
                 'bukti_pembayaran'  => null,
             ]);
         }
+
+        $this->command->info('StudentSeeder: Data siswa program QL-SCHOOL berhasil di-seed.');
     }
 }

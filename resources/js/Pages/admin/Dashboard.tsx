@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
 import axios from 'axios';
-import { LayoutDashboard, BookOpen, Users, CalendarDays, Bell, Settings, LogOut, ChevronLeft, ChevronRight, GraduationCap, CheckCircle2, Clock, TrendingUp, Award, Star, Menu, FileText, ShieldUser, Info, Handshake, ArrowUpRight, ArrowRight, UserPlus, Search, Loader2, CreditCard } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { LayoutDashboard, BookOpen, Users, CalendarDays, Bell, Settings, LogOut, ChevronLeft, ChevronRight, GraduationCap, CheckCircle2, Clock, TrendingUp, Award, Star, Menu, FileText, ShieldUser, Info, Handshake, ArrowUpRight, ArrowRight, UserPlus, Search, Loader2, CreditCard, X, Lock, Eye, EyeOff } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 import GuruPage from './GuruPage';
@@ -62,6 +63,111 @@ const QUAL_LABEL: Record<string, string> = {
 };
 
 /* ═══════════════════════════════════════════════
+   PASSWORD MODAL COMPONENT
+   ═══════════════════════════════════════════════ */
+function PasswordModal({
+    isOpen,
+    title,
+    description = "Masukkan password admin untuk melanjutkan tindakan ini.",
+    onClose,
+    onSubmit
+}: {
+    isOpen: boolean;
+    title: string;
+    description?: string;
+    onClose: () => void;
+    onSubmit: (password: string, setError: (msg: string | null) => void) => void;
+}) {
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    if (!isOpen) return null;
+
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!password) {
+            setError('Password wajib diisi.');
+            return;
+        }
+        setError(null);
+        onSubmit(password, setError);
+    };
+
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+            <div className="w-full max-w-[420px] bg-white border border-slate-200 rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                            <Lock size={16} />
+                        </div>
+                        <h3 className="text-[16px] font-extrabold text-slate-900 leading-tight">{title}</h3>
+                    </div>
+                    <button
+                        type="button"
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 transition-colors hover:bg-red-100 hover:text-red-600 focus:outline-none border-none cursor-pointer"
+                        onClick={onClose}
+                    >
+                        <X size={16} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleFormSubmit} className="flex-1 p-6 flex flex-col gap-4">
+                    <p className="text-[13px] text-slate-500 font-semibold leading-relaxed">
+                        {description}
+                    </p>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Password Admin</label>
+                        <div className="relative flex items-center h-11 px-4 bg-white border border-slate-300 rounded-xl transition-all focus-within:ring-2 focus-within:ring-sky-500/15 focus-within:border-sky-500">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="flex-1 text-[13.5px] font-medium text-slate-900 bg-transparent border-none outline-none focus:ring-0 w-full placeholder:text-slate-400"
+                                placeholder="Masukkan password"
+                                autoFocus
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer border-none bg-transparent"
+                            >
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="text-[12.5px] text-red-600 font-bold flex items-center gap-1.5 mt-1 bg-red-50 p-2.5 rounded-xl border border-red-100">
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2.5 mt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 h-11 px-4 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none cursor-pointer"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 h-11 px-4 rounded-xl bg-teal-700 text-white text-[13px] font-bold hover:bg-teal-800 transition-colors focus:outline-none shadow-md shadow-teal-900/10 border-none cursor-pointer"
+                        >
+                            Konfirmasi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+/* ═══════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════ */
 export default function DashboardAdmin() {
@@ -111,6 +217,26 @@ export default function DashboardAdmin() {
             .catch(console.error)
             .finally(() => setLoading(false));
     }, [active]);
+    const [exportLoading, setExportLoading] = useState(false);
+    const [pwdModalOpen, setPwdModalOpen] = useState(false);
+
+    const handleExportExcel = () => {
+        setPwdModalOpen(true);
+    };
+
+    const handleConfirmExport = async (password: string, setError: (msg: string | null) => void) => {
+        try {
+            // First check credentials using a safe Axios call
+            await axios.get(`/admin/dashboard/export-excel?password=${encodeURIComponent(password)}`, { responseType: 'blob' });
+            
+            // If successful, start export download and close the modal
+            window.location.href = `/admin/dashboard/export-excel?password=${encodeURIComponent(password)}`;
+            setPwdModalOpen(false);
+        } catch (error: any) {
+            console.error(error);
+            setError('Password admin salah atau sesi Anda habis.');
+        }
+    };
 
     const NAV = [
         { id: 'dashboard', l: 'Beranda', i: LayoutDashboard, badge: 0 },
@@ -244,8 +370,22 @@ export default function DashboardAdmin() {
                                         <div className="text-xl md:text-2xl font-extrabold mb-1 tracking-tight">Selamat Datang, {adminName.split(' ')[0]} 👋</div>
                                         <div className="text-[13px] text-white/80 font-medium">Berikut adalah ringkasan operasional QLC hari ini.</div>
                                     </div>
-                                    <div className="bg-black/15 py-1.5 px-3.5 rounded-lg text-[12.5px] font-bold flex items-center gap-2 border border-white/10 relative z-10 whitespace-nowrap">
-                                        <CalendarDays size={16} /> {today}
+                                    <div className="flex items-center gap-3 relative z-10 whitespace-nowrap flex-wrap sm:flex-nowrap">
+                                        <button
+                                            onClick={handleExportExcel}
+                                            disabled={exportLoading}
+                                            className="bg-green-600 hover:bg-green-500 active:scale-95 text-white py-1.5 px-4 rounded-lg text-[12.5px] font-bold flex items-center gap-2 border border-green-500/30 transition-all disabled:opacity-60 cursor-pointer shadow-md"
+                                        >
+                                            {exportLoading ? (
+                                                <Loader2 size={16} className="animate-spin" />
+                                            ) : (
+                                                <FileText size={16} />
+                                            )}
+                                            <span>{exportLoading ? 'Mengekspor...' : 'Ekspor Laporan Excel'}</span>
+                                        </button>
+                                        <div className="bg-black/15 py-1.5 px-3.5 rounded-lg text-[12.5px] font-bold flex items-center gap-2 border border-white/10">
+                                            <CalendarDays size={16} /> {today}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -453,6 +593,13 @@ export default function DashboardAdmin() {
                     </div>
                 </main>
             </div>
+            
+            <PasswordModal
+                isOpen={pwdModalOpen}
+                title="Ekspor Laporan Excel"
+                onClose={() => setPwdModalOpen(false)}
+                onSubmit={handleConfirmExport}
+            />
         </>
     );
 }

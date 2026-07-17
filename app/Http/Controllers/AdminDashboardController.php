@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Models\Teacher;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -153,6 +154,21 @@ class AdminDashboardController extends Controller
             ->values();
 
         return response()->json($data);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $password = $request->query('password');
+
+        $user = auth()->user();
+        if (empty($password) || !$user || !\Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+            abort(403, 'Password admin salah atau sesi habis.');
+        }
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\QlcMultiSheetExport, 
+            'qlc_laporan_' . date('Ymd_His') . '.xlsx'
+        );
     }
 
     private function classifyAgenda(Carbon $date): string

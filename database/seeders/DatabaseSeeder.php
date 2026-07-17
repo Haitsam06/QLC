@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             AgendaSeeder::class,
             ProgressReportSeeder::class,
             MitraReportSeeder::class,
+            SppPaymentSeeder::class,
         ]);
     }
 }

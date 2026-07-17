@@ -111,6 +111,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::get('top-reports',      [AdminDashboardController::class, 'topReports']);
     });
 
+    // ── Admin Database Backup & Restore ───────────────────────────
+    Route::get('database/backup',  [\App\Http\Controllers\Admin\DatabaseController::class, 'backupDatabase']);
+    Route::post('database/restore', [\App\Http\Controllers\Admin\DatabaseController::class, 'restoreDatabase']);
+
     // ── Admin Mitra Reports ────────────────────────────────────────
     Route::prefix('admin/mitra')->group(function () {
         Route::get('list',                      [MitraReportController::class, 'partners']);

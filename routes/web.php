@@ -168,6 +168,7 @@ Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/dashboard/export-excel', [AdminDashboardController::class, 'exportExcel'])->name('admin.dashboard.export-excel');
     });
 
 // ── Teacher: satu route dashboard, semua tab di-handle React ──

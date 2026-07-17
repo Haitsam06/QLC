@@ -1,7 +1,8 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
 import { createPortal } from 'react-dom';
-import { User, Lock, Bell, CheckCircle2, AlertCircle, Loader2, Eye, EyeOff, Save, ShieldCheck, Mail, Check } from 'lucide-react';
+import { User, Lock, Bell, CheckCircle2, AlertCircle, Loader2, Eye, EyeOff, Save, ShieldCheck, Mail, Check, Database, Download, Upload, AlertTriangle, X } from 'lucide-react';
+import axios from 'axios';
 
 /* ═══════════════════════════════════════════════════════════
    TOAST COMPONENT
@@ -24,14 +25,120 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error';
 }
 
 /* ═══════════════════════════════════════════════════════════
+   PASSWORD MODAL COMPONENT
+   ═══════════════════════════════════════════════════════════ */
+function PasswordModal({
+    isOpen,
+    title,
+    description = "Masukkan password admin untuk melanjutkan tindakan ini.",
+    onClose,
+    onSubmit
+}: {
+    isOpen: boolean;
+    title: string;
+    description?: string;
+    onClose: () => void;
+    onSubmit: (password: string, setError: (msg: string | null) => void) => void;
+}) {
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    if (!isOpen) return null;
+
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!password) {
+            setError('Password wajib diisi.');
+            return;
+        }
+        setError(null);
+        onSubmit(password, setError);
+    };
+
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+            <div className="w-full max-w-[420px] bg-white border border-slate-200 rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                            <Lock size={16} />
+                        </div>
+                        <h3 className="text-[16px] font-extrabold text-slate-900 leading-tight">{title}</h3>
+                    </div>
+                    <button
+                        type="button"
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 transition-colors hover:bg-red-100 hover:text-red-600 focus:outline-none border-none cursor-pointer"
+                        onClick={onClose}
+                    >
+                        <X size={16} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleFormSubmit} className="flex-1 p-6 flex flex-col gap-4">
+                    <p className={`text-[12.5px] font-bold leading-relaxed ${description.includes('PERINGATAN') ? 'text-rose-700 bg-rose-50/50 p-4 rounded-2xl border border-rose-100' : 'text-slate-500'}`}>
+                        {description}
+                    </p>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Password Admin</label>
+                        <div className="relative flex items-center h-11 px-4 bg-white border border-slate-300 rounded-xl transition-all focus-within:ring-2 focus-within:ring-sky-500/15 focus-within:border-sky-500">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="flex-1 text-[13.5px] font-medium text-slate-900 bg-transparent border-none outline-none focus:ring-0 w-full placeholder:text-slate-400"
+                                placeholder="Masukkan password"
+                                autoFocus
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer border-none bg-transparent"
+                            >
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="text-[12.5px] text-red-600 font-bold flex items-center gap-1.5 mt-1 bg-red-50 p-2.5 rounded-xl border border-red-100">
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2.5 mt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 h-11 px-4 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none cursor-pointer"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 h-11 px-4 rounded-xl bg-teal-700 text-white text-[13px] font-bold hover:bg-teal-800 transition-colors focus:outline-none shadow-md shadow-teal-900/10 border-none cursor-pointer"
+                        >
+                            Konfirmasi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════
    MAIN PAGE
-═══════════════════════════════════════════════════════════ */
-type TabId = 'account' | 'security' | 'preferences';
+   ═══════════════════════════════════════════════════════════ */
+type TabId = 'account' | 'security' | 'preferences' | 'database';
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: 'account', label: 'Profil Akun', icon: <User size={16} /> },
     { id: 'security', label: 'Keamanan', icon: <ShieldCheck size={16} /> },
     { id: 'preferences', label: 'Notifikasi', icon: <Bell size={16} /> },
+    { id: 'database', label: 'Backup & Restore', icon: <Database size={16} /> },
 ];
 
 export default function PengaturanPage() {
@@ -95,6 +202,76 @@ export default function PengaturanPage() {
     const [prefEmail, setPrefEmail] = useState(true);
     const [prefWA, setPrefWA] = useState(false);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+    /* ── Backup & Restore Database ── */
+    const [backupLoading, setBackupLoading] = useState(false);
+    const [restoreFile, setRestoreFile] = useState<File | null>(null);
+    const [restoreLoading, setRestoreLoading] = useState(false);
+
+    // Modal state for Backup/Restore
+    const [pwdModalOpen, setPwdModalOpen] = useState(false);
+    const [pwdModalType, setPwdModalType] = useState<'backup' | 'restore' | null>(null);
+
+    const handleBackup = () => {
+        setPwdModalType('backup');
+        setPwdModalOpen(true);
+    };
+
+    const handleRestoreClick = () => {
+        if (!restoreFile) return;
+        setPwdModalType('restore');
+        setPwdModalOpen(true);
+    };
+
+    const handleConfirmBackup = async (password: string, setError: (msg: string | null) => void) => {
+        setBackupLoading(true);
+        try {
+            // First check credentials using a safe Axios GET call
+            await axios.get(`/api/database/backup?password=${encodeURIComponent(password)}`);
+            
+            // If successful, trigger native browser download
+            window.location.href = `/api/database/backup?password=${encodeURIComponent(password)}`;
+            setToastMsg({ msg: 'Database backup berhasil diunduh.', type: 'success' });
+            setPwdModalOpen(false);
+        } catch (error: any) {
+            console.error(error);
+            let errMsg = 'Gagal mengunduh backup database. Pastikan password Anda benar.';
+            if (error.response?.data?.message) {
+                errMsg = error.response.data.message;
+            }
+            setError(errMsg);
+        } finally {
+            setBackupLoading(false);
+        }
+    };
+
+    const handleConfirmRestore = async (password: string, setError: (msg: string | null) => void) => {
+        setRestoreLoading(true);
+        const formData = new FormData();
+        formData.append('backup_file', restoreFile!);
+        formData.append('password', password);
+
+        try {
+            const response = await axios.post('/api/database/restore', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            if (response.data.success) {
+                setToastMsg({ msg: response.data.message || 'Database berhasil dipulihkan.', type: 'success' });
+                setRestoreFile(null);
+                setPwdModalOpen(false);
+            } else {
+                setError(response.data.message || 'Gagal memulihkan database.');
+            }
+        } catch (error: any) {
+            console.error(error);
+            const errMsg = error.response?.data?.message || 'Terjadi kesalahan saat memulihkan database.';
+            setError(errMsg);
+        } finally {
+            setRestoreLoading(false);
+        }
+    };
 
     return (
         <>
@@ -360,10 +537,118 @@ export default function PengaturanPage() {
                             </div>
                         </div>
                     )}
+
+                    {/* --- TAB 4: BACKUP & RESTORE --- */}
+                    {tab === 'database' && (
+                        <div className="flex flex-col bg-white rounded-3xl overflow-hidden">
+                            <div className="px-6 md:px-8 py-6 border-b border-slate-100">
+                                <div className="text-[18px] font-extrabold text-slate-900 tracking-tight">Cadangkan & Pulihkan Database</div>
+                                <div className="text-[13px] text-slate-500 font-semibold mt-1">
+                                    Unduh salinan data Anda atau lakukan pemulihan sistem dari cadangan berkas ZIP.
+                                </div>
+                            </div>
+
+                            <div className="px-6 md:px-8 py-7 flex flex-col gap-8 max-w-3xl">
+                                {/* Section 1: Backup */}
+                                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex flex-col gap-1 max-w-md">
+                                        <div className="text-sm font-bold text-slate-900">Cadangkan Database (Backup)</div>
+                                        <div className="text-[12.5px] text-slate-500 font-medium">
+                                            Ekspor seluruh 16 koleksi MongoDB termasuk akun user, progres belajar, SPP, dan konfigurasi lainnya ke dalam berkas ZIP terkompresi.
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleBackup}
+                                        disabled={backupLoading}
+                                        className="flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-teal-700 text-white text-[13px] font-extrabold shadow-md shadow-teal-900/10 transition-all hover:bg-teal-800 active:scale-95 disabled:opacity-60 cursor-pointer self-start sm:self-center whitespace-nowrap"
+                                    >
+                                        {backupLoading ? (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                <span>Mengekspor...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Download size={16} />
+                                                <span>Unduh Cadangan</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* Section 2: Restore */}
+                                 <div className="p-6 bg-rose-50/30 rounded-2xl border border-rose-100/50 flex flex-col gap-5">
+                                     <div className="flex flex-col gap-1">
+                                         <div className="text-sm font-bold text-rose-950 flex items-center gap-1.5">
+                                             <AlertTriangle size={16} className="text-rose-600 shrink-0" />
+                                             <span>Pulihkan Database (Restore)</span>
+                                         </div>
+                                         <div className="text-[12.5px] text-rose-900/80 font-medium mt-1 leading-relaxed">
+                                             Unggah berkas ZIP cadangan Anda untuk memulihkan keadaan database. 
+                                             <span className="font-extrabold text-rose-700 block mt-1">
+                                                 PERINGATAN: Proses ini akan menghapus (truncate) seluruh data di database saat ini sebelum mengimpor data cadangan!
+                                             </span>
+                                         </div>
+                                     </div>
+ 
+                                     <div className="flex flex-col gap-2.5">
+                                         <div className="flex items-center gap-4 flex-wrap">
+                                             <label className="flex items-center justify-center gap-2 h-11 px-5 rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-700 shadow-sm cursor-pointer hover:bg-slate-50 active:scale-98 transition-all">
+                                                 <Upload size={16} />
+                                                 <span>Pilih Berkas ZIP</span>
+                                                 <input
+                                                     type="file"
+                                                     accept=".zip"
+                                                     onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
+                                                     className="hidden"
+                                                 />
+                                             </label>
+                                             <span className="text-[12px] font-bold text-slate-600">
+                                                 {restoreFile ? restoreFile.name : 'Belum ada berkas terpilih'}
+                                             </span>
+                                         </div>
+                                         <span className="text-[11px] text-slate-400">Berkas wajib berupa format ZIP hasil ekspor sistem (maksimal 10MB).</span>
+                                     </div>
+ 
+                                     {restoreFile && (
+                                         <div className="flex justify-end border-t border-rose-100/60 pt-4 mt-2">
+                                             <button
+                                                 type="button"
+                                                 onClick={handleRestoreClick}
+                                                 disabled={restoreLoading}
+                                                 className="flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-rose-600 text-white text-[13px] font-extrabold shadow-md shadow-rose-900/10 transition-all hover:bg-rose-700 active:scale-95 disabled:opacity-60 cursor-pointer"
+                                             >
+                                                 {restoreLoading ? (
+                                                     <>
+                                                         <Loader2 size={16} className="animate-spin" />
+                                                         <span>Memulihkan Data...</span>
+                                                     </>
+                                                 ) : (
+                                                     <>
+                                                         <Upload size={16} />
+                                                         <span>Mulai Pemulihan</span>
+                                                     </>
+                                                 )}
+                                             </button>
+                                         </div>
+                                     )}
+                                 </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {toastMsg && <Toast msg={toastMsg.msg} type={toastMsg.type} onClose={() => setToastMsg(null)} />}
+
+            <PasswordModal
+                isOpen={pwdModalOpen}
+                title={pwdModalType === 'backup' ? 'Cadangkan Database (Backup)' : 'Pulihkan Database (Restore)'}
+                description={pwdModalType === 'backup' ? 'Masukkan password admin untuk mengunduh backup database.' : 'PERINGATAN KERAS: Proses pemulihan database akan menghapus seluruh data yang ada saat ini sebelum mengimpor data cadangan. Silakan masukkan password admin untuk melanjutkan.'}
+                onClose={() => setPwdModalOpen(false)}
+                onSubmit={pwdModalType === 'backup' ? handleConfirmBackup : handleConfirmRestore}
+            />
         </>
     );
 }

@@ -13,11 +13,14 @@ class TeacherSeeder extends Seeder
         Teacher::truncate();
 
         $profiles = [
-            ['nama_guru' => 'Ahmad Fauzan',      'bidang' => 'Tahfidz',  'phone' => '081200001111', 'email' => 'guru1@qlc.id'],
-            ['nama_guru' => 'Siti Fatimah',       'bidang' => 'Tilawah',  'phone' => '081200002222', 'email' => 'guru2@qlc.id'],
-            ['nama_guru' => 'Muhammad Ridwan',    'bidang' => 'Yanbua',   'phone' => '081200003333', 'email' => 'guru3@qlc.id'],
-            ['nama_guru' => 'Nur Halimah',        'bidang' => 'Tahfidz',  'phone' => '081200004444', 'email' => 'guru4@qlc.id'],
-            ['nama_guru' => 'Hasan Basri',        'bidang' => 'Tilawah',  'phone' => '081200005555', 'email' => 'guru5@qlc.id'],
+            ['nama_guru' => 'Ahmad Fauzan',   'bidang' => 'Tahfidz', 'phone' => '081200001111', 'email' => 'guru1@qlc.id'],
+            ['nama_guru' => 'Siti Fatimah',    'bidang' => 'Tilawah', 'phone' => '081200002222', 'email' => 'guru2@qlc.id'],
+            ['nama_guru' => 'Muhammad Ridwan', 'bidang' => 'Yanbua',  'phone' => '081200003333', 'email' => 'guru3@qlc.id'],
+            ['nama_guru' => 'Nur Halimah',     'bidang' => 'Tahfidz', 'phone' => '081200004444', 'email' => 'guru4@qlc.id'],
+            ['nama_guru' => 'Hasan Basri',     'bidang' => 'Tilawah', 'phone' => '081200005555', 'email' => 'guru5@qlc.id'],
+            ['nama_guru' => 'Lutfi Hakim',     'bidang' => 'Yanbua',  'phone' => '081200006666', 'email' => 'guru6@qlc.id'],
+            ['nama_guru' => 'Fatimah Zahra',   'bidang' => 'Tahfidz', 'phone' => '081200007777', 'email' => 'guru7@qlc.id'],
+            ['nama_guru' => 'Yusuf Mansur',    'bidang' => 'Tilawah', 'phone' => '081200008888', 'email' => 'guru8@qlc.id'],
         ];
 
         $users = User::where('role_id', 'RL02')->get()->keyBy('email');
@@ -30,7 +33,10 @@ class TeacherSeeder extends Seeder
                 'bidang'    => $p['bidang'],
                 'phone'     => $p['phone'],
                 'email'     => $p['email'],
+                'tanggal_masuk' => now()->subMonths(rand(6, 24))->format('Y-m-d'),
             ]);
         }
+
+        $this->command->info('TeacherSeeder: Data guru berhasil di-seed.');
     }
 }

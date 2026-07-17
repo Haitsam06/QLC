@@ -23,9 +23,9 @@ class ProgressReportSeeder extends Seeder
 
         $data = [
             [
-                'student_index'      => 0,
-                'teacher_index'      => 0,
-                'date'               => '2025-05-20',
+                'student_index'      => 0, // Rizky Al-Faruq
+                'teacher_index'      => 0, // Ahmad Fauzan
+                'date'               => '2026-07-01',
                 'attendance'         => 'hadir',
                 'report_type'        => 'hafalan',
                 'kualitas'           => 'sangat_lancar',
@@ -34,9 +34,9 @@ class ProgressReportSeeder extends Seeder
                 'teacher_notes'      => 'Santri sangat fokus dan lancar dalam hafalan hari ini.',
             ],
             [
-                'student_index'      => 1,
-                'teacher_index'      => 1,
-                'date'               => '2025-05-21',
+                'student_index'      => 1, // Nadia Putri Salsabila
+                'teacher_index'      => 1, // Siti Fatimah
+                'date'               => '2026-07-02',
                 'attendance'         => 'hadir',
                 'report_type'        => 'tilawah',
                 'kualitas'           => 'lancar',
@@ -45,9 +45,9 @@ class ProgressReportSeeder extends Seeder
                 'teacher_notes'      => 'Murajaah berjalan baik, tajwid perlu sedikit perbaikan.',
             ],
             [
-                'student_index'      => 2,
-                'teacher_index'      => 0,
-                'date'               => '2025-05-22',
+                'student_index'      => 2, // Muhammad Hafiz Firdaus
+                'teacher_index'      => 0, // Ahmad Fauzan
+                'date'               => '2026-07-03',
                 'attendance'         => 'izin',
                 'report_type'        => null,
                 'kualitas'           => null,
@@ -56,9 +56,9 @@ class ProgressReportSeeder extends Seeder
                 'teacher_notes'      => 'Santri izin karena sakit ringan.',
             ],
             [
-                'student_index'      => 3,
-                'teacher_index'      => 2,
-                'date'               => '2025-05-23',
+                'student_index'      => 3, // Fatimah Az-Zahra
+                'teacher_index'      => 2, // Muhammad Ridwan
+                'date'               => '2026-07-04',
                 'attendance'         => 'hadir',
                 'report_type'        => 'hafalan',
                 'kualitas'           => 'mengulang',
@@ -67,15 +67,48 @@ class ProgressReportSeeder extends Seeder
                 'teacher_notes'      => 'Progres baik, perlu penguatan pada ayat 4 dan 5.',
             ],
             [
-                'student_index'      => 4,
-                'teacher_index'      => 1,
-                'date'               => '2025-05-24',
+                'student_index'      => 4, // Umar Abdillah Hakim
+                'teacher_index'      => 1, // Siti Fatimah
+                'date'               => '2026-07-05',
                 'attendance'         => 'hadir',
                 'report_type'        => 'yanbua',
                 'kualitas'           => 'sangat_lancar',
                 'hafalan_target'     => 'Juz 30',
                 'hafalan_achievement'=> 'Juz 30',
                 'teacher_notes'      => 'Santri menyelesaikan murajaah Juz 30 dengan sangat baik.',
+            ],
+            [
+                'student_index'      => 5, // Aisyah Humaira
+                'teacher_index'      => 3, // Nur Halimah
+                'date'               => '2026-07-06',
+                'attendance'         => 'hadir',
+                'report_type'        => 'hafalan',
+                'kualitas'           => 'lancar',
+                'hafalan_target'     => 'An-Naba 1-15',
+                'hafalan_achievement'=> 'An-Naba 1-15',
+                'teacher_notes'      => 'Hafalan lancar dengan makhraj yang baik.',
+            ],
+            [
+                'student_index'      => 6, // Ali Zainal Abidin
+                'teacher_index'      => 4, // Hasan Basri
+                'date'               => '2026-07-07',
+                'attendance'         => 'hadir',
+                'report_type'        => 'tilawah',
+                'kualitas'           => 'lancar',
+                'hafalan_target'     => 'Yasin 1-20',
+                'hafalan_achievement'=> 'Yasin 1-15',
+                'teacher_notes'      => 'Membaca lancar, perlu pengulangan di ayat 16-20.',
+            ],
+            [
+                'student_index'      => 7, // Khadijah Al-Kubra
+                'teacher_index'      => 5, // Lutfi Hakim
+                'date'               => '2026-07-08',
+                'attendance'         => 'hadir',
+                'report_type'        => 'yanbua',
+                'kualitas'           => 'sangat_lancar',
+                'hafalan_target'     => 'Jilid 4 Halaman 1-5',
+                'hafalan_achievement'=> 'Jilid 4 Halaman 1-5',
+                'teacher_notes'      => 'Luar biasa, materi diserap dengan sangat baik.',
             ],
         ];
 
@@ -96,5 +129,7 @@ class ProgressReportSeeder extends Seeder
                 'created_by'          => 'teacher',
             ]);
         }
+
+        $this->command->info('ProgressReportSeeder: Data laporan progress berhasil di-seed.');
     }
 }
