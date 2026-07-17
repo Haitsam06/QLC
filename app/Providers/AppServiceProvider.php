@@ -26,5 +26,14 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
         }
+
+        if (isset($_SERVER['HTTP_HOST'])) {
+            $host = $_SERVER['HTTP_HOST'];
+            $stateful = config('sanctum.stateful', []);
+            if (is_array($stateful) && !in_array($host, $stateful)) {
+                $stateful[] = $host;
+                config(['sanctum.stateful' => $stateful]);
+            }
+        }
     }
 }
